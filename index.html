@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Patanisha</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black">
+  <div id="root"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
+      authDomain: "patanisha-49561.firebaseapp.com",
+      projectId: "patanisha-49561",
+      storageBucket: "patanisha-49561.firebasestorage.app",
+      messagingSenderId: "363879415134",
+      appId: "1:363879415134:web:81b99ab93290a3e45723cf",
+      measurementId: "G-GLXLGVWLHF"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const root = document.getElementById('root');
+    let currentUser = null;
+    let userData = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if(user){
+        currentUser = user;
+        const snap = await getDoc(doc(db, "users", user.uid));
+        userData = snap.data();
+        showHome();
+      } else {
+        showLogin();
+      }
+    })
+
+    function showLogin(){
+      root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto"><h1 class="text-pink-500 text-5xl font-bold mb-2">Patanisha</h1><p class="text-gray-400 mb-6">Meet. Chat. Connect.</p><input id="email" placeholder="Email" class="w-full p-3 bg-gray-800 rounded my-2 border border-gray-700"><input id="pass" type="password" placeholder="Password" class="w-full p-3 bg-gray-800 rounded my-2 border border-gray-700"><select id="gender" class="w-full p-3 bg-gray-800 rounded my-2 border border-gray-700"><option value="male">Mimi ni Mwanaume - 500 KES</option><option value="female">Mimi ni Dada - BURE</option></select><button onclick="signup()" class="w-full bg-pink-600 p-3 rounded font-bold mt-2">Sign Up</button><button onclick="login()" class="w-full bg-gray-700 p-3 rounded mt-2">Login</button></div>`
+    }
+
+    window.signup = async () => {
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('pass').value;
+      const gender = document.getElementById('gender').value;
+      const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+      await setDoc(doc(db, "users", userCred.user.uid), {email, gender, isPremium: gender === "female"})
+    }
+    window.login = async () => {
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('pass').value;
+      await signInWithEmailAndPassword(auth, email, pass);
+    }
+
+    function showHome(){
+      if(userData.gender === "male" && !userData.isPremium){
+        showPaywall();
+      } else {
+        root.innerHTML = `<div class="text-white text-center p-8"><h1 class="text-pink-500 text-3xl">Karibu Patanisha 💖</h1><p class="my-4">Start Swiping!</p><button onclick="signOut(auth)" class="bg-red-600 p-2 rounded">Logout</button></div>`
+      }
+    }
+
+    function showPaywall(){
+      root.innerHTML = `<div class="bg-black text-white text-center p-8 min-h-screen"><h1 class="text-4xl font-bold text-pink-500">Patanisha Premium</h1><p class="my-2">Fungua chat na uone nani alikupenda</p><div class="bg-gray-900 p-6 rounded-2xl my-6 border border-pink-500"><p class="text-lg">1. Lipa <b>500 KES</b> to Airtel Money Till</p><p class="text-4xl font-bold text-cyan-400 my-3">0754068531</p><p>Account Name: <b>Patanisha</b></p></div><input id="txCode" placeholder="Paste Airtel Transaction Code" class="w-full p-3 bg-gray-800 rounded mb-4 border border-gray-700"/><button onclick="submitPayment()" class="w-full bg-pink-600 p-4 rounded-xl text-xl font-bold">Nimalizishe Malipo</button><p class="text-sm mt-4 text-pink-400">Bure kabisa kwa Dada 💖</p><button onclick="signOut(auth)" class="mt-6 text-gray-500 text-sm">Logout</button></div>`
+    }
+
+    window.submitPayment = async () => {
+      const txCode = document.getElementById('txCode').value;
+      if(!txCode) return alert("Weka transaction code kwanza")
+      await addDoc(collection(db, "payments"), {userId: currentUser.uid, email: currentUser.email, txCode, amount: 500, status: "pending", createdAt: new Date()})
+      alert("Tumepokea! We will unlock you in 10 minutes")
+    }
+  </script>
+</body>
+</html>
