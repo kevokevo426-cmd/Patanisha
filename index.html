@@ -76,6 +76,10 @@
       await addDoc(collection(db, "payments"), {userId: currentUser.uid, email: currentUser.email, txCode, amount: 500, status: "pending", createdAt: new Date()})
       alert("Tumepokea! We will unlock you in 10 minutes")
     }
-  </script>
+window.logout = async () => {
+    await signOut(auth);
+    alert("Logged out successfully!");
+    window.location.reload();
+}  </script>
 </body>
 </html>
