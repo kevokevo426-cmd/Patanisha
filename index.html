@@ -68,15 +68,13 @@ await setDoc(doc(window.db, "users", userCred.user.uid), {email, gender, isPremi
     window.submitPayment = async () => {
       const txCode = document.getElementById('txCode').value;
       if(!txCode) return alert("Weka transaction code kwanza")
-      await addDoc(collection(db, "payments"), {userId: currentUser.uid, email: currentUser.email, txCode, amount: 500, status: "pending", createdAt: new Date()})
+      await addDoc(collection(window.db, "payments"), {userId: currentUser.uid, email: currentUser.email, txCode, amount: 500});
       alert("Tumepokea! We will unlock you in 10 minutes")
     }
 window.logout = async () => {
     await signOut(window.auth);
 alert("Logged out successfully!");
 window.location.reload();
-    window.location.reload();
-await signOut(window.auth);
 }  </script>
 </body>
 </html>
