@@ -54,12 +54,18 @@ await setDoc(doc(window.db, "users", userCred.user.uid), {email, gender, isPremi
       const email = document.getElementById('email').value;
       await signInWithEmailAndPassword(window.auth, email, pass);
     function showHome(){
-      if(userData.gender === "male" && !userData.isPremium){
-        showPaywall();
-      } else {
-        root.innerHTML = `<div class="text-white text-center p-8"><h1 class="text-pink-500 text-3xl">Karibu Patanisha 💖</h1><p class="my-4">Start Swiping!</p><button onclick="signOut(auth)" class="bg-red-600 p-2 rounded">Logout</button></div>`
-      }
-    }
+  if(userData.gender === "male" && !userData.isPremium){
+    showPaywall();
+  } else {
+    root.innerHTML = `<div class="text-white text-center p-8">
+      <h1 class="text-pink-500 text-3xl">Karibu Patanisha ❤️</h1>
+      <p class="mt-4">You are logged in as: ${currentUser.email}</p>
+      <button onclick="logout()" class="bg-red-500 px-6 py-2 rounded mt-6">Logout</button>
+    </div>`;
+  }
+}
+      if(userData.gender === "male" &&
+        root.innerHTML = `<div class="text-white text-center p-8"><h1 class="text-pink-500 text-3xl">Karibu Patanisha 💖</h1><p class="my-4">Start Swiping!</p><button onclick="signOut(auth)" class="bg-red-600 p-2 r
 
     function showPaywall(){
       root.innerHTML = `<div class="bg-black text-white text-center p-8 min-h-screen"><h1 class="text-4xl font-bold text-pink-500">Patanisha Premium</h1><p class="my-2">Fungua chat na uone nani alikupenda</p><div class="bg-gray-900 p-6 rounded-2xl my-6 border border-pink-500"><p class="text-lg">1. Lipa <b>500 KES</b> to Airtel Money Till</p><p class="text-4xl font-bold text-cyan-400 my-3">0754068531</p><p>Account Name: <b>Patanisha</b></p></div><input id="txCode" placeholder="Paste Airtel Transaction Code" class="w-full p-3 bg-gray-800 rounded mb-4 border border-gray-700"/><button onclick="submitPayment()" class="w-full bg-pink-600 p-4 rounded-xl text-xl font-bold">Nimalizishe Malipo</button><p class="text-sm mt-4 text-pink-400">Bure kabisa kwa Dada 💖</p><button onclick="signOut(auth)" class="mt-6 text-gray-500 text-sm">Logout</button></div>`
