@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -14,13 +13,15 @@
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+    // YOUR REAL CONFIG
     const firebaseConfig = {
-      apiKey: "AIzaSyAhaMwbZkLI2WFKdG7_g1ivg8M",
-      authDomain: "patanisha-86567.firebaseapp.com",
-      projectId: "patanisha-86567",
-      storageBucket: "patanisha-86567.firebasestorage.app",
-      messagingSenderId: "83487441514",
-      appId: "1:83487441514:web:9ba339a0a46723cf"
+      apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
+      authDomain: "patanisha-49561.firebaseapp.com",
+      projectId: "patanisha-49561",
+      storageBucket: "patanisha-49561.firebasestorage.app",
+      messagingSenderId: "363879415134",
+      appId: "1:363879415134:web:81b99ab93290a3e45723cf",
+      measurementId: "G-GLXLGVWLHF"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -90,20 +91,3 @@
       <div class="bg-black text-white text-center p-8 min-h-screen">
         <h1 class="text-4xl font-bold text-pink-500">Unlock Premium</h1>
         <p class="mt-4">Men pay 500 KES</p>
-        <input id="txCode" placeholder="M-Pesa Code" class="w-full p-3 mt-6 bg-gray-800 rounded">
-        <button onclick="submitPayment()" class="bg-green-500 px-6 py-3 rounded mt-4">Submit Payment</button>
-        <button onclick="logout()" class="bg-red-500 px-6 py-2 rounded mt-4">Logout</button>
-      </div>`;
-    }
-
-    window.submitPayment = async () => {
-      const txCode = document.getElementById('txCode').value;
-      if(!txCode) return alert("Weka transaction code");
-      await addDoc(collection(db, "payments"), {userId: auth.currentUser.uid, email: auth.currentUser.email, txCode, amount: 500});
-      alert("Tumepokea!");
-    }
-
-    window.logout = async () => { await signOut(auth); }
-  </script>
-</body>
-</html>
