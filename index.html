@@ -22,18 +22,16 @@
       appId: "1:363879415134:web:81b99ab93290a3e45723cf",
       measurementId: "G-GLXLGVWLHF"
     };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
+    window.auth = getAuth(app);
+window.db = getFirestore(app);
     const root = document.getElementById('root');
     let currentUser = null;
     let userData = null;
 
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(window.auth, async (user) => {
       if(user){
         currentUser = user;
-        const snap = await getDoc(doc(db, "users", user.uid));
+        const snap = await getDoc(doc(window.db, "users", user.uid));
         userData = snap.data();
         showHome();
       } else {
@@ -49,15 +47,12 @@
       const email = document.getElementById('email').value;
       const pass = document.getElementById('pass').value;
       const gender = document.getElementById('gender').value;
-      const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-      await setDoc(doc(db, "users", userCred.user.uid), {email, gender, isPremium: gender === "female"})
+      const userCred = await createUserWithEmailAndPassword(window.auth, email, pass);
+await setDoc(doc(window.db, "users", userCred.user.uid), {email, gender, isPremium: gender === "female"}) 
     }
     window.login = async () => {
       const email = document.getElementById('email').value;
-      const pass = document.getElementById('pass').value;
-      await signInWithEmailAndPassword(auth, email, pass);
-    }
-
+      await signInWithEmailAndPassword(window.auth, email, pass);
     function showHome(){
       if(userData.gender === "male" && !userData.isPremium){
         showPaywall();
@@ -77,9 +72,11 @@
       alert("Tumepokea! We will unlock you in 10 minutes")
     }
 window.logout = async () => {
-    await signOut(auth);
-    alert("Logged out successfully!");
+    await signOut(window.auth);
+alert("Logged out successfully!");
+window.location.reload();
     window.location.reload();
+await signOut(window.auth);
 }  </script>
 </body>
 </html>
