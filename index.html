@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,23 +20,23 @@
       projectId: "patanisha-86567",
       storageBucket: "patanisha-86567.firebasestorage.app",
       messagingSenderId: "83487441514",
-      appId: "1:83487441514:web:9ba339a0a46723cf",
-      measurementId: "G-6XLOA4H"
+      appId: "1:83487441514:web:9ba339a0a46723cf"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const root = document.getElementById('root');
-    let currentUser = null;
-    let userData = null;
 
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        currentUser = user;
         const snap = await getDoc(doc(db, "users", user.uid));
-        userData = snap.data();
-        showHome();
+        const userData = snap.data();
+        if(userData.gender === "male" && !userData.isPremium){
+          showPaywall(user);
+        } else {
+          showHome(user);
+        }
       } else {
         showLogin();
       }
@@ -61,34 +62,34 @@
       const email = document.getElementById('email').value;
       const pass = document.getElementById('pass').value;
       const gender = document.getElementById('gender').value;
-      const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-      await setDoc(doc(db, "users", userCred.user.uid), {email, gender, isPremium: gender === "female"});
+      if(!gender) return alert("Chagua gender kwanza");
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+        await setDoc(doc(db, "users", userCred.user.uid), {email, gender, isPremium: gender === "female"});
+      } catch(e){ alert(e.message); }
     }
 
     window.login = async () => {
       const email = document.getElementById('email').value;
       const pass = document.getElementById('pass').value;
-      await signInWithEmailAndPassword(auth, email, pass);
+      try { await signInWithEmailAndPassword(auth, email, pass); } 
+      catch(e){ alert(e.message); }
     }
 
-    function showHome(){
-      if(userData.gender === "male" && !userData.isPremium){
-        showPaywall();
-      } else {
-        root.innerHTML = `
-        <div class="text-white text-center p-8">
-          <h1 class="text-pink-500 text-3xl">Karibu Patanisha ❤️</h1>
-          <p class="mt-4">Logged in as: ${currentUser.email}</p>
-          <button onclick="logout()" class="bg-red-500 px-6 py-2 rounded mt-6">Logout</button>
-        </div>`;
-      }
+    function showHome(user){
+      root.innerHTML = `
+      <div class="text-white text-center p-8">
+        <h1 class="text-pink-500 text-3xl">Karibu Patanisha ❤️</h1>
+        <p class="mt-4">Logged in as: ${user.email}</p>
+        <button onclick="logout()" class="bg-red-500 px-6 py-2 rounded mt-6">Logout</button>
+      </div>`;
     }
 
-    function showPaywall(){
+    function showPaywall(user){
       root.innerHTML = `
       <div class="bg-black text-white text-center p-8 min-h-screen">
         <h1 class="text-4xl font-bold text-pink-500">Unlock Premium</h1>
-        <p class="mt-4">Men pay 500 KES to access</p>
+        <p class="mt-4">Men pay 500 KES</p>
         <input id="txCode" placeholder="M-Pesa Code" class="w-full p-3 mt-6 bg-gray-800 rounded">
         <button onclick="submitPayment()" class="bg-green-500 px-6 py-3 rounded mt-4">Submit Payment</button>
         <button onclick="logout()" class="bg-red-500 px-6 py-2 rounded mt-4">Logout</button>
@@ -97,16 +98,12 @@
 
     window.submitPayment = async () => {
       const txCode = document.getElementById('txCode').value;
-      if(!txCode) return alert("Weka transaction code kwanza");
-      await addDoc(collection(db, "payments"), {userId: currentUser.uid, email: currentUser.email, txCode, amount: 500});
-      alert("Tumepokea! We will unlock you in 10 minutes");
+      if(!txCode) return alert("Weka transaction code");
+      await addDoc(collection(db, "payments"), {userId: auth.currentUser.uid, email: auth.currentUser.email, txCode, amount: 500});
+      alert("Tumepokea!");
     }
 
-    window.logout = async () => {
-      await signOut(auth);
-      alert("Logged out successfully!");
-      window.location.reload();
-    }
+    window.logout = async () => { await signOut(auth); }
   </script>
 </body>
 </html>
