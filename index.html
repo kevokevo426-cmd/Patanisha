@@ -2,55 +2,83 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Patanisha</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    body { -webkit-font-smoothing: antialiased; }
+   .hide-scrollbar::-webkit-scrollbar { display: none; }
+  </style>
 </head>
 <body class="bg-gray-50">
-  <div id="root"></div>
+  <div id="root">Loading Patanisha...</div>
+  <input type="file" id="photoInput" accept="image/*" style="display:none">
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+  <script>
+    // 1. FIREBASE CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
       authDomain: "patanisha-49561.firebaseapp.com",
       projectId: "patanisha-49561",
       storageBucket: "patanisha-49561.firebasestorage.app",
       messagingSenderId: "363879415134",
-      appId: "1:363879415134:web:81b99ab93290a3e45723cf",
-      measurementId: "G-GLXLGVWLHF"
+      appId: "1:363879415134:web:81b99ab93290a3e45723cf"
     };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
     const root = document.getElementById('root');
     let currentPage = 'home';
+    let currentUser = null;
+    let currentUserData = {};
+    let allUsers = [];
+    let chats = [];
 
-    onAuthStateChanged(auth, async (user) => {
+    // 2. AUTH STATE
+    auth.onAuthStateChanged(async (user) => {
       if (user) {
-        const snap = await getDoc(doc(db, "users", user.uid));
-        const userData = snap.data();
-        if(userData.gender === "male" &&!userData.isPremium){
-          showPaywall(user);
+        currentUser = user;
+        const snap = await db.collection("users").doc(user.uid).get();
+        currentUserData = snap.data() || {};
+        if(currentUserData.gender === "male" &&!currentUserData.isPremium){
+          showPaywall();
         } else {
-          showHome(user);
+          loadUsers();
+          loadChats();
         }
       } else {
         showLogin();
       }
     });
 
+    // 3. LOAD DATA
+    async function loadUsers(){
+      const snapshot = await db.collection("users").get();
+      allUsers = [];
+      snapshot.forEach(doc => { if(doc.id!== currentUser.uid){ allUsers.push({id: doc.id,...doc.data()}); } });
+      if(currentPage === 'home') showHome();
+    }
+
+    function loadChats(){
+      db.collection("chats").where("members", "array-contains", currentUser.uid).orderBy("lastMessageTime", "desc").onSnapshot(snapshot => {
+        chats = [];
+        snapshot.forEach(doc => { chats.push({id: doc.id,...doc.data()}); });
+        if(currentPage === 'chat') showChat();
+      });
+    }
+
+    // 4. AUTH PAGES
     function showLogin(){
       root.innerHTML = `
       <div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex flex-col justify-center bg-black">
         <h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1>
-        <input id="email" placeholder="Email" class="w-full p-3 mt-6 bg-gray-800 rounded">
-        <input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded">
-        <select id="gender" class="w-full p-3 mt-3 bg-gray-800 rounded">
+        <p class="text-gray-400 mb-6">Find your match</p>
+        <input id="email" placeholder="Email" class="w-full p-3 mt-4 bg-gray-800 rounded text-white">
+        <input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white">
+        <select id="gender" class="w-full p-3 mt-3 bg-gray-800 rounded text-white">
           <option value="">Select Gender</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
@@ -60,215 +88,254 @@
       </div>`;
     }
 
-    window.signup = async () => {
+    function signup(){
       const email = document.getElementById('email').value;
       const pass = document.getElementById('pass').value;
       const gender = document.getElementById('gender').value;
       if(!gender) return alert("Chagua gender kwanza");
-      try {
-        const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-        await setDoc(doc(db, "users", userCred.user.uid), {email, gender, isPremium: gender === "female"});
-      } catch(e){ alert(e.message); }
+      const username = "User" + Math.floor(Math.random()*9999);
+      const userId = "PT" + Math.floor(Math.random()*900000 + 100000);
+      auth.createUserWithEmailAndPassword(email, pass).then(userCred => {
+        db.collection("users").doc(userCred.user.uid).set({
+          email, gender, username, userId,
+          photo: `https://i.pravatar.cc/150?u=${userCred.user.uid}`,
+          age: Math.floor(Math.random()*15)+20,
+          isPremium: gender === "female",
+          createdAt: Date.now()
+        });
+      }).catch(e => alert(e.message));
     }
 
-    window.login = async () => {
+    function login(){
       const email = document.getElementById('email').value;
       const pass = document.getElementById('pass').value;
-      try { await signInWithEmailAndPassword(auth, email, pass); }
-      catch(e){ alert(e.message); }
+      auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message));
     }
 
-    window.logout = async () => {
-      await signOut(auth);
-    }
+    function logout(){ auth.signOut(); }
 
-    function showPaywall(user){
+    // 5. PAYWALL
+    function showPaywall(){
       root.innerHTML = `
-      <div class="bg-black text-white text-center p-8 min-h-screen flex-col justify-center">
+      <div class="bg-black text-white text-center p-8 min-h-screen flex flex-col justify-center">
         <h1 class="text-4xl font-bold text-pink-500">Unlock Premium</h1>
         <p class="mt-4 text-lg">Men pay 500 KES to chat & see profiles</p>
-        <button onclick="alert('M-Pesa coming soon')" class="bg-gradient-to-r from-pink-500 to-red-500 px-8 py-3 rounded-full mt-6 font-bold">Pay with M-Pesa</button>
+        <button onclick="alert('M-Pesa STK coming soon')" class="bg-gradient-to-r from-pink-500 to-red-500 px-8 py-3 rounded-full mt-6 font-bold">Pay with M-Pesa</button>
         <button onclick="logout()" class="bg-gray-600 px-8 py-3 rounded-full mt-3">Logout</button>
       </div>`;
     }
 
-    function showHome(user){
+    // 6. HOME PAGE
+    function showHome(){
       currentPage = 'home';
+      const men = allUsers.filter(u => u.gender === "male");
       root.innerHTML = `
-      <div class="bg-white min-h-screen pb-20 font-sans">
-        <div class="bg-gradient-to-r from-yellow-300 to-yellow-200 rounded-2xl mx-3 mt-3 p-4 flex items-center shadow-md">
+      <div class="bg-white min-h-screen pb-20">
+        <div class="bg-gradient-to-r from-yellow-300 to-orange-300 rounded-2xl mx-3 mt-3 p-4 flex items-center shadow">
           <div class="flex-1">
-            <h2 class="font-bold text-black text-base">Set up 3 Say hi texts</h2>
-            <p class="text-sm text-gray-800 mt-1">The other user is more likely to reply to you</p>
+            <h2 class="font-bold text-black">Find New People</h2>
+            <p class="text-sm text-gray-800">${men.length} men online now</p>
           </div>
-          <img src="https://cdn-icons-png.flaticon.com/512/8913/8913995.png" class="w-20 h-20" />
-          <button class="bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-2 rounded-full font-bold ml-2 shadow">Go</button>
+          <img src="https://cdn-icons-png.flaticon.com/512/8913/8913995.png" class="w-16 h-16" />
         </div>
-        <div class="flex items-center gap-5 px-4 mt-4 overflow-x-auto text-sm">
-          <button class="font-bold text-xl text-black border-b-4 border-yellow-400 pb-1">Recommend</button>
-          <button class="text-gray-500">Newcomer</button>
-          <button class="text-gray-500">Nearby</button>
-          <button>🏆</button>
-          <button class="ml-auto text-2xl">🔍</button>
+        <div class="px-3 mt-4 space-y-4 hide-scrollbar overflow-y-auto">
+          ${men.length === 0? '<p class="text-center text-gray-500 mt-10">No men yet. Invite friends!</p>' : ''}
+          ${men.map(user => userCard(user)).join('')}
         </div>
-        <div class="px-3 mt-4 space-y-5">
-          ${getUserCard("Thaguru 77", "https://i.pravatar.cc/150?img=1", "VIP0", 48, "<0.1km")}
-          ${getUserCard("David Mbai", "https://i.pravatar.cc/150?img=2", "VIP2", 20, "<0.1km")}
-          ${getUserCard("joram fuchingo", "https://i.pravatar.cc/150?img=3", "VIP1", 37, "<0.1km", "Sometimes")}
-          ${getUserCard("EmberSage", "https://i.pravatar.cc/150?img=4", "VIP1", 20, "<0.1km")}
-        </div>
-        ${bottomNav()}
-      </div>
-      `;
+        ${nav()}
+      </div>`;
     }
 
-    function showChat(user){
+    async function startChat(otherUserId, name, photo){
+      const chatId = [currentUser.uid, otherUserId].sort().join("_");
+      const chatRef = db.collection("chats").doc(chatId);
+      const doc = await chatRef.get();
+      if(!doc.exists){
+        await chatRef.set({
+          members: [currentUser.uid, otherUserId],
+          memberInfo: {
+            [currentUser.uid]: {name: currentUserData.username, photo: currentUserData.photo},
+            [otherUserId]: {name, photo}
+          },
+          lastMessage: "Hi! 👋",
+          lastMessageTime: Date.now()
+        });
+      }
+      openChat(chatId, name, photo);
+    }
+
+    function userCard(user){
+      return `<div class="flex items-center bg-white p-3 rounded-xl shadow-sm">
+        <div class="relative">
+          <img src="${user.photo}" class="w-16 h-16 rounded-full border-2 border-pink-400"/>
+          <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+        </div>
+        <div class="ml-3 flex-1">
+          <p class="font-bold text-black">${user.username} ${user.isPremium?`<span class="text-xs bg-green-500 text-white px-2 rounded ml-1">VIP</span>`:""}</p>
+          <p class="text-sm text-gray-500">♂ ${user.age} yrs | ID: ${user.userId}</p>
+        </div>
+        <button onclick="startChat('${user.id}', '${user.username}', '${user.photo}')" class="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-5 py-2 rounded-full font-bold">💬 Hi</button>
+      </div>`;
+    }
+
+    // 7. CHAT LIST PAGE
+    function showChat(){
       currentPage = 'chat';
       root.innerHTML = `
       <div class="bg-white min-h-screen pb-20">
-        <div class="sticky top-0 bg-white z-10">
-          <div class="flex items-center px-4 pt-3 pb-2">
-            <button class="font-bold text-2xl text-black relative">Chat
-              <div class="absolute -bottom-1 left-0 w-3 h-3 bg-yellow-400 rounded-full"></div>
-            </button>
-            <button class="ml-6 text-xl text-gray-400">Call</button>
-            <button class="ml-auto bg-yellow-300 rounded-full px-3 py-1 flex items-center">😁 ></button>
-            <button class="ml-3">🎁</button>
-            <button class="ml-3">👤</button>
-            <button class="ml-3">📊</button>
-          </div>
-          <div class="h-1 bg-yellow-300 mx-4 rounded-full"></div>
+        <div class="sticky top-0 bg-white p-4 border-b z-10"><h1 class="font-bold text-2xl">Chat</h1></div>
+        <div>
+          ${chats.length === 0? '<p class="text-center text-gray-500 mt-10">No chats yet. Tap Hi on Home</p>' : ''}
+          ${chats.map(chat => {
+            const otherId = chat.members.find(id => id!== currentUser.uid);
+            const other = chat.memberInfo[otherId];
+            const time = new Date(chat.lastMessageTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            return chatItem(other.name, other.photo, chat.lastMessage, chat.id, time);
+          }).join('')}
         </div>
-
-        <div class="px-3 mt-2">
-          ${chatItem("2,201 have seen me", "Hey! People here appreciate you", "https://cdn-icons-png.flaticon.com/512/1828/1828640.png", "+802", "purple", "viewers")}
-          ${chatItem("Official Team", "This time you haven't reached 13,000 diamonds", "https://cdn-icons-png.flaticon.com/512/1034/1034144.png", "", "pink", "official")}
-          ${chatItem("Exclusive cus...", "Please ask your agency", "https://i.pravatar.cc/150?img=10", "02-25 19:21", "gold", "exclusive")}
-          ${chatItem("Customer se...", "chat first with the men b...", "https://cdn-icons-png.flaticon.com/512/1034/1034144.png", "12-22 23:08", "pink", "support")}
-          ${chatItem("Mus'ab Barre", "Didn't reply to the other p...", "https://i.pravatar.cc/150?img=11", "08-16 05:35", "", "user1")}
-          ${chatItem("Mutuku", "Didn't reply to the other p...", "https://i.pravatar.cc/150?img=12", "08-16 05:35", "", "user2", "1")}
-          ${chatItem("Phoenix2024", "NEW", "https://i.pravatar.cc/150?img=13", "08-16 05:34", "", "user3")}
-        </div>
-
-        <button class="fixed right-3 top-24 bg-blue-500 rounded-full w-16 h-16 flex flex-col items-center justify-center shadow-lg">
-          <div class="text-2xl">🎮</div>
-          <div class="bg-yellow-400 text-black text-[10px] font-bold px-2 rounded-full -mt-1">Game</div>
-        </button>
-        ${bottomNav()}
-      </div>
-      `;
+        ${nav()}
+      </div>`;
     }
 
-    function showChatWindow(user, chatId, name, img){
+    function chatItem(name, photo, lastMsg, chatId, time){
+      return `<button onclick="openChat('${chatId}', '${name}', '${photo}')" class="w-full flex items-center p-4 border-b hover:bg-gray-50 text-left">
+        <img src="${photo}" class="w-12 h-12 rounded-full"/>
+        <div class="ml-3 flex-1">
+          <div class="flex justify-between">
+            <p class="font-bold text-black">${name}</p>
+            <p class="text-xs text-gray-400">${time}</p>
+          </div>
+          <p class="text-sm text-gray-500 truncate">${lastMsg}</p>
+        </div>
+      </button>`;
+    }
+
+    // 8. SINGLE CHAT WINDOW
+    function openChat(chatId, name, photo){
       currentPage = 'chatWindow';
       root.innerHTML = `
-      <div class="bg-gray-100 min-h-screen flex flex-col">
-        <!-- CHAT HEADER -->
+      <div class="bg-gray-100 min-h-screen flex-col">
         <div class="bg-white p-4 flex items-center border-b shadow-sm">
-          <button onclick="showChat(auth.currentUser)" class="text-2xl">←</button>
-          <img src="${img}" class="w-10 h-10 rounded-full ml-3" />
+          <button onclick="showChat()" class="text-2xl">←</button>
+          <img src="${photo}" class="w-10 h-10 rounded-full ml-3" />
           <div class="ml-3">
-            <h3 class="font-bold text-black">${name}</h3>
+            <h3 class="font-bold">${name}</h3>
             <p class="text-xs text-green-500">Online</p>
           </div>
-          <button class="ml-auto text-xl">⋮</button>
         </div>
-
-        <!-- CHAT MESSAGES -->
-        <div class="flex-1 p-4 space-y-3 overflow-y-auto">
-          <div class="flex justify-start">
-            <div class="bg-white p-3 rounded-2xl max-w-[70%] shadow">Hii bro 👋</div>
-          </div>
-          <div class="flex justify-end">
-            <div class="bg-yellow-300 p-3 rounded-2xl max-w-[70%] shadow">Poa sana, uko aje?</div>
-          </div>
+        <div id="messages" class="flex-1 p-4 space-y-2 overflow-y-auto"></div>
+        <div class="bg-white p-3 flex border-t">
+          <input id="msgInput" placeholder="Type a message..." class="flex-1 bg-gray-100 rounded-full px-4">
+          <button onclick="sendMessage('${chatId}')" class="bg-yellow-400 w-10 h-10 rounded-full ml-2 flex items-center justify-center">➤</button>
         </div>
-
-        <!-- INPUT -->
-        <div class="bg-white p-3 flex items-center border-t">
-          <button class="text-2xl">😊</button>
-          <input id="chatInput" placeholder="Type a message..." class="flex-1 mx-2 bg-gray-100 rounded-full px-4 py-2">
-          <button onclick="sendMsg()" class="bg-yellow-400 w-10 h-10 rounded-full flex items-center justify-center">➤</button>
-        </div>
-      </div>
-      `;
+      </div>`;
+      loadMessages(chatId);
     }
 
-    window.sendMsg = () => {
-      const input = document.getElementById('chatInput');
-      if(input.value.trim() === "") return;
-      alert("Message sent: " + input.value);
+    function loadMessages(chatId){
+      db.collection("chats").doc(chatId).collection("messages").orderBy("time", "asc").onSnapshot(snapshot => {
+        const msgDiv = document.getElementById('messages');
+        if(!msgDiv) return;
+        msgDiv.innerHTML = '';
+        snapshot.forEach(doc => {
+          const msg = doc.data();
+          const isMe = msg.sender === currentUser.uid;
+          msgDiv.innerHTML += `<div class="flex ${isMe?'justify-end':'justify-start'}"><div class="${isMe?'bg-yellow-300':'bg-white'} p-3 rounded-2xl max-w-[70%] shadow">${msg.text}</div></div>`;
+        });
+        msgDiv.scrollTop = msgDiv.scrollHeight;
+      });
+    }
+
+    function sendMessage(chatId){
+      const input = document.getElementById('msgInput');
+      const text = input.value.trim();
+      if(text === "") return;
+      db.collection("chats").doc(chatId).collection("messages").add({ text, sender: currentUser.uid, time: Date.now() });
+      db.collection("chats").doc(chatId).update({ lastMessage: text, lastMessageTime: Date.now() });
       input.value = "";
     }
 
-    function chatItem(title, subtitle, img, time, color="", chatId="", notif=""){
-      return `
-      <button onclick="showChatWindow(auth.currentUser, '${chatId}', '${title}', '${img}')" class="w-full flex items-center py-3 border-b border-gray-100 text-left">
-        <div class="relative">
-          <img src="${img}" class="w-14 h-14 rounded-full ${color==="gold"? "border-4 border-yellow-400" : ""}" />
-          ${color==="purple"? `<div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">Hi</div>` : ""}
-          ${color==="pink"? `<div class="absolute inset-0 bg-pink-500 rounded-full flex items-center justify-center"><svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path></svg></div>` : ""}
-        </div>
-        <div class="ml-3 flex-1">
-          <div class="flex items-center">
-            <h3 class="font-bold text-black ${title.includes('Customer')? 'text-yellow-500' : ''}">${title}</h3>
-            ${chatId==="exclusive"? `<span class="ml-2 bg-yellow-800 text-white text-[10px] px-2 py-0.5 rounded-full">Exclusive</span>` : ""}
-            ${chatId==="support"? `<span class="ml-2 bg-yellow-400 text-black text-[10px] px-2 py-0.5 rounded-full">✓ Official</span>` : ""}
-            ${chatId==="user3"? `<span class="ml-2 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full">NEW</span>` : ""}
-            <span class="ml-auto text-sm text-gray-400">${time}</span>
-          </div>
-          <p class="text-sm text-gray-500 mt-1 truncate">${subtitle}</p>
-        </div>
-        ${notif? `<div class="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">${notif}</div>` : ""}
-        ${time.includes(":") &&!notif? `<button class="ml-2 text-purple-400">📌</button>` : ""}
-      </button>
-      `
+    // 9. MOMENT PAGE
+    function showMoment(){
+      currentPage = 'moment';
+      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 border-b"><h1 class="font-bold text-2xl">Moments</h1></div><p class="text-center mt-10 text-gray-500">Coming Soon</p>${nav()}</div>`;
     }
 
-    function getUserCard(name, img, vip, age, distance, status=""){
-      const vipColor = vip==="VIP2"? "green" : "blue";
-      return `
-      <div class="flex items-center bg-white px-1">
-        <div class="relative">
-          <img src="${img}" class="w-20 h-20 rounded-full border-4 ${vip!=="VIP0"? `border-${vipColor}-500` : "border-gray-200"}" />
-          ${vip!=="VIP0"? `<div class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-${vipColor}-600 text-white text-[10px] px-2 rounded-full font-bold">⭐${vip}</div>` : ""}
-          <div class="absolute bottom-1 right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-        </div>
-        <div class="ml-3 flex-1">
-          <h3 class="font-bold text-black">${name}</h3>
-          <div class="flex gap-1 mt-1 flex-wrap">
-            ${vip!=="VIP0"? `<span class="bg-${vipColor}-100 text-${vipColor}-700 text-xs px-2 py-0.5 rounded-full">⭐${vip}</span>` : ""}
-            <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">📍${distance}</span>
-            <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">♂ ${age}</span>
+    // 10. ME PAGE - EDITABLE PROFILE
+    function showMe(){
+      currentPage = 'me';
+      root.innerHTML = `
+      <div class="bg-white min-h-screen pb-20">
+        <div class="bg-gradient-to-r from-pink-500 to-red-500 p-8 text-white text-center">
+          <div class="relative inline-block">
+            <img id="profilePic" src="${currentUserData.photo}" class="w-28 h-28 rounded-full mx-auto border-4 border-white"/>
+            <button onclick="document.getElementById('photoInput').click()" class="absolute bottom-0 right-0 bg-black bg-opacity-60 rounded-full w-8 h-8 flex items-center justify-center">📷</button>
           </div>
+          <h1 id="displayName" class="font-bold text-2xl mt-3">${currentUserData.username}</h1>
+          <p class="text-sm opacity-90">ID: ${currentUserData.userId}</p>
+          <p class="text-sm opacity-90">${currentUserData.email}</p>
         </div>
-        <button onclick="showChatWindow(auth.currentUser, '${name}', '${name}', '${img}')" class="bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold px-4 py-2 rounded-full">💬 Hi</button>
-      </div>
-      `
+
+        <div class="p-4 space-y-4">
+          <div class="bg-gray-100 p-4 rounded-xl">
+            <p class="text-sm text-gray-500">Username</p>
+            <div class="flex items-center mt-1">
+              <input id="nameInput" value="${currentUserData.username}" class="flex-1 bg-white p-2 rounded border">
+              <button onclick="updateName()" class="ml-2 bg-pink-500 text-white px-4 py-2 rounded">Save</button>
+            </div>
+          </div>
+          <button class="w-full text-left p-4 bg-gray-100 rounded-xl">⚙️ Settings</button>
+          <button class="w-full text-left p-4 bg-gray-100 rounded-xl">💎 Buy Coins</button>
+          <button onclick="logout()" class="w-full text-left p-4 bg-red-100 text-red-600 rounded-xl">🚪 Logout</button>
+        </div>
+        ${nav()}
+      </div>`;
+
+      document.getElementById('photoInput').onchange = (e) => {
+        const file = e.target.files[0];
+        if(file){
+          const reader = new FileReader();
+          reader.onload = function(event){
+            const newPhoto = event.target.result;
+            document.getElementById('profilePic').src = newPhoto;
+            db.collection("users").doc(currentUser.uid).update({photo: newPhoto});
+            currentUserData.photo = newPhoto;
+            alert("Profile photo updated!");
+          }
+          reader.readAsDataURL(file);
+        }
+      }
     }
 
-    function bottomNav(){
-      return `
-      <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2">
-        <button onclick="showHome(auth.currentUser)" class="flex flex-col items-center ${currentPage==='home'?'text-black':'text-gray-400'}">
+    function updateName(){
+      const newName = document.getElementById('nameInput').value.trim();
+      if(newName === "") return alert("Name cannot be empty");
+      db.collection("users").doc(currentUser.uid).update({username: newName});
+      currentUserData.username = newName;
+      document.getElementById('displayName').innerText = newName;
+      alert("Username updated!");
+    }
+
+    // 11. BOTTOM NAV
+    function nav(){
+      return `<div class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50">
+        <button onclick="showHome()" class="${currentPage==='home'?'text-pink-500':'text-gray-400'} flex-col items-center">
           <svg width="24" height="24" fill="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-          <span class="text-xs mt-1">Home</span>
+          <span class="text-xs">Home</span>
         </button>
-        <button class="flex flex-col items-center text-gray-400">
+        <button onclick="showMoment()" class="${currentPage==='moment'?'text-pink-500':'text-gray-400'} flex flex-col items-center">
           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span class="text-xs mt-1">Moment</span>
+          <span class="text-xs">Moment</span>
         </button>
-        <button onclick="showChat(auth.currentUser)" class="flex flex-col items-center relative ${currentPage==='chat' || currentPage==='chatWindow'?'text-black':'text-gray-400'}">
+        <button onclick="showChat()" class="${currentPage==='chat' || currentPage==='chatWindow'?'text-pink-500':'text-gray-400'} flex flex-col items-center">
           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-          <span class="absolute -top-1 right-2 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center">32</span>
-          <span class="text-xs mt-1">Chat</span>
+          <span class="text-xs">Chat</span>
         </button>
-        <button class="flex flex-col items-center text-gray-400">
+        <button onclick="showMe()" class="${currentPage==='me'?'text-pink-500':'text-gray-400'} flex flex-col items-center">
           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          <span class="text-xs mt-1">Me</span>
+          <span class="text-xs">Me</span>
         </button>
-      </div>
-      `
+      </div>`
     }
   </script>
 </body>
