@@ -11,9 +11,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // YOUR REAL CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
       authDomain: "patanisha-49561.firebaseapp.com",
@@ -77,6 +76,10 @@
       catch(e){ alert(e.message); }
     }
 
+    window.logout = async () => {
+      await signOut(auth);
+    }
+
     function showHome(user){
       root.innerHTML = `
       <div class="text-white text-center p-8">
@@ -90,4 +93,11 @@
       root.innerHTML = `
       <div class="bg-black text-white text-center p-8 min-h-screen">
         <h1 class="text-4xl font-bold text-pink-500">Unlock Premium</h1>
-        <p class="mt-4">Men pay 500 KES</p>
+        <p class="mt-4">Men pay 500 KES to continue</p>
+        <button onclick="alert('M-Pesa coming soon')" class="bg-pink-500 px-8 py-3 rounded mt-6 font-bold">Pay with M-Pesa</button>
+        <button onclick="logout()" class="bg-gray-600 px-8 py-3 rounded mt-3">Logout</button>
+      </div>`;
+    }
+  </script>
+</body>
+</html>
