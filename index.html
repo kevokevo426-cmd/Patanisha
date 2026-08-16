@@ -28,7 +28,7 @@
     const root = document.getElementById('root');
     let currentPage = 'home';
     let currentUser = null;
-    let currentUserData = {diamonds: 50.0, coins: 6, totalIncome: 0, todayIncome: 0};
+    let currentUserData = {diamonds: 0, coins: 0, totalIncome: 0, todayIncome: 0, visitors:[], followers:[], following:[], friends:[]};
     let allUsers = [];
     let exchangeRates = {rate1: {d:6500, s:1050}, rate2: {d:32500, s:5250}, rate3: {d:65000, s:10500}, dailyLimit: 650000};
     let transactions = [];
@@ -38,7 +38,7 @@
         currentUser = user;
         await loadUserData(user.uid);
         loadExchangeRates();
-        loadTransactions(); // LOAD TRANSACTION HISTORY
+        loadTransactions(); // NOW SAFE
         if(!currentUserData.username ||!currentUserData.photo){
           showSetup();
         } else if(currentUserData.gender === "male" &&!currentUserData.isPremium){
@@ -54,7 +54,7 @@
 
     async function loadUserData(uid){
       const snap = await db.collection("users").doc(uid).get();
-      currentUserData = snap.data() || {};
+      if(snap.exists) currentUserData = {...currentUserData, ...snap.data()};
     }
     
     function loadExchangeRates(){
@@ -64,6 +64,7 @@
     }
 
     function loadTransactions(){
+      if(!currentUser) return; // FIX: don't run if no user
       db.collection("users").doc(currentUser.uid).collection("transactions").orderBy("time", "desc").onSnapshot(snapshot => {
         transactions = [];
         snapshot.forEach(doc => { transactions.push({id: doc.id,...doc.data()}); });
@@ -80,9 +81,10 @@
       if(currentUserData.diamonds < diamondAmount) return alert("Not enough diamonds");
       await db.collection("users").doc(currentUser.uid).update({
         diamonds: firebase.firestore.FieldValue.increment(-diamondAmount),
-        coins: firebase.firestore.FieldValue.increment(sAmount)
+        coins: firebase.firestore.FieldValue.increment(sAmount),
+        totalIncome: firebase.firestore.FieldValue.increment(sAmount),
+        todayIncome: firebase.firestore.FieldValue.increment(sAmount)
       });
-      // ADD TRANSACTION
       await db.collection("users").doc(currentUser.uid).collection("transactions").add({
         type: "Exchange",
         amount: `💎${diamondAmount} → S${sAmount}`,
@@ -94,7 +96,7 @@
     }
 
     function showLogin(){
-      root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex-col justify-center bg-black"><h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1><input id="email" placeholder="Email" class="w-full p-3 mt-6 bg-gray-800 rounded text-white"><input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white"><select id="gender" class="w-full p-3 mt-3 bg-gray-800 rounded text-white"><option value="">Select Gender</option><option value="male">Male</option><option value="female">Female</option></select><button onclick="signup()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Sign Up</button><button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button></div>`;
+      root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex flex-col justify-center bg-black"><h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1><input id="email" placeholder="Email" class="w-full p-3 mt-6 bg-gray-800 rounded text-white"><input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white"><select id="gender" class="w-full p-3 mt-3 bg-gray-800 rounded text-white"><option value="">Select Gender</option><option value="male">Male</option><option value="female">Female</option></select><button onclick="signup()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Sign Up</button><button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button></div>`;
     }
     
     function signup(){
@@ -117,13 +119,13 @@
     function logout(){ auth.signOut(); }
 
     function showSetup(){
-      root.innerHTML = `<div class="bg-white min-h-screen p-6 flex-col justify-center"><h1 class="text-3xl font-bold text-center">Complete Profile</h1><p class="text-center text-gray-500 mb-6">Your ID: ${currentUserData.userId}</p><div class="flex justify-center mb-4"><img id="setupPic" src="https://i.pravatar.cc/150" onclick="document.getElementById('photoInput').click()" class="w-28 h-28 rounded-full border-4 border-pink-400 object-cover"/></div><input id="setupName" placeholder="Enter Username" class="w-full p-3 bg-gray-100 rounded mb-4"><input id="setupAge" type="number" placeholder="Your Age" class="w-full p-3 bg-gray-100 rounded mb-6"><button onclick="saveSetup()" class="bg-pink-500 w-full py-3 rounded font-bold text-white">Save & Continue</button></div>`;
+      root.innerHTML = `<div class="bg-white min-h-screen p-6 flex flex-col justify-center"><h1 class="text-3xl font-bold text-center">Complete Profile</h1><p class="text-center text-gray-500 mb-6">Your ID: ${currentUserData.userId}</p><div class="flex justify-center mb-4"><img id="setupPic" src="https://i.pravatar.cc/150" onclick="document.getElementById('photoInput').click()" class="w-28 h-28 rounded-full border-4 border-pink-400 object-cover"/></div><input id="setupName" placeholder="Enter Username" class="w-full p-3 bg-gray-100 rounded mb-4"><input id="setupAge" type="number" placeholder="Your Age" class="w-full p-3 bg-gray-100 rounded mb-6"><button onclick="saveSetup()" class="bg-pink-500 w-full py-3 rounded font-bold text-white">Save & Continue</button></div>`;
       let tempPhoto = "";
       document.getElementById('photoInput').onchange = (e) => { const file = e.target.files[0]; if(file){ const reader = new FileReader(); reader.onload = function(event){ tempPhoto = event.target.result; document.getElementById('setupPic').src = tempPhoto; } reader.readAsDataURL(file); }
       window.saveSetup = () => { const name = document.getElementById('setupName').value.trim(); const age = document.getElementById('setupAge').value; if(name === "") return alert("Enter username"); if(!tempPhoto) return alert("Upload photo"); db.collection("users").doc(currentUser.uid).update({username: name, photo: tempPhoto, age: parseInt(age)}).then(() => { loadUserData(currentUser.uid).then(() => showHome()); }); }
     }
 
-    function showPaywall(){ root.innerHTML = `<div class="bg-black text-white text-center p-8 min-h-screen flex flex-col justify-center"><h1 class="text-4xl font-bold text-pink-500">Unlock Premium</h1><p class="mt-4">Men pay 500 KES to chat</p><button onclick="logout()" class="bg-gray-600 px-8 py-3 rounded-full mt-3">Logout</button></div>`; }
+    function showPaywall(){ root.innerHTML = `<div class="bg-black text-white text-center p-8 min-h-screen flex-col justify-center"><h1 class="text-4xl font-bold text-pink-500">Unlock Premium</h1><p class="mt-4">Men pay 500 KES to chat</p><button onclick="logout()" class="bg-gray-600 px-8 py-3 rounded-full mt-3">Logout</button></div>`; }
     
     function showHome(){ 
       currentPage = 'home'; 
@@ -168,7 +170,7 @@
 
         <div class="grid grid-cols-4 gap-4 bg-white rounded-xl p-4 mx-4 mt-3 text-center">
           <button onclick="showIncome()"><div class="text-2xl">💰</div><p class="text-xs">Income</p></button>
-          <button onclick="showAccount()"><div class="text-2xl">🏦</div><p class="text-xs">Account</p></button> <!-- RENAMED -->
+          <button onclick="showAccount()"><div class="text-2xl">🏦</div><p class="text-xs">Account</p></button>
           <div><div class="text-2xl">🏪</div><p class="text-xs">Store</p></div>
           <div><div class="text-2xl">👑</div><p class="text-xs">Aristocracy</p></div>
         </div>
@@ -176,64 +178,27 @@
       </div>`;
     }
 
-    // NEW ACCOUNT PAGE
     function showAccount(){
       currentPage = 'account';
       root.innerHTML = `
       <div class="min-h-screen bg-gray-100">
-        <div class="bg-white p-4 flex items-center border-b">
-          <button onclick="showMe()" class="text-2xl">←</button>
-          <h1 class="font-bold text-xl ml-4">Account</h1>
-        </div>
-
-        <!-- BALANCE CARDS -->
+        <div class="bg-white p-4 flex items-center border-b"><button onclick="showMe()" class="text-2xl">←</button><h1 class="font-bold text-xl ml-4">Account</h1></div>
         <div class="p-4 space-y-3">
-          <div class="bg-gradient-to-r from-yellow-400 to-orange-400 text-white p-4 rounded-xl">
-            <p class="text-sm opacity-90">Account Balance</p>
-            <p class="font-bold text-3xl">S ${currentUserData.coins}</p>
-          </div>
+          <div class="bg-gradient-to-r from-yellow-400 to-orange-400 text-white p-4 rounded-xl"><p class="text-sm opacity-90">Account Balance</p><p class="font-bold text-3xl">S ${currentUserData.coins}</p></div>
           <div class="grid grid-cols-2 gap-3">
-            <div class="bg-white p-4 rounded-xl shadow-sm">
-              <p class="text-sm text-gray-500">Today's Income</p>
-              <p class="font-bold text-xl">S ${currentUserData.todayIncome || 0}</p>
-            </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm">
-              <p class="text-sm text-gray-500">Total Income</p>
-              <p class="font-bold text-xl">S ${currentUserData.totalIncome || 0}</p>
-            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm"><p class="text-sm text-gray-500">Today's Income</p><p class="font-bold text-xl">S ${currentUserData.todayIncome || 0}</p></div>
+            <div class="bg-white p-4 rounded-xl shadow-sm"><p class="text-sm text-gray-500">Total Income</p><p class="font-bold text-xl">S ${currentUserData.totalIncome || 0}</p></div>
           </div>
         </div>
-
-        <!-- WITHDRAWALS -->
         <div class="bg-white mx-4 p-4 rounded-xl mb-3">
           <h2 class="font-bold mb-3">Withdrawals</h2>
-          <div class="flex gap-2">
-            <div class="flex-1 bg-green-100 text-green-700 p-3 rounded-lg text-center">
-              <p class="font-bold">S 0</p><p class="text-xs">Paid</p>
-            </div>
-            <div class="flex-1 bg-yellow-100 text-yellow-700 p-3 rounded-lg text-center">
-              <p class="font-bold">S 0</p><p class="text-xs">Pending</p>
-            </div>
-          </div>
+          <div class="flex gap-2"><div class="flex-1 bg-green-100 text-green-700 p-3 rounded-lg text-center"><p class="font-bold">S 0</p><p class="text-xs">Paid</p></div><div class="flex-1 bg-yellow-100 text-yellow-700 p-3 rounded-lg text-center"><p class="font-bold">S 0</p><p class="text-xs">Pending</p></div></div>
           <button onclick="alert('Withdraw to M-Pesa coming')" class="bg-pink-500 w-full py-3 rounded-lg font-bold text-white mt-3">Withdraw</button>
         </div>
-
-        <!-- TRANSACTION HISTORY -->
         <div class="bg-white mx-4 p-4 rounded-xl">
           <h2 class="font-bold mb-3">Transaction History</h2>
           ${transactions.length === 0? `<p class="text-center text-gray-500 py-6">No transactions yet</p>` : ''}
-          ${transactions.map(tx => `
-            <div class="flex justify-between items-center py-3 border-b last:border-0">
-              <div>
-                <p class="font-bold">${tx.type}</p>
-                <p class="text-xs text-gray-500">${new Date(tx.time).toLocaleString()}</p>
-              </div>
-              <div class="text-right">
-                <p class="font-bold">${tx.amount}</p>
-                <span class="text-xs px-2 py-1 rounded-full ${tx.status==='Completed'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}">${tx.status}</span>
-              </div>
-            </div>
-          `).join('')}
+          ${transactions.map(tx => `<div class="flex justify-between items-center py-3 border-b last:border-0"><div><p class="font-bold">${tx.type}</p><p class="text-xs text-gray-500">${new Date(tx.time).toLocaleString()}</p></div><div class="text-right"><p class="font-bold">${tx.amount}</p><span class="text-xs px-2 py-1 rounded-full ${tx.status==='Completed'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}">${tx.status}</span></div></div>`).join('')}
         </div>
       </div>`;
     }
@@ -243,30 +208,16 @@
       root.innerHTML = `
       <div class="min-h-screen">
         <div class="bg-yellow-400 p-6 pb-16">
-          <div class="flex items-center justify-between text-black">
-            <button onclick="showMe()" class="text-2xl">←</button>
-            <h1 class="font-bold text-xl">Income</h1>
-            <span class="text-2xl">☰</span>
-          </div>
-          <div class="text-center mt-6 text-black">
-            <p class="font-bold text-xl">Balance</p>
-            <div class="flex items-center justify-center mt-2">
-              <span class="text-3xl mr-2">💎</span>
-              <p class="font-bold text-5xl">${currentUserData.diamonds || 0}.0</p>
-            </div>
-          </div>
+          <div class="flex items-center justify-between text-black"><button onclick="showMe()" class="text-2xl">←</button><h1 class="font-bold text-xl">Income</h1><span class="text-2xl">☰</span></div>
+          <div class="text-center mt-6 text-black"><p class="font-bold text-xl">Balance</p><div class="flex items-center justify-center mt-2"><span class="text-3xl mr-2">💎</span><p class="font-bold text-5xl">${currentUserData.diamonds || 0}.0</p></div></div>
         </div>
-
         <div class="bg-white rounded-t-3xl -mt-8 p-6">
           <h2 class="font-bold text-xl text-center mb-4">Exchange</h2>
           ${exchangeOption(exchangeRates.rate1.s, exchangeRates.rate1.d)}
           ${exchangeOption(exchangeRates.rate2.s, exchangeRates.rate2.d)}
           ${exchangeOption(exchangeRates.rate3.s, exchangeRates.rate3.d)}
           <h3 class="font-bold mt-6 mb-2">Exchange Rules</h3>
-          <div class="border rounded-xl">
-            <div class="flex justify-between p-3 border-b"><span class="font-bold">Exchange Rate</span><span>💎 ${exchangeRates.rate1.d} = 🟠 S ${exchangeRates.rate1.s}</span></div>
-            <div class="flex justify-between p-3"><span class="font-bold">Daily Exchange Limit</span><span>💎 ${exchangeRates.dailyLimit}</span></div>
-          </div>
+          <div class="border rounded-xl"><div class="flex justify-between p-3 border-b"><span class="font-bold">Exchange Rate</span><span>💎 ${exchangeRates.rate1.d} = 🟠 S ${exchangeRates.rate1.s}</span></div><div class="flex justify-between p-3"><span class="font-bold">Daily Exchange Limit</span><span>💎 ${exchangeRates.dailyLimit}</span></div></div>
           <button onclick="alert('Custom exchange coming')" class="bg-yellow-400 w-full py-4 rounded-full font-bold text-lg mt-6">Custom Exchange</button>
         </div>
       </div>`;
