@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Patanisha</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-pink-500 mb-2">Patanisha Admin 🔒</h1>
+    <p class="text-gray-600 mb-6">Manage all users</p>
+    
+    <div id="loading" class="text-center">Loading users...</div>
+    <div id="users" class="space-y-3"></div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
+      authDomain: "patanisha-49561.firebaseapp.com",
+      projectId: "patanisha-49561",
+      storageBucket: "patanisha-49561.firebasestorage.app",
+      messagingSenderId: "363879415134",
+      appId: "1:363879415134:web:81b99ab93290a3e45723cf"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Load all users
+    db.collection("users").orderBy("username").onSnapshot(snap => {
+      document.getElementById('loading').style.display = 'none';
+      const usersDiv = document.getElementById('users');
+      
+      if(snap.empty){
+        usersDiv.innerHTML = '<p class="text-center text-gray-500">No users yet</p>';
+        return;
+      }
+
+      usersDiv.innerHTML = snap.docs.map(doc => {
+        const u = doc.data();
+        return `
+        <div class="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between">
+          <div class="flex items-center">
+            <img src="${u.photo}" class="w-12 h-12 rounded-full object-cover">
+            <div class="ml-3">
+              <p class="font-bold">${u.username}</p>
+              <p class="text-sm text-gray-500">ID: ${u.userId}</p>
+              <p class="text-sm">💰 ${u.coins} coins | 💎 ${u.diamonds} diamonds</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="addCoins('${doc.id}', 100)" class="bg-green-500 text-white px-3 py-1 rounded text-sm">+100 Coins</button>
+            <button onclick="addDiamonds('${doc.id}', 10)" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm">+10 💎</button>
+          </div>
+        </div>
+        `;
+      }).join('');
+    });
+
+    async function addCoins(uid, amount){
+      await db.collection("users").doc(uid).update({
+        coins: firebase.firestore.FieldValue.increment(amount)
+      });
+      alert(`Added ${amount} coins`);
+    }
+
+    async function addDiamonds(uid, amount){
+      await db.collection("users").doc(uid).update({
+        diamonds: firebase.firestore.FieldValue.increment(amount)
+      });
+      alert(`Added ${amount} diamonds`);
+    }
+  </script>
+</body>
+</html>
