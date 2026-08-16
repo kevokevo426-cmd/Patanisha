@@ -8,13 +8,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <style>
-   .nav-active { color: #ec4899; }
-   .nav-inactive { color: #9ca3af; }
-  </style>
+  <style> .nav-active { color: #ec4899; } .nav-inactive { color: #9ca3af; } </style>
 </head>
 <body class="bg-gray-100">
-  <div id="root">Loading Patanisha...</div>
+  <div id="root">Loading...</div>
   <input type="file" id="photoInput" accept="image/*" style="display:none">
 
   <script>
@@ -33,15 +30,16 @@
     let currentPage = 'home';
     let currentUser = null;
     let currentUserData = {};
+    let allUsers = [];
+    let activeChat = null;
 
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         currentUser = user;
         await ensureUserData(user.uid);
+        loadUsers();
         showHome();
-      } else {
-        showLogin();
-      }
+      } else { showLogin(); }
     });
 
     async function ensureUserData(uid){
@@ -54,124 +52,83 @@
         coins: 6, diamonds: 10, friends: 0, following: 0, followers: 0, visitors: 0,
         totalIncome: 0, todayIncome: 0, gender: "female", isPremium: true
       };
-      if(!snap.exists){
-        await docRef.set(defaultData);
-      } else {
-        await docRef.set({...defaultData,...snap.data()}, {merge: true}); // FIXES undefined
-      }
+      if(!snap.exists){ await docRef.set(defaultData); } 
+      else { await docRef.set({...defaultData,...snap.data()}, {merge: true}); }
       currentUserData = (await docRef.get()).data();
     }
 
-    function showLogin(){
-      root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex flex-col justify-center bg-black">
-        <h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1>
-        <input id="email" placeholder="Email" class="w-full p-3 mt-6 bg-gray-800 rounded text-white">
-        <input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white">
-        <button onclick="signup()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Sign Up</button>
-        <button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button>
-      </div>`;
+    async function loadUsers(){
+      const snapshot = await db.collection("users").get();
+      allUsers = [];
+      snapshot.forEach(doc => { if(doc.id !== currentUser.uid){ allUsers.push({id: doc.id,...doc.data()}); } });
     }
+
+    function showLogin(){ root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex-col justify-center bg-black"><h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1><input id="email" placeholder="Email" class="w-full p-3 mt-6 bg-gray-800 rounded text-white"><input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white"><button onclick="signup()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Sign Up</button><button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button></div>`; }
     function signup(){ const email = document.getElementById('email').value; const pass = document.getElementById('pass').value; auth.createUserWithEmailAndPassword(email, pass).catch(e => alert(e.message)); }
     function login(){ const email = document.getElementById('email').value; const pass = document.getElementById('pass').value; auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message)); }
     function logout(){ auth.signOut(); }
-
-    function renderBottomNav(){
-      return `<div class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2">
-        <button onclick="showHome()" class="flex flex-col items-center ${currentPage==='home'?'nav-active':'nav-inactive'}">🏠<span class="text-xs">Home</span></button>
-        <button onclick="showChat()" class="flex flex-col items-center ${currentPage==='chat'?'nav-active':'nav-inactive'}">💬<span class="text-xs">Chat</span></button>
-        <button onclick="showMe()" class="flex flex-col items-center ${currentPage==='me'?'nav-active':'nav-inactive'}">👤<span class="text-xs">Me</span></button>
-        <button onclick="showInfo()" class="flex flex-col items-center ${currentPage==='info'?'nav-active':'nav-inactive'}">ℹ️<span class="text-xs">Info</span></button>
-      </div>`;
-    }
+    function renderBottomNav(){ return `<div class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2"><button onclick="showHome()" class="flex flex-col items-center ${currentPage==='home'?'nav-active':'nav-inactive'}">🏠<span class="text-xs">Home</span></button><button onclick="showChatList()" class="flex flex-col items-center ${currentPage==='chat'?'nav-active':'nav-inactive'}">💬<span class="text-xs">Chat</span></button><button onclick="showMe()" class="flex flex-col items-center ${currentPage==='me'?'nav-active':'nav-inactive'}">👤<span class="text-xs">Me</span></button><button onclick="showInfo()" class="flex flex-col items-center ${currentPage==='info'?'nav-active':'nav-inactive'}">ℹ️<span class="text-xs">Info</span></button></div>`; }
     
     function showHome(){ 
       currentPage = 'home';
       root.innerHTML = `<div class="bg-white min-h-screen pb-20">
         <div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Patanisha</h1><p>Hi ${currentUserData.username}</p></div>
-        <div class="p-4 text-center text-gray-500">Welcome to Patanisha! Start chatting.</div>
+        <div class="px-3 mt-4 space-y-4">${allUsers.length === 0 ? '<p class="text-center text-gray-500">No users yet. Invite friends!</p>' : allUsers.map(user => `<div onclick="startChat('${user.id}')" class="flex items-center bg-white p-3 rounded-xl shadow-sm"><img src="${user.photo}" class="w-16 h-16 rounded-full object-cover"/><div class="ml-3 flex-1"><p class="font-bold">${user.username}</p><p class="text-sm text-gray-500">ID: ${user.userId}</p></div></div>`).join('')}</div>
         ${renderBottomNav()}
       </div>`; 
     }
 
-    function showChat(){
+    function showChatList(){
       currentPage = 'chat';
       root.innerHTML = `<div class="bg-white min-h-screen pb-20">
         <div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Chat</h1></div>
-        <div class="p-4 text-center text-gray-500">No chats yet. Go to Home to find people.</div>
+        <div class="p-4 text-center text-gray-500">Click someone on Home to start chat</div>
         ${renderBottomNav()}
       </div>`;
     }
 
-    function showInfo(){
-      currentPage = 'info';
-      root.innerHTML = `<div class="bg-white min-h-screen pb-20">
-        <div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Information</h1></div>
-        <div class="p-4">
-          <h2 class="font-bold">About Patanisha</h2>
-          <p class="text-sm mt-2">Connect, Chat, and Earn. Version 1.0</p>
-          <button onclick="logout()" class="w-full bg-red-500 text-white p-3 rounded-xl font-bold mt-6">Logout</button>
-        </div>
+    async function startChat(otherUserId){
+      const otherUser = allUsers.find(u => u.id === otherUserId);
+      activeChat = otherUserId;
+      currentPage = 'chatroom';
+      root.innerHTML = `<div class="bg-white min-h-screen pb-20 flex flex-col">
+        <div class="p-4 bg-pink-500 text-white flex items-center"><button onclick="showHome()">←</button><img src="${otherUser.photo}" class="w-10 h-10 rounded-full ml-3"/><p class="ml-2 font-bold">${otherUser.username}</p></div>
+        <div id="messages" class="flex-1 p-4 overflow-y-auto"></div>
+        <div class="p-2 border-t flex"><input id="msgInput" placeholder="Type message..." class="flex-1 border rounded-full px-4 py-2"><button onclick="sendMessage()" class="bg-pink-500 text-white px-4 rounded-full ml-2">Send</button></div>
         ${renderBottomNav()}
       </div>`;
+      loadMessages();
     }
 
-    function showMe(){
-      currentPage = 'me';
-      root.innerHTML = `
-      <div class="min-h-screen pb-20">
-        <div class="bg-gradient-to-b from-yellow-100 to-white p-4">
-          <div class="flex items-center">
-            <img id="profilePic" src="${currentUserData.photo}" onclick="document.getElementById('photoInput').click()" class="w-16 h-16 rounded-full border-2 border-white object-cover"/>
-            <div class="ml-3 flex-1"><h1 class="font-bold text-lg">${currentUserData.username} 😊</h1><p class="text-sm text-gray-600">ID:${currentUserData.userId}</p></div>
-          </div>
-          <div class="flex justify-around text-center mt-4">
-            <div><p class="font-bold">${currentUserData.friends}</p><p class="text-xs text-gray-500">Friends</p></div>
-            <div><p class="font-bold">${currentUserData.following}</p><p class="text-xs text-gray-500">Following</p></div>
-            <div><p class="font-bold">${currentUserData.followers}</p><p class="text-xs text-gray-500">Followers</p></div>
-            <div><p class="font-bold">${currentUserData.visitors}</p><p class="text-xs text-gray-500">Visitors</p></div>
-          </div>
-        </div>
-
-        <div class="flex gap-3 px-4 mt-3">
-          <button onclick="showIncome()" class="flex-1 bg-yellow-400 rounded-xl p-3 flex items-center justify-center font-bold"><span class="mr-2">💰</span>${currentUserData.coins}</button>
-          <button onclick="showAccount()" class="flex-1 bg-gradient-to-r from-yellow-700 to-yellow-500 text-white rounded-xl p-3 font-bold">🏦 Account</button>
-        </div>
-
-        ${renderBottomNav()}
-      </div>`;
-      
-      document.getElementById('photoInput').onchange = (e) => {
-        const file = e.target.files[0];
-        if(file){
-          const reader = new FileReader();
-          reader.onload = function(event){
-            const newPhoto = event.target.result;
-            document.getElementById('profilePic').src = newPhoto;
-            db.collection("users").doc(currentUser.uid).update({photo: newPhoto});
-          }
-          reader.readAsDataURL(file);
-        }
-      }
-    }
-
-    function showIncome(){
-      root.innerHTML = `<div class="p-6"><button onclick="showMe()" class="mb-4">← Back</button><h1 class="font-bold text-2xl">Income</h1><p class="mt-4">Diamonds: 💎 ${currentUserData.diamonds}</p><p>Coins: S ${currentUserData.coins}</p><button onclick="exchange()" class="bg-yellow-400 px-4 py-2 rounded mt-4">Exchange 5 💎 to S 800</button></div>`;
-    }
-
-    function showAccount(){
-      root.innerHTML = `<div class="p-6"><button onclick="showMe()" class="mb-4">← Back</button><h1 class="font-bold text-2xl">Account</h1><p class="mt-4">Balance: S ${currentUserData.coins}</p><p>Total Income: S ${currentUserData.totalIncome || 0}</p></div>`;
-    }
-
-    async function exchange(){
-      if(currentUserData.diamonds < 5) return alert("Not enough diamonds");
-      await db.collection("users").doc(currentUser.uid).update({
-        diamonds: firebase.firestore.FieldValue.increment(-5),
-        coins: firebase.firestore.FieldValue.increment(800)
+    async function loadMessages(){
+      const chatId = [currentUser.uid, activeChat].sort().join("_");
+      db.collection("chats").doc(chatId).collection("messages").orderBy("timestamp").onSnapshot(snap => {
+        const messagesDiv = document.getElementById('messages');
+        messagesDiv.innerHTML = snap.docs.map(doc => {
+          const msg = doc.data();
+          const isMe = msg.sender === currentUser.uid;
+          return `<div class="flex ${isMe?'justify-end':''} mb-2"><div class="${isMe?'bg-pink-500 text-white':'bg-gray-200'} rounded-xl px-3 py-2 max-w-xs">${msg.text}</div></div>`;
+        }).join('');
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
-      alert("Exchanged!");
-      await ensureUserData(currentUser.uid);
-      showIncome();
     }
+
+    async function sendMessage(){
+      const text = document.getElementById('msgInput').value;
+      if(!text) return;
+      const chatId = [currentUser.uid, activeChat].sort().join("_");
+      await db.collection("chats").doc(chatId).collection("messages").add({
+        text, sender: currentUser.uid, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('msgInput').value = '';
+    }
+
+    function showInfo(){ currentPage = 'info'; root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Information</h1></div><div class="p-4"><h2 class="font-bold">About Patanisha</h2><p class="text-sm mt-2">Connect, Chat, and Earn. Version 1.0</p><button onclick="logout()" class="w-full bg-red-500 text-white p-3 rounded-xl font-bold mt-6">Logout</button></div>${renderBottomNav()}</div>`; }
+
+    function showMe(){ currentPage = 'me'; root.innerHTML = `<div class="min-h-screen pb-20"><div class="bg-gradient-to-b from-yellow-100 to-white p-4"><div class="flex items-center"><img id="profilePic" src="${currentUserData.photo}" onclick="document.getElementById('photoInput').click()" class="w-16 h-16 rounded-full border-2 border-white object-cover"/><div class="ml-3 flex-1"><h1 class="font-bold text-lg">${currentUserData.username} 😊</h1><p class="text-sm text-gray-600">ID:${currentUserData.userId}</p></div></div><div class="flex justify-around text-center mt-4"><div><p class="font-bold">${currentUserData.friends}</p><p class="text-xs text-gray-500">Friends</p></div><div><p class="font-bold">${currentUserData.following}</p><p class="text-xs text-gray-500">Following</p></div><div><p class="font-bold">${currentUserData.followers}</p><p class="text-xs text-gray-500">Followers</p></div><div><p class="font-bold">${currentUserData.visitors}</p><p class="text-xs text-gray-500">Visitors</p></div></div></div><div class="flex gap-3 px-4 mt-3"><button onclick="showIncome()" class="flex-1 bg-yellow-400 rounded-xl p-3 flex items-center justify-center font-bold"><span class="mr-2">💰</span>${currentUserData.coins}</button><button onclick="showAccount()" class="flex-1 bg-gradient-to-r from-yellow-700 to-yellow-500 text-white rounded-xl p-3 font-bold">🏦 Account</button></div>${renderBottomNav()}</div>`; document.getElementById('photoInput').onchange = (e) => { const file = e.target.files[0]; if(file){ const reader = new FileReader(); reader.onload = function(event){ const newPhoto = event.target.result; document.getElementById('profilePic').src = newPhoto; db.collection("users").doc(currentUser.uid).update({photo: newPhoto}); } reader.readAsDataURL(file); } } }
+    function showIncome(){ root.innerHTML = `<div class="p-6"><button onclick="showMe()" class="mb-4">← Back</button><h1 class="font-bold text-2xl">Income</h1><p class="mt-4">Diamonds: 💎 ${currentUserData.diamonds}</p><p>Coins: S ${currentUserData.coins}</p><button onclick="exchange()" class="bg-yellow-400 px-4 py-2 rounded mt-4">Exchange 5 💎 to S 800</button></div>`; }
+    function showAccount(){ root.innerHTML = `<div class="p-6"><button onclick="showMe()" class="mb-4">← Back</button><h1 class="font-bold text-2xl">Account</h1><p class="mt-4">Balance: S ${currentUserData.coins}</p><p>Total Income: S ${currentUserData.totalIncome || 0}</p></div>`; }
+    async function exchange(){ if(currentUserData.diamonds < 5) return alert("Not enough diamonds"); await db.collection("users").doc(currentUser.uid).update({ diamonds: firebase.firestore.FieldValue.increment(-5), coins: firebase.firestore.FieldValue.increment(800) }); alert("Exchanged!"); await ensureUserData(currentUser.uid); showIncome(); }
   </script>
 </body>
 </html>
