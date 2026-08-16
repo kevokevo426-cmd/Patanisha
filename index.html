@@ -14,19 +14,21 @@
   <input type="file" id="photoInput" accept="image/*" style="display:none">
 
   <script>
+    // YOUR CONFIG FROM FIREBASE - SAME AS SCREENSHOT
     const firebaseConfig = {
       apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
       authDomain: "patanisha-49561.firebaseapp.com",
       projectId: "patanisha-49561",
       storageBucket: "patanisha-49561.firebasestorage.app",
       messagingSenderId: "363879415134",
-      appId: "1:363879415134:web:81b99ab93290a3e45723cf"
+      appId: "1:363879415134:web:81b99ab93290a3e45723cf",
+      measurementId: "G-GLXLGWLHF"
     };
+    
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
     const root = document.getElementById('root');
-    let currentPage = 'home';
     let currentUser = null;
     let currentUserData = {};
     let allUsers = [];
@@ -51,7 +53,7 @@
           userId: "PT" + Math.floor(Math.random()*900000 + 100000),
           photo: `https://i.pravatar.cc/150?u=${uid}`,
           coins: 6, diamonds: 0, friends: 0, following: 0, followers: 0, visitors: 0,
-          totalIncome: 0, todayIncome: 0, gender: "female"
+          totalIncome: 0, todayIncome: 0, gender: "female", isPremium: true
         });
       }
       currentUserData = (await docRef.get()).data();
@@ -77,7 +79,7 @@
           username: "User" + Math.floor(Math.random()*9999),
           userId: "PT" + Math.floor(Math.random()*900000 + 100000),
           photo: `https://i.pravatar.cc/150?u=${cred.user.uid}`,
-          coins: 6, diamonds: 0
+          coins: 6, diamonds: 0, isPremium: gender === "female"
         })
       }).catch(e => alert(e.message));
     }
@@ -85,7 +87,6 @@
     function logout(){ auth.signOut(); }
     
     function showHome(){ 
-      currentPage = 'home'; 
       root.innerHTML = `<div class="bg-white min-h-screen pb-20">
         <div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Patanisha</h1><p>Hi ${currentUserData.username}</p></div>
         <div class="px-3 mt-4 space-y-4">${allUsers.map(user => `<div class="flex items-center bg-white p-3 rounded-xl shadow-sm"><img src="${user.photo || 'https://i.pravatar.cc/150'}" class="w-16 h-16 rounded-full"/><div class="ml-3 flex-1"><p class="font-bold">${user.username || 'No Name'}</p><p class="text-sm text-gray-500">ID: ${user.userId}</p></div></div>`).join('')}</div>
@@ -95,7 +96,6 @@
     }
 
     function showMe(){
-      currentPage = 'me';
       root.innerHTML = `
       <div class="min-h-screen pb-20">
         <div class="bg-gradient-to-b from-yellow-100 to-white p-4">
@@ -110,16 +110,9 @@
             <div><p class="font-bold">${currentUserData.visitors || 0}</p><p class="text-xs text-gray-500">Visitors</p></div>
           </div>
         </div>
-        <div class="flex gap-3 px-4 mt-3">
-          <button onclick="showIncome()" class="flex-1 bg-yellow-400 rounded-xl p-3"><span>💰 ${currentUserData.coins || 6}</span></button>
-          <button onclick="showAccount()" class="flex-1 bg-gradient-to-r from-yellow-700 to-yellow-500 text-white rounded-xl p-3">🏦 Account</button>
-        </div>
         <button onclick="showHome()" class="m-4 bg-gray-300 px-4 py-2 rounded">← Back Home</button>
       </div>`;
     }
-
-    function showIncome(){ root.innerHTML = `<div class="p-8"><h1 class="font-bold text-2xl">Income</h1><p>Diamonds: ${currentUserData.diamonds}</p><button onclick="showMe()">Back</button></div>`; }
-    function showAccount(){ root.innerHTML = `<div class="p-8"><h1 class="font-bold text-2xl">Account</h1><p>Balance: S ${currentUserData.coins}</p><button onclick="showMe()">Back</button></div>`; }
   </script>
 </body>
 </html>
