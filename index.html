@@ -96,7 +96,6 @@
       currentPage = 'home';
       root.innerHTML = `
       <div class="bg-white min-h-screen pb-20 font-sans">
-        <!-- YELLOW BANNER -->
         <div class="bg-gradient-to-r from-yellow-300 to-yellow-200 rounded-2xl mx-3 mt-3 p-4 flex items-center shadow-md">
           <div class="flex-1">
             <h2 class="font-bold text-black text-base">Set up 3 Say hi texts</h2>
@@ -105,8 +104,6 @@
           <img src="https://cdn-icons-png.flaticon.com/512/8913/8913995.png" class="w-20 h-20" />
           <button class="bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-2 rounded-full font-bold ml-2 shadow">Go</button>
         </div>
-
-        <!-- TABS -->
         <div class="flex items-center gap-5 px-4 mt-4 overflow-x-auto text-sm">
           <button class="font-bold text-xl text-black border-b-4 border-yellow-400 pb-1">Recommend</button>
           <button class="text-gray-500">Newcomer</button>
@@ -114,8 +111,6 @@
           <button>🏆</button>
           <button class="ml-auto text-2xl">🔍</button>
         </div>
-
-        <!-- USER CARDS -->
         <div class="px-3 mt-4 space-y-5">
           ${getUserCard("Thaguru 77", "https://i.pravatar.cc/150?img=1", "VIP0", 48, "<0.1km")}
           ${getUserCard("David Mbai", "https://i.pravatar.cc/150?img=2", "VIP2", 20, "<0.1km")}
@@ -131,7 +126,6 @@
       currentPage = 'chat';
       root.innerHTML = `
       <div class="bg-white min-h-screen pb-20">
-        <!-- TOP BAR -->
         <div class="sticky top-0 bg-white z-10">
           <div class="flex items-center px-4 pt-3 pb-2">
             <button class="font-bold text-2xl text-black relative">Chat
@@ -146,18 +140,16 @@
           <div class="h-1 bg-yellow-300 mx-4 rounded-full"></div>
         </div>
 
-        <!-- CHAT LIST -->
         <div class="px-3 mt-2">
-          ${chatItem("2,201 have seen me", "Hey! People here appreciate you, see whos visiting your profile", "https://cdn-icons-png.flaticon.com/512/1828/1828640.png", "+802", "purple")}
-          ${chatItem("Official Team", "This time you haven't reached the goal of 13,000 diamonds, t...", "https://cdn-icons-png.flaticon.com/512/1034/1034144.png", "", "pink")}
-          ${chatItem("Exclusive cus...", "Please ask your agency", "https://i.pravatar.cc/150?img=10", "02-25 19:21", "gold", "Exclusive")}
-          ${chatItem("Customer se...", "chat first with the men b...", "https://cdn-icons-png.flaticon.com/512/1034/1034144.png", "12-22 23:08", "pink", "Official")}
-          ${chatItem("Mus'ab Barre", "Didn't reply to the other p...", "https://i.pravatar.cc/150?img=11", "08-16 05:35")}
-          ${chatItem("Mutuku", "Didn't reply to the other p...", "https://i.pravatar.cc/150?img=12", "08-16 05:35", "", "", "1")}
-          ${chatItem("Phoenix2024", "", "https://i.pravatar.cc/150?img=13", "08-16 05:34", "", "NEW")}
+          ${chatItem("2,201 have seen me", "Hey! People here appreciate you", "https://cdn-icons-png.flaticon.com/512/1828/1828640.png", "+802", "purple", "viewers")}
+          ${chatItem("Official Team", "This time you haven't reached 13,000 diamonds", "https://cdn-icons-png.flaticon.com/512/1034/1034144.png", "", "pink", "official")}
+          ${chatItem("Exclusive cus...", "Please ask your agency", "https://i.pravatar.cc/150?img=10", "02-25 19:21", "gold", "exclusive")}
+          ${chatItem("Customer se...", "chat first with the men b...", "https://cdn-icons-png.flaticon.com/512/1034/1034144.png", "12-22 23:08", "pink", "support")}
+          ${chatItem("Mus'ab Barre", "Didn't reply to the other p...", "https://i.pravatar.cc/150?img=11", "08-16 05:35", "", "user1")}
+          ${chatItem("Mutuku", "Didn't reply to the other p...", "https://i.pravatar.cc/150?img=12", "08-16 05:35", "", "user2", "1")}
+          ${chatItem("Phoenix2024", "NEW", "https://i.pravatar.cc/150?img=13", "08-16 05:34", "", "user3")}
         </div>
 
-        <!-- FLOATING GAME BUTTON -->
         <button class="fixed right-3 top-24 bg-blue-500 rounded-full w-16 h-16 flex flex-col items-center justify-center shadow-lg">
           <div class="text-2xl">🎮</div>
           <div class="bg-yellow-400 text-black text-[10px] font-bold px-2 rounded-full -mt-1">Game</div>
@@ -167,9 +159,51 @@
       `;
     }
 
-    function chatItem(title, subtitle, img, time, color="", badge="", notif=""){
+    function showChatWindow(user, chatId, name, img){
+      currentPage = 'chatWindow';
+      root.innerHTML = `
+      <div class="bg-gray-100 min-h-screen flex flex-col">
+        <!-- CHAT HEADER -->
+        <div class="bg-white p-4 flex items-center border-b shadow-sm">
+          <button onclick="showChat(auth.currentUser)" class="text-2xl">←</button>
+          <img src="${img}" class="w-10 h-10 rounded-full ml-3" />
+          <div class="ml-3">
+            <h3 class="font-bold text-black">${name}</h3>
+            <p class="text-xs text-green-500">Online</p>
+          </div>
+          <button class="ml-auto text-xl">⋮</button>
+        </div>
+
+        <!-- CHAT MESSAGES -->
+        <div class="flex-1 p-4 space-y-3 overflow-y-auto">
+          <div class="flex justify-start">
+            <div class="bg-white p-3 rounded-2xl max-w-[70%] shadow">Hii bro 👋</div>
+          </div>
+          <div class="flex justify-end">
+            <div class="bg-yellow-300 p-3 rounded-2xl max-w-[70%] shadow">Poa sana, uko aje?</div>
+          </div>
+        </div>
+
+        <!-- INPUT -->
+        <div class="bg-white p-3 flex items-center border-t">
+          <button class="text-2xl">😊</button>
+          <input id="chatInput" placeholder="Type a message..." class="flex-1 mx-2 bg-gray-100 rounded-full px-4 py-2">
+          <button onclick="sendMsg()" class="bg-yellow-400 w-10 h-10 rounded-full flex items-center justify-center">➤</button>
+        </div>
+      </div>
+      `;
+    }
+
+    window.sendMsg = () => {
+      const input = document.getElementById('chatInput');
+      if(input.value.trim() === "") return;
+      alert("Message sent: " + input.value);
+      input.value = "";
+    }
+
+    function chatItem(title, subtitle, img, time, color="", chatId="", notif=""){
       return `
-      <div class="flex items-center py-3 border-b border-gray-100">
+      <button onclick="showChatWindow(auth.currentUser, '${chatId}', '${title}', '${img}')" class="w-full flex items-center py-3 border-b border-gray-100 text-left">
         <div class="relative">
           <img src="${img}" class="w-14 h-14 rounded-full ${color==="gold"? "border-4 border-yellow-400" : ""}" />
           ${color==="purple"? `<div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">Hi</div>` : ""}
@@ -178,14 +212,16 @@
         <div class="ml-3 flex-1">
           <div class="flex items-center">
             <h3 class="font-bold text-black ${title.includes('Customer')? 'text-yellow-500' : ''}">${title}</h3>
-            ${badge? `<span class="ml-2 bg-${badge==="Exclusive"? "brown-600" : "blue-500"} text-white text-[10px] px-2 py-0.5 rounded-full">${badge}</span>` : ""}
+            ${chatId==="exclusive"? `<span class="ml-2 bg-yellow-800 text-white text-[10px] px-2 py-0.5 rounded-full">Exclusive</span>` : ""}
+            ${chatId==="support"? `<span class="ml-2 bg-yellow-400 text-black text-[10px] px-2 py-0.5 rounded-full">✓ Official</span>` : ""}
+            ${chatId==="user3"? `<span class="ml-2 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full">NEW</span>` : ""}
             <span class="ml-auto text-sm text-gray-400">${time}</span>
           </div>
           <p class="text-sm text-gray-500 mt-1 truncate">${subtitle}</p>
         </div>
         ${notif? `<div class="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">${notif}</div>` : ""}
         ${time.includes(":") &&!notif? `<button class="ml-2 text-purple-400">📌</button>` : ""}
-      </div>
+      </button>
       `
     }
 
@@ -206,7 +242,7 @@
             <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">♂ ${age}</span>
           </div>
         </div>
-        <button onclick="alert('Say Hi to ${name}')" class="bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold px-4 py-2 rounded-full">💬 Hi</button>
+        <button onclick="showChatWindow(auth.currentUser, '${name}', '${name}', '${img}')" class="bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold px-4 py-2 rounded-full">💬 Hi</button>
       </div>
       `
     }
@@ -222,7 +258,7 @@
           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           <span class="text-xs mt-1">Moment</span>
         </button>
-        <button onclick="showChat(auth.currentUser)" class="flex flex-col items-center relative ${currentPage==='chat'?'text-black':'text-gray-400'}">
+        <button onclick="showChat(auth.currentUser)" class="flex flex-col items-center relative ${currentPage==='chat' || currentPage==='chatWindow'?'text-black':'text-gray-400'}">
           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
           <span class="absolute -top-1 right-2 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center">32</span>
           <span class="text-xs mt-1">Chat</span>
