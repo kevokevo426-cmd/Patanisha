@@ -8,9 +8,13 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+   .nav-active { color: #ec4899; }
+   .nav-inactive { color: #9ca3af; }
+  </style>
 </head>
 <body class="bg-gray-100">
-  <div id="root">Loading...</div>
+  <div id="root">Loading Patanisha...</div>
   <input type="file" id="photoInput" accept="image/*" style="display:none">
 
   <script>
@@ -28,7 +32,7 @@
     const root = document.getElementById('root');
     let currentPage = 'home';
     let currentUser = null;
-    let currentUserData = {coins: 6, diamonds: 0, friends: 0, following: 0, followers: 0, visitors: 0};
+    let currentUserData = {};
 
     auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -43,35 +47,72 @@
     async function ensureUserData(uid){
       const docRef = db.collection("users").doc(uid);
       const snap = await docRef.get();
+      const defaultData = {
+        username: "User" + Math.floor(Math.random()*9999),
+        userId: "PT" + Math.floor(Math.random()*900000 + 100000),
+        photo: `https://i.pravatar.cc/150?u=${uid}`,
+        coins: 6, diamonds: 10, friends: 0, following: 0, followers: 0, visitors: 0,
+        totalIncome: 0, todayIncome: 0, gender: "female", isPremium: true
+      };
       if(!snap.exists){
-        await docRef.set({
-          username: "User" + Math.floor(Math.random()*9999),
-          userId: "PT" + Math.floor(Math.random()*900000 + 100000),
-          photo: `https://i.pravatar.cc/150?u=${uid}`,
-          coins: 6, diamonds: 10, friends: 0, following: 0, followers: 0, visitors: 0,
-          totalIncome: 0, todayIncome: 0, gender: "female", isPremium: true
-        });
+        await docRef.set(defaultData);
+      } else {
+        await docRef.set({...defaultData,...snap.data()}, {merge: true}); // FIXES undefined
       }
       currentUserData = (await docRef.get()).data();
     }
 
     function showLogin(){
-      root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex-col justify-center bg-black"><h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1><input id="email" placeholder="Email" class="w-full p-3 mt-6 bg-gray-800 rounded text-white"><input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white"><button onclick="signup()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Sign Up</button><button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button></div>`;
+      root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex flex-col justify-center bg-black">
+        <h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1>
+        <input id="email" placeholder="Email" class="w-full p-3 mt-6 bg-gray-800 rounded text-white">
+        <input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white">
+        <button onclick="signup()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Sign Up</button>
+        <button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button>
+      </div>`;
     }
     function signup(){ const email = document.getElementById('email').value; const pass = document.getElementById('pass').value; auth.createUserWithEmailAndPassword(email, pass).catch(e => alert(e.message)); }
     function login(){ const email = document.getElementById('email').value; const pass = document.getElementById('pass').value; auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message)); }
     function logout(){ auth.signOut(); }
+
+    function renderBottomNav(){
+      return `<div class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2">
+        <button onclick="showHome()" class="flex flex-col items-center ${currentPage==='home'?'nav-active':'nav-inactive'}">🏠<span class="text-xs">Home</span></button>
+        <button onclick="showChat()" class="flex flex-col items-center ${currentPage==='chat'?'nav-active':'nav-inactive'}">💬<span class="text-xs">Chat</span></button>
+        <button onclick="showMe()" class="flex flex-col items-center ${currentPage==='me'?'nav-active':'nav-inactive'}">👤<span class="text-xs">Me</span></button>
+        <button onclick="showInfo()" class="flex flex-col items-center ${currentPage==='info'?'nav-active':'nav-inactive'}">ℹ️<span class="text-xs">Info</span></button>
+      </div>`;
+    }
     
     function showHome(){ 
       currentPage = 'home';
       root.innerHTML = `<div class="bg-white min-h-screen pb-20">
         <div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Patanisha</h1><p>Hi ${currentUserData.username}</p></div>
-        <div class="p-4 text-center text-gray-500">No users yet. Invite friends!</div>
-        <div class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2">
-          <button onclick="showHome()" class="text-pink-500 flex flex-col items-center">🏠<span class="text-xs">Home</span></button>
-          <button onclick="showMe()" class="text-gray-400 flex-col items-center">👤<span class="text-xs">Me</span></button>
-        </div>
+        <div class="p-4 text-center text-gray-500">Welcome to Patanisha! Start chatting.</div>
+        ${renderBottomNav()}
       </div>`; 
+    }
+
+    function showChat(){
+      currentPage = 'chat';
+      root.innerHTML = `<div class="bg-white min-h-screen pb-20">
+        <div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Chat</h1></div>
+        <div class="p-4 text-center text-gray-500">No chats yet. Go to Home to find people.</div>
+        ${renderBottomNav()}
+      </div>`;
+    }
+
+    function showInfo(){
+      currentPage = 'info';
+      root.innerHTML = `<div class="bg-white min-h-screen pb-20">
+        <div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Information</h1></div>
+        <div class="p-4">
+          <h2 class="font-bold">About Patanisha</h2>
+          <p class="text-sm mt-2">Connect, Chat, and Earn. Version 1.0</p>
+          <button onclick="logout()" class="w-full bg-red-500 text-white p-3 rounded-xl font-bold mt-6">Logout</button>
+        </div>
+        ${renderBottomNav()}
+      </div>`;
     }
 
     function showMe(){
@@ -96,12 +137,7 @@
           <button onclick="showAccount()" class="flex-1 bg-gradient-to-r from-yellow-700 to-yellow-500 text-white rounded-xl p-3 font-bold">🏦 Account</button>
         </div>
 
-        <button onclick="logout()" class="m-4 w-[calc(100%-32px)] bg-red-500 text-white p-3 rounded-xl font-bold">Logout</button>
-
-        <div class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2">
-          <button onclick="showHome()" class="text-gray-400 flex flex-col items-center">🏠<span class="text-xs">Home</span></button>
-          <button onclick="showMe()" class="text-pink-500 flex-col items-center">👤<span class="text-xs">Me</span></button>
-        </div>
+        ${renderBottomNav()}
       </div>`;
       
       document.getElementById('photoInput').onchange = (e) => {
