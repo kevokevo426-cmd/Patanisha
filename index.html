@@ -1,145 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PATANISHA - Anonymous Confessions</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #333;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .container {
-      max-width: 700px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 15px;
-      padding: 30px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    h1 {
-      text-align: center;
-      color: #764ba2;
-      margin-bottom: 10px;
-      font-size: 2.5em;
-    }
-    .subtitle {
-      text-align: center;
-      color: #666;
-      margin-bottom: 30px;
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: bold;
-      color: #555;
-    }
-    textarea {
-      width: 100%;
-      padding: 15px;
-      border: 2px solid #ddd;
-      border-radius: 10px;
-      font-size: 16px;
-      resize: vertical;
-      min-height: 150px;
-      font-family: inherit;
-    }
-    textarea:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-    button {
-      width: 100%;
-      padding: 15px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    button:hover {
-      transform: translateY(-2px);
-    }
-    .confessions {
-      margin-top: 40px;
-    }
-    .confession-card {
-      background: #f8f9fa;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 15px;
-      border-left: 4px solid #667eea;
-    }
-    .confession-date {
-      font-size: 12px;
-      color: #999;
-      margin-top: 10px;
-    }
-    .anonymous {
-      color: #764ba2;
-      font-weight: bold;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patanisha v2.0</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:#f5f5f5}
+.header{background:#FF1493;color:white;padding:15px;text-align:center}
+.header h1{font-size:24px}
+.nav{display:flex;background:white;position:fixed;bottom:0;width:100%;box-shadow:0 -2px 5px rgba(0,0,0,0.1)}
+.nav button{flex:1;padding:12px;border:none;background:none;font-size:12px;color:#888}
+.nav button.active{color:#FF1493}
+.page{display:none;padding:20px;padding-bottom:80px}
+.page.active{display:block}
+.input{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px}
+.btn{width:100%;padding:12px;background:#FF1493;color:white;border:none;border-radius:8px;font-weight:bold;margin:8px 0}
+.chat-box{height:400px;overflow-y:auto;background:white;border-radius:10px;padding:10px;margin-bottom:10px}
+.msg{background:#FF1493;color:white;padding:8px 12px;border-radius:15px;margin:5px 0;max-width:70%}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>🔥 PATANISHA</h1>
-    <p class="subtitle">Share anonymously. Be heard.</p>
 
-    <div class="form-group">
-      <label for="confession">Your Confession</label>
-      <textarea id="confession" placeholder="Write what’s on your mind... No one will know it's you."></textarea>
-    </div>
-    <button onclick="postConfession()">Post Anonymously</button>
+<div class="header">
+  <h1>Patanisha</h1>
+</div>
 
-    <div class="confessions">
-      <h2>Recent Confessions</h2>
-      <div id="confessionList">
-        <div class="confession-card">
-          <p>I'm tired of pretending I'm okay when I'm not.</p>
-          <div class="confession-date">Posted by <span class="anonymous">Anonymous</span> • Just now</div>
-        </div>
-        <div class="confession-card">
-          <p>I failed my exams but I'm too scared to tell my parents.</p>
-          <div class="confession-date">Posted by <span class="anonymous">Anonymous</span> • 2 hours ago</div>
-        </div>
-      </div>
-    </div>
-  </div>
+<div id="loginPage" class="page active">
+  <h2>Welcome BOSS</h2>
+  <input type="text" id="username" class="input" placeholder="Enter Username">
+  <input type="password" id="password" class="input" placeholder="Enter Password">
+  <button class="btn" onclick="login()">Login / Register</button>
+</div>
 
-  <script>
-    function postConfession() {
-      const text = document.getElementById('confession').value;
-      if(text.trim() === '') {
-        alert('Please write something first!');
-        return;
-      }
-      
-      const list = document.getElementById('confessionList');
-      const newConfession = document.createElement('div');
-      newConfession.className = 'confession-card';
-      newConfession.innerHTML = `
-        <p>${text}</p>
-        <div class="confession-date">Posted by <span class="anonymous">Anonymous</span> • Just now</div>
-      `;
-      list.prepend(newConfession);
-      document.getElementById('confession').value = '';
-      alert('Posted! Your confession is live 🔥');
-    }
-  </script>
+<div id="homePage" class="page">
+  <h2>Welcome <span id="userDisplay"></span>!</h2>
+  <p>Your ID: <b id="userID"></b></p>
+  <p>Start connecting with people.</p>
+</div>
+
+<div id="chatPage" class="page">
+  <h2>Chat</h2>
+  <div class="chat-box" id="chatBox"></div>
+  <input type="text" id="msgInput" class="input" placeholder="Type message...">
+  <button class="btn" onclick="sendMsg()">Send</button>
+</div>
+
+<div id="mePage" class="page">
+  <h2>Profile</h2>
+  <p><b>Name:</b> <span id="meName"></span></p>
+  <p><b>ID:</b> <span id="meID"></span></p>
+  <button class="btn" onclick="logout()" style="background:red">Logout</button>
+</div>
+
+<div class="nav">
+  <button class="navBtn active" onclick="showPage('homePage')">🏠 Home</button>
+  <button class="navBtn" onclick="showPage('chatPage')">💬 Chat</button>
+  <button class="navBtn" onclick="showPage('mePage')">👤 Me</button>
+</div>
+
+<script>
+let currentUser = localStorage.getItem('patanisha_user');
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  if(currentUser){
+    document.getElementById('userDisplay').innerText = currentUser;
+    document.getElementById('userID').innerText = 'ID_' + currentUser;
+    document.getElementById('meName').innerText = currentUser;
+    document.getElementById('meID').innerText = 'ID_' + currentUser;
+  }
+}
+
+function login(){
+  let user = document.getElementById('username').value;
+  if(user.length < 3){ alert('Username too short'); return; }
+  localStorage.setItem('patanisha_user', user);
+  currentUser = user;
+  showPage('homePage');
+}
+
+function logout(){
+  localStorage.removeItem('patanisha_user');
+  location.reload();
+}
+
+function sendMsg(){
+  let msg = document.getElementById('msgInput').value;
+  if(msg=='')return;
+  document.getElementById('chatBox').innerHTML += `<div class="msg">${msg}</div>`;
+  document.getElementById('msgInput').value='';
+}
+
+if(currentUser){ showPage('homePage'); }
+</script>
+
 </body>
 </html>
