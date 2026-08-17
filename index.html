@@ -6,36 +6,20 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 body{background:#f5f5f5;padding-bottom:80px}
-
-/* WRAPPER FOR PC CENTERING */
 .wrapper{max-width:1200px;margin:0 auto}
-
 .banner{background:linear-gradient(135deg,#FFD700,#FFA500);margin:10px;border-radius:15px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
 .banner-text b{font-size:16px;display:block;margin-bottom:5px;color:#000}
 .banner-text p{font-size:12px;color:#333}
-.banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:10px 25px;border-radius:20px;font-weight:bold;cursor:pointer;transition:0.2s}
-.banner-btn:hover{transform:scale(1.05)}
-
-/* STICKY TABS FOR EASY NAV */
+.banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:10px 25px;border-radius:20px;font-weight:bold;cursor:pointer}
 .tabs-wrapper{position:sticky;top:0;background:#f5f5f5;z-index:10}
 .tabs{display:flex;gap:25px;padding:15px 10px;border-bottom:2px solid #eee;overflow-x:auto;background:white}
-.tab{color:#666;font-weight:500;font-size:16px;padding-bottom:8px;cursor:pointer;white-space:nowrap;position:relative;transition:0.2s}
+.tab{color:#666;font-weight:500;font-size:16px;padding-bottom:8px;cursor:pointer;white-space:nowrap;position:relative}
 .tab.active{color:#000;font-weight:bold;font-size:17px}
 .tab.active::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:3px;background:#FFD700;border-radius:2px}
-
-/* GRID FOR PC - 2 to 3 COLUMNS */
 #userList{display:grid;grid-template-columns:1fr;gap:0}
-@media(min-width:768px){
-  #userList{grid-template-columns:1fr 1fr;padding:0 10px}
- .banner{margin:20px}
- .tabs{border-radius:12px;margin:10px}
-}
-@media(min-width:1024px){
-  #userList{grid-template-columns:1fr 1fr 1fr}
-}
-
-.card{display:flex;background:white;margin:10px;padding:15px;border-radius:12px;align-items:flex-start;box-shadow:0 2px 5px rgba(0,0,0,0.05);transition:0.2s}
-.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+@media(min-width:768px){#userList{grid-template-columns:1fr 1fr;padding:0 10px}.banner{margin:20px}.tabs{border-radius:12px;margin:10px}}
+@media(min-width:1024px){#userList{grid-template-columns:1fr 1fr 1fr}}
+.card{display:flex;background:white;margin:10px;padding:15px;border-radius:12px;align-items:flex-start;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
 .avatar{width:70px;height:70px;border-radius:50%;border:3px solid #FFD700;position:relative;margin-right:12px;cursor:pointer;flex-shrink:0}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .online{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid white}
@@ -52,23 +36,14 @@ body{background:#f5f5f5;padding-bottom:80px}
 .badge-age{background:#BBDEFB;color:#1565C0}
 .desc{font-size:12px;color:#666;margin-top:4px}
 .btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.hi-btn,.add-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 16px;color:white;font-weight:bold;font-size:13px;cursor:pointer;transition:0.2s}
-.hi-btn:hover,.add-btn:hover{transform:scale(1.05)}
+.hi-btn,.add-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 16px;color:white;font-weight:bold;font-size:13px;cursor:pointer}
 .add-btn{background:linear-gradient(135deg,#00C853,#00BFA5)}
-.photos{display:flex;gap:5px;margin:5px 10px 10px 95px;overflow-x:auto}
-.photos img{width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0}
-
-/* BOTTOM NAV - WORKS ON PC TOO */
 .nav{position:fixed;bottom:0;left:0;width:100%;background:white;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:99}
-@media(min-width:768px){
- .nav{max-width:600px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0}
-}
-.nav-item{text-align:center;font-size:11px;color:#999;cursor:pointer;position:relative;flex:1;transition:0.2s}
-.nav-item:hover{color:#FF8C00}
+@media(min-width:768px){.nav{max-width:600px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0}}
+.nav-item{text-align:center;font-size:11px;color:#999;cursor:pointer;position:relative;flex:1}
 .nav-item.active{color:#FF8C00}
 .nav-icon{font-size:26px;display:block}
 .notif{position:absolute;background:red;color:white;border-radius:10px;font-size:10px;padding:1px 5px;top:-2px;right:calc(50% - 20px)}
-
 .popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;overflow-y:auto}
 .popup-content{background:white;margin:10% auto;padding:20px;border-radius:15px;text-align:center;position:relative;max-width:500px;width:90%}
 .close-btn{position:absolute;top:10px;right:20px;font-size:30px;color:#666;cursor:pointer}
@@ -77,8 +52,6 @@ body{background:#f5f5f5;padding-bottom:80px}
 .msg.me{background:#FFD700;color:#000;float:right}
 .empty{text-align:center;padding:40px;color:#999}
 .search-box{width:90%;max-width:500px;margin:10px auto;display:block;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:16px}
-.hi-template{padding:10px;margin:8px 0;background:#fff7e6;border-radius:10px;cursor:pointer;text-align:left}
-.block-btn{background:#ff5252}
 </style>
 </head>
 <body>
@@ -108,9 +81,8 @@ body{background:#f5f5f5;padding-bottom:80px}
 
 <div id="userList"></div>
 
-</div><!-- end wrapper -->
+</div>
 
-<!-- NAVIGATION - ALL CLICKABLE NOW -->
 <div class="nav">
   <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
   <div class="nav-item" onclick="openMoment()"><span class="nav-icon">⭕</span>Moment</div>
@@ -118,7 +90,6 @@ body{background:#f5f5f5;padding-bottom:80px}
   <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
 </div>
 
-<!-- POPUPS SAME AS BEFORE -->
 <div class="popup" id="profilePopup">
   <span class="close-btn" onclick="closePopup('profilePopup')">×</span>
   <div class="popup-content">
@@ -127,7 +98,7 @@ body{background:#f5f5f5;padding-bottom:80px}
     <p id="profileVIP"></p>
     <p id="profileDetails"></p>
     <button class="hi-btn" onclick="startChatFromProfile()">💬 Say Hi</button>
-    <button class="hi-btn block-btn" onclick="blockUser()">🚫 Block</button>
+    <button class="hi-btn" style="background:#ff5252" onclick="blockUser()">🚫 Block</button>
   </div>
 </div>
 
@@ -164,7 +135,7 @@ body{background:#f5f5f5;padding-bottom:80px}
 let currentTab = 'nearby';
 let currentChatUser = '';
 let userCity = 'Ruiru';
-let hiTemplates = JSON.parse(localStorage.getItem('hiTemplates')) || ['Hi there! 😊','Hey, how are you?','What\'s up?'];
+let hiTemplates = JSON.parse(localStorage.getItem('hiTemplates')) || ["Hi there! 😊","Hey, how are you?","What's up?"];
 let chats = JSON.parse(localStorage.getItem('patanishaChats')) || {};
 let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || [];
 
@@ -175,182 +146,29 @@ let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
   {name:"lightening", avatar:"https://i.pravatar.cc/100?img=14", friends:18, level:1, distance:"51.2km", age:20, city:"Thika"}
 ];
 
-function getVIPLevel(friends){
-  if(friends >= 50) return 5;
-  if(friends >= 40) return 4;
-  if(friends >= 30) return 3;
-  if(friends >= 20) return 2;
-  if(friends >= 10) return 1;
-  return 0;
-}
-
+function getVIPLevel(friends){if(friends >= 50) return 5;if(friends >= 40) return 4;if(friends >= 30) return 3;if(friends >= 20) return 2;if(friends >= 10) return 1;return 0;}
 function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
 function saveChats(){localStorage.setItem('patanishaChats', JSON.stringify(chats))}
-
-function addFriend(name){
-  let u = users.find(x=>x.name==name);
-  u.friends += 5;
-  saveUsers();
-  loadUsers();
-  alert(`${name} +5 Friends! Now ${u.friends} friends`);
-}
-
-function switchTab(tab, el){
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('searchBox').style.display = tab==='search'? 'block' : 'none';
-  loadUsers();
-}
-
-function filterUsers(){
-  let filtered = users.filter(u =>!blocked.includes(u.name));
-  if(currentTab === 'recommend') return filtered.filter(u => u.friends > 30);
-  if(currentTab === 'newcomer') return filtered.filter(u => u.friends < 10);
-  if(currentTab === 'nearby') return filtered.filter(u => u.city === userCity);
-  if(currentTab === 'top') return filtered.sort((a,b)=>b.friends-a.friends).slice(0,10);
-  return filtered;
-}
-
-function searchUsers(){
-  let q = document.getElementById('searchInput').value.toLowerCase();
-  let filtered = users.filter(u => u.name.toLowerCase().includes(q) &&!blocked.includes(u.name));
-  renderUsers(filtered);
-}
-
-function loadUsers(){
-  let filtered = filterUsers();
-  renderUsers(filtered);
-}
-
-function renderUsers(filtered){
-  if(filtered.length === 0){
-    document.getElementById('userList').innerHTML = `<div class="empty" style="grid-column:1/-1">No users found</div>`;
-    return;
-  }
-  let html = '';
-  filtered.forEach(u=>{
-    let vipLevel = getVIPLevel(u.friends);
-    let vipBadge = vipLevel > 0? `VIP${vipLevel}` : '';
-    html += `
-    <div class="card">
-      <div class="avatar" onclick="viewProfile('${u.name}')">
-        <img src="${u.avatar}">
-        <div class="online"></div>
-        ${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}
-      </div>
-      <div class="card-info" onclick="viewProfile('${u.name}')">
-        <h3>${u.name}</h3>
-        <div class="friends-count">${u.friends} friends</div>
-        <div class="badges">
-          ${u.svip?`<span class="badge badge-svip">${u.svip}</span>`:''}
-          ${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}
-          ${u.level?`<span class="badge badge-level">Lv${u.level}</span>`:''}
-        </div>
-        <div class="badges">
-          <span class="badge badge-distance">${u.distance}</span>
-          <span class="badge badge-age">♂ ${u.age}</span>
-        </div>
-        ${u.desc?`<p class="desc">${u.desc}</p>`:''}
-        <div class="btn-row">
-          <button class="hi-btn" onclick="event.stopPropagation();startChat('${u.name}')">💬 Hi</button>
-          <button class="add-btn" onclick="event.stopPropagation();addFriend('${u.name}')">+ Add</button>
-        </div>
-      </div>
-    </div>
-    ${u.photos?`<div class="photos" style="grid-column:1/-1">${u.photos.map(p=>`<img src="${p}">`).join('')}</div>`:''}
-    `
-  });
-  document.getElementById('userList').innerHTML = html;
-}
-
-function viewProfile(name){
-  let u = users.find(x=>x.name==name);
-  let vipLevel = getVIPLevel(u.friends);
-  document.getElementById('profileImg').src = u.avatar;
-  document.getElementById('profileName').innerText = u.name;
-  document.getElementById('profileVIP').innerText = vipLevel > 0? `VIP${vipLevel} • ${u.friends} friends` : `${u.friends} friends`;
-  document.getElementById('profileDetails').innerText = `${u.distance} • ${u.age} years • ${u.city}`;
-  currentChatUser = name;
-  document.getElementById('profilePopup').style.display = 'block';
-}
-
-function startChat(name){
-  currentChatUser = name;
-  document.getElementById('chatWithName').innerText = name;
-  document.getElementById('chatPopup').style.display = 'block';
-  loadChatHistory(name);
-}
-
-function startChatFromProfile(){
-  closePopup('profilePopup');
-  startChat(currentChatUser);
-}
-
-function loadChatHistory(name){
-  let history = chats[name] || [];
-  document.getElementById('chatBox').innerHTML = history.map(m=>`<div class="msg ${m.me?'me':''}">${m.text}</div>`).join('');
-  document.getElementById('chatBox').scrollTop = 99999;
-}
-
-function sendMsg(){
-  let msg = document.getElementById('msgInput').value;
-  if(msg=='')return;
-  if(!chats[currentChatUser]) chats[currentChatUser] = [];
-  chats[currentChatUser].push({text: msg, me: true, time: Date.now()});
-  saveChats();
-  document.getElementById('chatBox').innerHTML += `<div class="msg me">${msg}</div>`;
-  document.getElementById('msgInput').value='';
-  updateChatNotif();
-}
-
-function openChatList(){
-  let html = '';
-  Object.keys(chats).forEach(name=>{
-    let lastMsg = chats[name][chats[name].length-1]?.text || '';
-    html += `<div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer" onclick="startChat('${name}');closePopup('chatListPopup')">${name}: ${lastMsg}</div>`
-  });
-  document.getElementById('chatList').innerHTML = html || '<p class="empty">No chats yet</p>';
-  document.getElementById('chatListPopup').style.display = 'block';
-}
-
-function updateChatNotif(){
-  let total = Object.keys(chats).length;
-  document.getElementById('chatNotif').innerText = total;
-}
-
-function openHiSetup(){
-  document.getElementById('hi1').value = hiTemplates[0];
-  document.getElementById('hi2').value = hiTemplates[1];
-  document.getElementById('hi3').value = hiTemplates[2];
-  document.getElementById('hiSetupPopup').style.display = 'block';
-}
-
-function saveHiTemplates(){
-  hiTemplates = [
-    document.getElementById('hi1').value,
-    document.getElementById('hi2').value,
-    document.getElementById('hi3').value
-  ];
-  localStorage.setItem('hiTemplates', JSON.stringify(hiTemplates));
-  alert('Saved!');
-  closePopup('hiSetupPopup');
-}
-
-function blockUser(){
-  if(confirm(`Block ${currentChatUser}?`)){
-    blocked.push(currentChatUser);
-    localStorage.setItem('blockedUsers', JSON.stringify(blocked));
-    closePopup('profilePopup');
-    loadUsers();
-  }
-}
-
+function addFriend(name){let u = users.find(x=>x.name==name);u.friends += 5;saveUsers();loadUsers();alert(name + " +5 Friends! Now " + u.friends + " friends");}
+function switchTab(tab, el){currentTab = tab;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('searchBox').style.display = tab==='search'? 'block' : 'none';loadUsers();}
+function filterUsers(){let filtered = users.filter(u =>!blocked.includes(u.name));if(currentTab === 'recommend') return filtered.filter(u => u.friends > 30);if(currentTab === 'newcomer') return filtered.filter(u => u.friends < 10);if(currentTab === 'nearby') return filtered.filter(u => u.city === userCity);if(currentTab === 'top') return filtered.sort((a,b)=>b.friends-a.friends).slice(0,10);return filtered;}
+function searchUsers(){let q = document.getElementById('searchInput').value.toLowerCase();let filtered = users.filter(u => u.name.toLowerCase().includes(q) &&!blocked.includes(u.name));renderUsers(filtered);}
+function loadUsers(){let filtered = filterUsers();renderUsers(filtered);}
+function renderUsers(filtered){if(filtered.length === 0){document.getElementById('userList').innerHTML = '<div class="empty" style="grid-column:1/-1">No users found</div>';return;}let html = '';filtered.forEach(u=>{let vipLevel = getVIPLevel(u.friends);let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';html += '<div class="card"><div class="avatar" onclick="viewProfile(\'' + u.name + '\')"><img src="' + u.avatar + '"><div class="online"></div>' + (vipBadge?'<div class="avatar-badge">'+vipBadge+'</div>':'') + '</div><div class="card-info" onclick="viewProfile(\'' + u.name + '\')"><h3>' + u.name + '</h3><div class="friends-count">' + u.friends + ' friends</div><div class="badges">' + (u.svip?'<span class="badge badge-svip">'+u.svip+'</span>':'') + (vipBadge?'<span class="badge badge-vip">'+vipBadge+'</span>':'') + (u.level?'<span class="badge badge-level">Lv'+u.level+'</span>':'') + '</div><div class="badges"><span class="badge badge-distance">' + u.distance + '</span><span class="badge badge-age">♂ ' + u.age + '</span></div>' + (u.desc?'<p class="desc">'+u.desc+'</p>':'') + '<div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();startChat(\'' + u.name + '\')">💬 Hi</button><button class="add-btn" onclick="event.stopPropagation();addFriend(\'' + u.name + '\')">+ Add</button></div></div></div>' + (u.photos?'<div class="photos" style="grid-column:1/-1">' + u.photos.map(p=>'<img src="'+p+'">').join('') + '</div>':'')});document.getElementById('userList').innerHTML = html;}
+function viewProfile(name){let u = users.find(x=>x.name==name);let vipLevel = getVIPLevel(u.friends);document.getElementById('profileImg').src = u.avatar;document.getElementById('profileName').innerText = u.name;document.getElementById('profileVIP').innerText = vipLevel > 0? 'VIP' + vipLevel + ' • ' + u.friends + ' friends' : u.friends + ' friends';document.getElementById('profileDetails').innerText = u.distance + ' • ' + u.age + ' years • ' + u.city;currentChatUser = name;document.getElementById('profilePopup').style.display = 'block';}
+function startChat(name){currentChatUser = name;document.getElementById('chatWithName').innerText = name;document.getElementById('chatPopup').style.display = 'block';loadChatHistory(name);}
+function startChatFromProfile(){closePopup('profilePopup');startChat(currentChatUser);}
+function loadChatHistory(name){let history = chats[name] || [];document.getElementById('chatBox').innerHTML = history.map(m=>'<div class="msg ' + (m.me?'me':'') + '">' + m.text + '</div>').join('');document.getElementById('chatBox').scrollTop = 99999;}
+function sendMsg(){let msg = document.getElementById('msgInput').value;if(msg=='')return;if(!chats[currentChatUser]) chats[currentChatUser] = [];chats[currentChatUser].push({text: msg, me: true, time: Date.now()});saveChats();document.getElementById('chatBox').innerHTML += '<div class="msg me">' + msg + '</div>';document.getElementById('msgInput').value='';updateChatNotif();}
+function openChatList(){let html = '';Object.keys(chats).forEach(name=>{let lastMsg = chats[name][chats[name].length-1]?.text || '';html += '<div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer" onclick="startChat(\''+name+'\');closePopup(\'chatListPopup\')">' + name + ': ' + lastMsg + '</div>' });document.getElementById('chatList').innerHTML = html || '<p class="empty">No chats yet</p>';document.getElementById('chatListPopup').style.display = 'block';}
+function updateChatNotif(){let total = Object.keys(chats).length;document.getElementById('chatNotif').innerText = total;}
+function openHiSetup(){document.getElementById('hi1').value = hiTemplates[0];document.getElementById('hi2').value = hiTemplates[1];document.getElementById('hi3').value = hiTemplates[2];document.getElementById('hiSetupPopup').style.display = 'block';}
+function saveHiTemplates(){hiTemplates = [document.getElementById('hi1').value,document.getElementById('hi2').value,document.getElementById('hi3').value];localStorage.setItem('hiTemplates', JSON.stringify(hiTemplates));alert('Saved!');closePopup('hiSetupPopup');}
+function blockUser(){if(confirm('Block ' + currentChatUser + '?')){blocked.push(currentChatUser);localStorage.setItem('blockedUsers', JSON.stringify(blocked));closePopup('profilePopup');loadUsers();}}
 function openMoment(){alert('Moment page - Coming Soon!')}
 function openMe(){alert('My Profile - Coming Soon!')}
-function goHome(){document.querySelector('.tab.active')?.classList.remove('active');document.querySelectorAll('.tab')[2].classList.add('active');currentTab='nearby';loadUsers();window.scrollTo(0,0)}
+function goHome(){document.querySelectorAll('.tab')[2].classList.add('active');currentTab='nearby';loadUsers();window.scrollTo(0,0)}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
-
 loadUsers();
 updateChatNotif();
 </script>
