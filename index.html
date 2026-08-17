@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Patanisha</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-body{background:#f5f5f5;padding-bottom:80px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .wrapper{max-width:1200px;margin:0 auto}
 .banner{background:linear-gradient(135deg,#FFD700,#FFA500);margin:10px;border-radius:15px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
 .banner-text b{font-size:16px;display:block;margin-bottom:5px;color:#000}
 .banner-text p{font-size:12px;color:#333}
 .banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:10px 25px;border-radius:20px;font-weight:bold;cursor:pointer}
 .tabs-wrapper{position:sticky;top:0;background:#f5f5f5;z-index:10}
-.tabs{display:flex;gap:25px;padding:15px 10px;border-bottom:2px solid #eee;overflow-x:auto;background:white}
+.tabs{display:flex;gap:25px;padding:15px 10px;border-bottom:2px solid #eee;overflow-x:auto;background:white;scroll-behavior:smooth}
 .tab{color:#666;font-weight:500;font-size:16px;padding-bottom:8px;cursor:pointer;white-space:nowrap;position:relative}
 .tab.active{color:#000;font-weight:bold;font-size:17px}
 .tab.active::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:3px;background:#FFD700;border-radius:2px}
-#userList{display:grid;grid-template-columns:1fr;gap:0}
+#userList{display:grid;grid-template-columns:1fr;gap:0;touch-action:pan-y}
 @media(min-width:768px){#userList{grid-template-columns:1fr 1fr;padding:0 10px}.banner{margin:20px}.tabs{border-radius:12px;margin:10px}}
 @media(min-width:1024px){#userList{grid-template-columns:1fr 1fr 1fr}}
 .card{display:flex;background:white;margin:10px;padding:15px;border-radius:12px;align-items:flex-start;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
@@ -132,6 +132,7 @@ body{background:#f5f5f5;padding-bottom:80px}
 </div>
 
 <script>
+const tabsOrder = ['recommend','newcomer','nearby','top','search'];
 let currentTab = 'nearby';
 let currentChatUser = '';
 let userCity = 'Ruiru';
@@ -150,25 +151,73 @@ function getVIPLevel(friends){if(friends >= 50) return 5;if(friends >= 40) retur
 function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
 function saveChats(){localStorage.setItem('patanishaChats', JSON.stringify(chats))}
 function addFriend(name){let u = users.find(x=>x.name==name);u.friends += 5;saveUsers();loadUsers();alert(name + " +5 Friends! Now " + u.friends + " friends");}
-function switchTab(tab, el){currentTab = tab;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('searchBox').style.display = tab==='search'? 'block' : 'none';loadUsers();}
-function filterUsers(){let filtered = users.filter(u =>!blocked.includes(u.name));if(currentTab === 'recommend') return filtered.filter(u => u.friends > 30);if(currentTab === 'newcomer') return filtered.filter(u => u.friends < 10);if(currentTab === 'nearby') return filtered.filter(u => u.city === userCity);if(currentTab === 'top') return filtered.sort((a,b)=>b.friends-a.friends).slice(0,10);return filtered;}
+
+function switchTab(tab, el){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  else document.querySelectorAll('.tab')[tabsOrder.indexOf(tab)].classList.add('active');
+  document.getElementById('searchBox').style.display = tab==='search'? 'block' : 'none';
+  document.getElementById('tabs').scrollLeft = tabsOrder.indexOf(tab) * 120;
+  loadUsers();
+}
+
+function filterUsers(){
+  let filtered = users.filter(u =>!blocked.includes(u.name));
+  if(currentTab === 'recommend') return filtered.filter(u => u.friends > 30);
+  if(currentTab === 'newcomer') return filtered.filter(u => u.friends < 10);
+  if(currentTab === 'nearby') return filtered.filter(u => u.city === userCity);
+  if(currentTab === 'top') return filtered.sort((a,b)=>b.friends-a.friends).slice(0,10);
+  return filtered;
+}
+
 function searchUsers(){let q = document.getElementById('searchInput').value.toLowerCase();let filtered = users.filter(u => u.name.toLowerCase().includes(q) &&!blocked.includes(u.name));renderUsers(filtered);}
 function loadUsers(){let filtered = filterUsers();renderUsers(filtered);}
-function renderUsers(filtered){if(filtered.length === 0){document.getElementById('userList').innerHTML = '<div class="empty" style="grid-column:1/-1">No users found</div>';return;}let html = '';filtered.forEach(u=>{let vipLevel = getVIPLevel(u.friends);let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';html += '<div class="card"><div class="avatar" onclick="viewProfile(\'' + u.name + '\')"><img src="' + u.avatar + '"><div class="online"></div>' + (vipBadge?'<div class="avatar-badge">'+vipBadge+'</div>':'') + '</div><div class="card-info" onclick="viewProfile(\'' + u.name + '\')"><h3>' + u.name + '</h3><div class="friends-count">' + u.friends + ' friends</div><div class="badges">' + (u.svip?'<span class="badge badge-svip">'+u.svip+'</span>':'') + (vipBadge?'<span class="badge badge-vip">'+vipBadge+'</span>':'') + (u.level?'<span class="badge badge-level">Lv'+u.level+'</span>':'') + '</div><div class="badges"><span class="badge badge-distance">' + u.distance + '</span><span class="badge badge-age">♂ ' + u.age + '</span></div>' + (u.desc?'<p class="desc">'+u.desc+'</p>':'') + '<div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();startChat(\'' + u.name + '\')">💬 Hi</button><button class="add-btn" onclick="event.stopPropagation();addFriend(\'' + u.name + '\')">+ Add</button></div></div></div>' + (u.photos?'<div class="photos" style="grid-column:1/-1">' + u.photos.map(p=>'<img src="'+p+'">').join('') + '</div>':'')});document.getElementById('userList').innerHTML = html;}
+
+function renderUsers(filtered){
+  if(filtered.length === 0){document.getElementById('userList').innerHTML = '<div class="empty" style="grid-column:1/-1">No users found</div>';return;}
+  let html = '';
+  filtered.forEach(u=>{
+    let vipLevel = getVIPLevel(u.friends);
+    let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';
+    html += '<div class="card"><div class="avatar" onclick="viewProfile(\'' + u.name + '\')"><img src="' + u.avatar + '"><div class="online"></div>' + (vipBadge?'<div class="avatar-badge">'+vipBadge+'</div>':'') + '</div><div class="card-info" onclick="viewProfile(\'' + u.name + '\')"><h3>' + u.name + '</h3><div class="friends-count">' + u.friends + ' friends</div><div class="badges">' + (u.svip?'<span class="badge badge-svip">'+u.svip+'</span>':'') + (vipBadge?'<span class="badge badge-vip">'+vipBadge+'</span>':'') + (u.level?'<span class="badge badge-level">Lv'+u.level+'</span>':'') + '</div><div class="badges"><span class="badge badge-distance">' + u.distance + '</span><span class="badge badge-age">♂ ' + u.age + '</span></div>' + (u.desc?'<p class="desc">'+u.desc+'</p>':'') + '<div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();startChat(\'' + u.name + '\')">💬 Hi</button><button class="add-btn" onclick="event.stopPropagation();addFriend(\'' + u.name + '\')">+ Add</button></div></div></div>' + (u.photos?'<div class="photos" style="grid-column:1/-1">' + u.photos.map(p=>'<img src="'+p+'">').join('') + '</div>':'')
+  });
+  document.getElementById('userList').innerHTML = html;
+}
+
+// SWIPE FUNCTION
+let touchstartX = 0;
+let touchendX = 0;
+document.getElementById('userList').addEventListener('touchstart', e => {touchstartX = e.changedTouches[0].screenX});
+document.getElementById('userList').addEventListener('touchend', e => {
+  touchendX = e.changedTouches[0].screenX;
+  handleSwipe();
+});
+function handleSwipe(){
+  let currentIndex = tabsOrder.indexOf(currentTab);
+  if(touchendX < touchstartX - 50){ // swipe left
+    if(currentIndex < tabsOrder.length - 1) switchTab(tabsOrder[currentIndex + 1]);
+  }
+  if(touchendX > touchstartX + 50){ // swipe right
+    if(currentIndex > 0) switchTab(tabsOrder[currentIndex - 1]);
+  }
+}
+
 function viewProfile(name){let u = users.find(x=>x.name==name);let vipLevel = getVIPLevel(u.friends);document.getElementById('profileImg').src = u.avatar;document.getElementById('profileName').innerText = u.name;document.getElementById('profileVIP').innerText = vipLevel > 0? 'VIP' + vipLevel + ' • ' + u.friends + ' friends' : u.friends + ' friends';document.getElementById('profileDetails').innerText = u.distance + ' • ' + u.age + ' years • ' + u.city;currentChatUser = name;document.getElementById('profilePopup').style.display = 'block';}
 function startChat(name){currentChatUser = name;document.getElementById('chatWithName').innerText = name;document.getElementById('chatPopup').style.display = 'block';loadChatHistory(name);}
 function startChatFromProfile(){closePopup('profilePopup');startChat(currentChatUser);}
 function loadChatHistory(name){let history = chats[name] || [];document.getElementById('chatBox').innerHTML = history.map(m=>'<div class="msg ' + (m.me?'me':'') + '">' + m.text + '</div>').join('');document.getElementById('chatBox').scrollTop = 99999;}
 function sendMsg(){let msg = document.getElementById('msgInput').value;if(msg=='')return;if(!chats[currentChatUser]) chats[currentChatUser] = [];chats[currentChatUser].push({text: msg, me: true, time: Date.now()});saveChats();document.getElementById('chatBox').innerHTML += '<div class="msg me">' + msg + '</div>';document.getElementById('msgInput').value='';updateChatNotif();}
 function openChatList(){let html = '';Object.keys(chats).forEach(name=>{let lastMsg = chats[name][chats[name].length-1]?.text || '';html += '<div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer" onclick="startChat(\''+name+'\');closePopup(\'chatListPopup\')">' + name + ': ' + lastMsg + '</div>' });document.getElementById('chatList').innerHTML = html || '<p class="empty">No chats yet</p>';document.getElementById('chatListPopup').style.display = 'block';}
-function updateChatNotif(){let total = Object.keys(chats).length;document.getElementById('chatNotif').innerText = total;}
+function updateChatNotif(){let total = Object.keys(chats).length;document.getElementById('chatNotif').innerText = total;document.getElementById('chatNotif').style.display = total>0?'block':'none';}
 function openHiSetup(){document.getElementById('hi1').value = hiTemplates[0];document.getElementById('hi2').value = hiTemplates[1];document.getElementById('hi3').value = hiTemplates[2];document.getElementById('hiSetupPopup').style.display = 'block';}
 function saveHiTemplates(){hiTemplates = [document.getElementById('hi1').value,document.getElementById('hi2').value,document.getElementById('hi3').value];localStorage.setItem('hiTemplates', JSON.stringify(hiTemplates));alert('Saved!');closePopup('hiSetupPopup');}
 function blockUser(){if(confirm('Block ' + currentChatUser + '?')){blocked.push(currentChatUser);localStorage.setItem('blockedUsers', JSON.stringify(blocked));closePopup('profilePopup');loadUsers();}}
 function openMoment(){alert('Moment page - Coming Soon!')}
 function openMe(){alert('My Profile - Coming Soon!')}
-function goHome(){document.querySelectorAll('.tab')[2].classList.add('active');currentTab='nearby';loadUsers();window.scrollTo(0,0)}
+function goHome(){switchTab('nearby');window.scrollTo(0,0)}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
+
 loadUsers();
 updateChatNotif();
 </script>
