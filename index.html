@@ -41,26 +41,49 @@
       }
     });
 
+    // FIXED: This now saves correctly and won't create "undefined"
     async function ensureUserData(uid){
       const docRef = db.collection("users").doc(uid);
       const snap = await docRef.get();
+      
+      const newUserId = "PT" + Math.floor(Math.random()*900000 + 100000);
+      const newUsername = "User" + Math.floor(Math.random()*9999);
+      
       const defaultData = {
-        username: "User" + Math.floor(Math.random()*9999),
-        userId: "PT" + Math.floor(Math.random()*900000 + 100000),
+        username: newUsername,
+        id: newUserId, // CHANGED: was userId. Now matches admin
+        email: user.email, // ADDED: for admin search
         photo: `https://i.pravatar.cc/150?u=${uid}`,
         coins: 6, diamonds: 10, friends: 0, following: 0, followers: 0, visitors: 0,
         totalIncome: 0, todayIncome: 0, gender: "female", isPremium: true
       };
+
       if(!snap.exists){
-        await docRef.set(defaultData);
+        await docRef.set(defaultData); // New user gets all defaults
       } else {
-        await docRef.set({...defaultData,...snap.data()}, {merge: true}); // BRINGS BACK COINS
+        // Existing user: only add fields that are missing, don't overwrite
+        const existingData = snap.data();
+        const dataToMerge = {};
+        for(let key in defaultData){
+          if(existingData[key] === undefined){
+            dataToMerge[key] = defaultData[key];
+          }
+        }
+        if(Object.keys(dataToMerge).length > 0){
+          await docRef.update(dataToMerge);
+        }
       }
       currentUserData = (await docRef.get()).data();
     }
 
     function showLogin(){
-      root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex flex-col justify-center bg-black"><h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1><input id="email" placeholder="Email" class="w-full p-3 mt-6 bg-gray-800 rounded text-white"><input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white"><button onclick="signup()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Sign Up</button><button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button></div>`;
+      root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex flex-col justify-center bg-black">
+        <h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1>
+        <input id="email" placeholder="Email" class="w-full p-3 mt-6 bg-gray-800 rounded text-white">
+        <input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white">
+        <button onclick="signup()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Sign Up</button>
+        <button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button>
+      </div>`;
     }
     function signup(){ const email = document.getElementById('email').value; const pass = document.getElementById('pass').value; auth.createUserWithEmailAndPassword(email, pass).catch(e => alert(e.message)); }
     function login(){ const email = document.getElementById('email').value; const pass = document.getElementById('pass').value; auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message)); }
@@ -91,7 +114,7 @@
 
     function showInfo(){
       currentPage = 'info';
-      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Information</h1></div><div class="p-4"><h2 class="font-bold">About Patanisha</h2><p class="text-sm mt-2">Connect, Chat, and Earn. Version 1.0</p><button onclick="logout()" class="w-full bg-red-500 text-white p-3 rounded-xl font-bold mt-6">Logout</button></div>${renderBottomNav()}</div>`;
+      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Information</h1></div><div class="p-4"><h2 class="font-bold">About Patanisha</h2><p class="text-sm mt-2">Connect, Chat, and Earn. Version 1.1</p><button onclick="logout()" class="w-full bg-red-500 text-white p-3 rounded-xl font-bold mt-6">Logout</button></div>${renderBottomNav()}</div>`;
     }
 
     function showMe(){
@@ -101,7 +124,7 @@
         <div class="bg-gradient-to-b from-yellow-100 to-white p-4">
           <div class="flex items-center">
             <img id="profilePic" src="${currentUserData.photo}" onclick="document.getElementById('photoInput').click()" class="w-16 h-16 rounded-full border-2 border-white object-cover"/>
-            <div class="ml-3 flex-1"><h1 class="font-bold text-lg">${currentUserData.username} 😊</h1><p class="text-sm text-gray-600">ID:${currentUserData.userId}</p></div>
+            <div class="ml-3 flex-1"><h1 class="font-bold text-lg">${currentUserData.username} 😊</h1><p class="text-sm text-gray-600">ID:${currentUserData.id}</p></div>
           </div>
           <div class="flex justify-around text-center mt-4">
             <div><p class="font-bold">${currentUserData.friends}</p><p class="text-xs text-gray-500">Friends</p></div>
