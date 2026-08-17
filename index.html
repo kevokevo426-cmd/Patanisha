@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Patanisha v2.0</title>
+<title>Patanisha v2.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
 body{background:#f5f5f5}
@@ -16,31 +16,28 @@ body{background:#f5f5f5}
 .page.active{display:block}
 .input{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px}
 .btn{width:100%;padding:12px;background:#FF1493;color:white;border:none;border-radius:8px;font-weight:bold;margin:8px 0}
-.chat-box{height:400px;overflow-y:auto;background:white;border-radius:10px;padding:10px;margin-bottom:10px}
+.chat-box{height:300px;overflow-y:auto;background:white;border-radius:10px;padding:10px;margin-bottom:10px}
 .msg{background:#FF1493;color:white;padding:8px 12px;border-radius:15px;margin:5px 0;max-width:70%}
+.user{padding:12px;background:white;margin:8px 0;border-radius:8px}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>Patanisha</h1>
-</div>
+<div class="header"><h1>Patanisha</h1></div>
 
 <div id="loginPage" class="page active">
   <h2>Welcome BOSS</h2>
   <input type="text" id="username" class="input" placeholder="Enter Username">
-  <input type="password" id="password" class="input" placeholder="Enter Password">
   <button class="btn" onclick="login()">Login / Register</button>
 </div>
 
 <div id="homePage" class="page">
-  <h2>Welcome <span id="userDisplay"></span>!</h2>
-  <p>Your ID: <b id="userID"></b></p>
-  <p>Start connecting with people.</p>
+  <h2>People Online</h2>
+  <div id="userList"></div>
 </div>
 
 <div id="chatPage" class="page">
-  <h2>Chat</h2>
+  <h2>Chat with <span id="chatWith">Everyone</span></h2>
   <div class="chat-box" id="chatBox"></div>
   <input type="text" id="msgInput" class="input" placeholder="Type message...">
   <button class="btn" onclick="sendMsg()">Send</button>
@@ -54,13 +51,14 @@ body{background:#f5f5f5}
 </div>
 
 <div class="nav">
-  <button class="navBtn active" onclick="showPage('homePage')">🏠 Home</button>
+  <button class="navBtn" onclick="showPage('homePage')">🏠 Home</button>
   <button class="navBtn" onclick="showPage('chatPage')">💬 Chat</button>
   <button class="navBtn" onclick="showPage('mePage')">👤 Me</button>
 </div>
 
 <script>
 let currentUser = localStorage.getItem('patanisha_user');
+let users = ['Test1@gmail.com', 'Test2@gmail.com', 'DemoUser'];
 
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -69,11 +67,23 @@ function showPage(id){
   event.target.classList.add('active');
   
   if(currentUser){
-    document.getElementById('userDisplay').innerText = currentUser;
-    document.getElementById('userID').innerText = 'ID_' + currentUser;
     document.getElementById('meName').innerText = currentUser;
     document.getElementById('meID').innerText = 'ID_' + currentUser;
+    loadUsers();
   }
+}
+
+function loadUsers(){
+  let html = '';
+  users.forEach(u=>{
+    if(u != currentUser) html += `<div class="user" onclick="startChat('${u}')">${u}</div>`
+  });
+  document.getElementById('userList').innerHTML = html;
+}
+
+function startChat(user){
+  document.getElementById('chatWith').innerText = user;
+  showPage('chatPage');
 }
 
 function login(){
@@ -81,6 +91,7 @@ function login(){
   if(user.length < 3){ alert('Username too short'); return; }
   localStorage.setItem('patanisha_user', user);
   currentUser = user;
+  if(!users.includes(user)) users.push(user);
   showPage('homePage');
 }
 
@@ -92,12 +103,11 @@ function logout(){
 function sendMsg(){
   let msg = document.getElementById('msgInput').value;
   if(msg=='')return;
-  document.getElementById('chatBox').innerHTML += `<div class="msg">${msg}</div>`;
+  document.getElementById('chatBox').innerHTML += `<div class="msg">${currentUser}: ${msg}</div>`;
   document.getElementById('msgInput').value='';
 }
 
 if(currentUser){ showPage('homePage'); }
 </script>
-
 </body>
 </html>
