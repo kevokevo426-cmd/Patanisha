@@ -43,7 +43,7 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .nav-item{text-align:center;font-size:11px;color:#999;cursor:pointer;position:relative;flex:1}
 .nav-item.active{color:#FF8C00}
 .nav-icon{font-size:26px;display:block}
-.notif{position:absolute;background:red;color:white;border-radius:10px;font-size:10px;padding:1px 5px;top:-2px;right:calc(50% - 20px)}
+.notif{position:absolute;background:red;color:white;border-radius:10px;font-size:10px;padding:1px 5px;top:-2px;right:calc(50% - 20px);display:none}
 .popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;overflow-y:auto}
 .popup-content{background:white;margin:10% auto;padding:20px;border-radius:15px;text-align:center;position:relative;max-width:500px;width:90%}
 .close-btn{position:absolute;top:10px;right:20px;font-size:30px;color:#666;cursor:pointer}
@@ -85,7 +85,7 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 
 <div class="nav">
   <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
-  <div class="nav-item" onclick="openMoment()"><span class="nav-icon">⭕</span>Moment</div>
+  <div class="nav-item" onclick="openInfo()"><span class="nav-icon">ℹ️</span>Info</div>
   <div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span></div>
   <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
 </div>
@@ -189,31 +189,42 @@ function renderUsers(filtered){
 let touchstartX = 0;
 let touchendX = 0;
 document.getElementById('userList').addEventListener('touchstart', e => {touchstartX = e.changedTouches[0].screenX});
-document.getElementById('userList').addEventListener('touchend', e => {
-  touchendX = e.changedTouches[0].screenX;
-  handleSwipe();
-});
-function handleSwipe(){
-  let currentIndex = tabsOrder.indexOf(currentTab);
-  if(touchendX < touchstartX - 50){ // swipe left
-    if(currentIndex < tabsOrder.length - 1) switchTab(tabsOrder[currentIndex + 1]);
-  }
-  if(touchendX > touchstartX + 50){ // swipe right
-    if(currentIndex > 0) switchTab(tabsOrder[currentIndex - 1]);
-  }
-}
+document.getElementById('userList').addEventListener('touchend', e => {touchendX = e.changedTouches[0].screenX;handleSwipe();});
+function handleSwipe(){let currentIndex = tabsOrder.indexOf(currentTab);if(touchendX < touchstartX - 50){if(currentIndex < tabsOrder.length - 1) switchTab(tabsOrder[currentIndex + 1]);}if(touchendX > touchstartX + 50){if(currentIndex > 0) switchTab(tabsOrder[currentIndex - 1]);}}
 
 function viewProfile(name){let u = users.find(x=>x.name==name);let vipLevel = getVIPLevel(u.friends);document.getElementById('profileImg').src = u.avatar;document.getElementById('profileName').innerText = u.name;document.getElementById('profileVIP').innerText = vipLevel > 0? 'VIP' + vipLevel + ' • ' + u.friends + ' friends' : u.friends + ' friends';document.getElementById('profileDetails').innerText = u.distance + ' • ' + u.age + ' years • ' + u.city;currentChatUser = name;document.getElementById('profilePopup').style.display = 'block';}
 function startChat(name){currentChatUser = name;document.getElementById('chatWithName').innerText = name;document.getElementById('chatPopup').style.display = 'block';loadChatHistory(name);}
 function startChatFromProfile(){closePopup('profilePopup');startChat(currentChatUser);}
 function loadChatHistory(name){let history = chats[name] || [];document.getElementById('chatBox').innerHTML = history.map(m=>'<div class="msg ' + (m.me?'me':'') + '">' + m.text + '</div>').join('');document.getElementById('chatBox').scrollTop = 99999;}
 function sendMsg(){let msg = document.getElementById('msgInput').value;if(msg=='')return;if(!chats[currentChatUser]) chats[currentChatUser] = [];chats[currentChatUser].push({text: msg, me: true, time: Date.now()});saveChats();document.getElementById('chatBox').innerHTML += '<div class="msg me">' + msg + '</div>';document.getElementById('msgInput').value='';updateChatNotif();}
-function openChatList(){let html = '';Object.keys(chats).forEach(name=>{let lastMsg = chats[name][chats[name].length-1]?.text || '';html += '<div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer" onclick="startChat(\''+name+'\');closePopup(\'chatListPopup\')">' + name + ': ' + lastMsg + '</div>' });document.getElementById('chatList').innerHTML = html || '<p class="empty">No chats yet</p>';document.getElementById('chatListPopup').style.display = 'block';}
-function updateChatNotif(){let total = Object.keys(chats).length;document.getElementById('chatNotif').innerText = total;document.getElementById('chatNotif').style.display = total>0?'block':'none';}
+
+// FIXED CHAT FUNCTION - NO MORE HANGING
+function openChatList(){
+  let chatKeys = Object.keys(chats);
+  if(chatKeys.length === 0){
+    alert('No chats yet. Tap "Hi" on any user to start chatting');
+    return;
+  }
+  let html = '';
+  chatKeys.forEach(name=>{
+    let lastMsg = chats[name][chats[name].length-1]?.text || '';
+    html += '<div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer" onclick="startChat(\''+name+'\');closePopup(\'chatListPopup\')"><b>' + name + '</b><br><span style="font-size:12px;color:#666">' + lastMsg + '</span></div>' 
+  });
+  document.getElementById('chatList').innerHTML = html;
+  document.getElementById('chatListPopup').style.display = 'block';
+}
+
+function updateChatNotif(){
+  let total = Object.keys(chats).length;
+  let notif = document.getElementById('chatNotif');
+  notif.innerText = total;
+  notif.style.display = total>0?'block':'none';
+}
+
 function openHiSetup(){document.getElementById('hi1').value = hiTemplates[0];document.getElementById('hi2').value = hiTemplates[1];document.getElementById('hi3').value = hiTemplates[2];document.getElementById('hiSetupPopup').style.display = 'block';}
 function saveHiTemplates(){hiTemplates = [document.getElementById('hi1').value,document.getElementById('hi2').value,document.getElementById('hi3').value];localStorage.setItem('hiTemplates', JSON.stringify(hiTemplates));alert('Saved!');closePopup('hiSetupPopup');}
 function blockUser(){if(confirm('Block ' + currentChatUser + '?')){blocked.push(currentChatUser);localStorage.setItem('blockedUsers', JSON.stringify(blocked));closePopup('profilePopup');loadUsers();}}
-function openMoment(){alert('Moment page - Coming Soon!')}
+function openInfo(){alert('Patanisha v1.0\nConnect with people near you\nSwipe left/right to change tabs\nTap Hi to start chatting')}
 function openMe(){alert('My Profile - Coming Soon!')}
 function goHome(){switchTab('nearby');window.scrollTo(0,0)}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
