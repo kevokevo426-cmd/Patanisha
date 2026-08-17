@@ -1,161 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Patanisha Admin</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patanisha</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:#f5f5f5;padding-bottom:70px;max-width:800px;margin:0 auto} /* Fits page better */
+.banner{background:linear-gradient(135deg,#FFD700,#FFA500);margin:8px;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center}
+.banner-text b{font-size:15px;display:block;margin-bottom:3px;color:#000}
+.banner-text p{font-size:11px;color:#333}
+.banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:8px 20px;border-radius:18px;font-weight:bold;font-size:13px}
+.tabs{display:flex;gap:20px;padding:12px 10px;border-bottom:2px solid #eee;overflow-x:auto}
+.tab{color:#666;font-weight:500;font-size:15px;padding-bottom:6px;cursor:pointer;white-space:nowrap;position:relative}
+.tab.active{color:#000;font-weight:bold;font-size:16px}
+.tab.active::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:3px;background:#FFD700;border-radius:2px}
+.card{display:flex;background:white;margin:8px;padding:10px;border-radius:10px;align-items:flex-start}
+.avatar{width:60px;height:60px;border-radius:50%;border:2px solid #FFD700;position:relative;margin-right:10px;cursor:pointer}
+.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.online{width:10px;height:10px;background:#4CAF50;border-radius:50%;position:absolute;bottom:1px;right:1px;border:2px solid white}
+.avatar-badge{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);background:#8B5CF6;color:white;font-size:9px;padding:1px 5px;border-radius:6px}
+.card-info{flex:1;cursor:pointer}
+.card-info h3{font-size:15px;margin-bottom:1px}
+.friends-count{font-size:10px;color:#888;margin-bottom:3px}
+.badges{display:flex;gap:4px;margin:3px 0;flex-wrap:wrap}
+.badge{padding:1px 6px;border-radius:10px;font-size:9px;font-weight:bold;color:white}
+.badge-svip{background:linear-gradient(135deg,#00BFFF,#1E90FF)}
+.badge-vip{background:linear-gradient(135deg,#BA55D3,#9370DB)}
+.badge-level{background:#00C853}
+.badge-distance{background:#C8E6C9;color:#2E7D32}
+.badge-age{background:#BBDEFB;color:#1565C0}
+.desc{font-size:11px;color:#666;margin-top:3px}
+.btn-row{display:flex;gap:5px;margin-top:4px}
+.hi-btn,.add-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:18px;padding:6px 10px;color:white;font-weight:bold;font-size:12px;cursor:pointer}
+.add-btn{background:linear-gradient(135deg,#00C853,#00BFA5)}
+.photos{display:flex;gap:4px;margin:4px 10px 8px 80px}
+.photos img{width:50px;height:50px;border-radius:6px;object-fit:cover}
+.nav{position:fixed;bottom:0;width:100%;max-width:800px;left:50%;transform:translateX(-50%);background:white;display:flex;justify-content:space-around;padding:6px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1)}
+.nav-item{text-align:center;font-size:10px;color:#999;cursor:pointer}
+.nav-item.active{color:#000}
+.nav-icon{font-size:22px;display:block}
+.notif{position:absolute;background:red;color:white;border-radius:10px;font-size:9px;padding:1px 4px;margin-left:12px;margin-top:-4px}
+.popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999}
+.popup-content{background:white;margin:15% 10px;padding:15px;border-radius:12px;text-align:center}
+.close-btn{position:absolute;top:10px;right:20px;font-size:28px;color:white;cursor:pointer}
+.chat-box{height:200px;overflow-y:auto;background:#f5f5f5;border-radius:8px;padding:8px;margin:8px 0;text-align:left}
+.msg{background:#FFA500;color:white;padding:6px 10px;border-radius:12px;margin:4px 0;max-width:70%;display:inline-block;font-size:13px}
+.msg.me{background:#FFD700;color:#000;margin-left:auto}
+.empty{text-align:center;padding:30px;color:#999;font-size:14px}
+.search-box{display:none;padding:10px;background:white;border-bottom:1px solid #eee}
+.search-box input{width:100%;padding:10px;border-radius:20px;border:1px solid #ddd;font-size:14px}
+</style>
 </head>
-<body class="bg-gray-100">
-  <div id="root">Loading Admin...</div>
+<body>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
-      authDomain: "patanisha-49561.firebaseapp.com",
-      projectId: "patanisha-49561",
-      storageBucket: "patanisha-49561.firebasestorage.app",
-      messagingSenderId: "363879415134",
-      appId: "1:363879415134:web:81b99ab93290a3e45723cf"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const root = document.getElementById('root');
-    
-    const ADMIN_EMAIL = "kevokevo426@gmail.com"; // CHANGE THIS TO YOUR ADMIN EMAIL
+<div class="banner">
+  <div class="banner-text">
+    <b>Set up 3 Say hi texts</b>
+    <p>The other user is more likely to reply to you</p>
+  </div>
+  <button class="banner-btn">Go</button>
+</div>
 
-    auth.onAuthStateChanged(async (user) => {
-      if (user && user.email === ADMIN_EMAIL) {
-        showAdminPanel();
-      } else if (user) {
-        root.innerHTML = `<div class="p-8 text-center">Access Denied. Not Admin.</div>`;
-        auth.signOut();
-      } else {
-        showLogin();
-      }
-    });
+<div class="search-box" id="searchBox">
+  <input type="text" id="searchInput" placeholder="Search by Name or ID..." onkeyup="searchUsers()">
+</div>
 
-    function showLogin(){
-      root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex flex-col justify-center bg-black">
-        <h1 class="text-pink-500 text-3xl font-bold">Patanisha Admin</h1>
-        <input id="email" placeholder="Admin Email" class="w-full p-3 mt-6 bg-gray-800 rounded text-white">
-        <input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white">
-        <button onclick="login()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Login</button>
-      </div>`;
-    }
-    function login(){ const email = document.getElementById('email').value; const pass = document.getElementById('pass').value; auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message)); }
-    function logout(){ auth.signOut(); }
+<div class="tabs" id="tabs">
+  <span class="tab" onclick="switchTab('recommend')">Recommend</span>
+  <span class="tab" onclick="switchTab('newcomer')">Newcomer</span>
+  <span class="tab active" onclick="switchTab('nearby')">Nearby</span>
+  <span class="tab" onclick="switchTab('top')">🏆</span>
+  <span class="tab" onclick="toggleSearch()">🔍</span>
+</div>
 
-    async function showAdminPanel(){
-      const usersSnap = await db.collection("users").get();
-      const users = usersSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
-      const paymentsSnap = await db.collection("payments").where("status", "==", "pending").get();
-      const payments = paymentsSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+<div id="userList"></div>
 
-      const totalCoins = users.reduce((sum, u) => sum + (u.coins || 0), 0);
-      const totalDiamonds = users.reduce((sum, u) => sum + (u.diamonds || 0), 0);
+<div class="nav">
+  <div class="nav-item active"><span class="nav-icon">🏠</span>Home</div>
+  <div class="nav-item" onclick="showInfo()"><span class="nav-icon">ℹ️</span>Info</div> <!-- REPLACED MOMENT -->
+  <div class="nav-item"><span class="nav-icon">💬</span>Chat<span class="notif">16</span></div>
+  <div class="nav-item"><span class="nav-icon">👤</span>Me</div>
+</div>
 
-      root.innerHTML = `
-      <div class="p-4 max-w-5xl mx-auto">
-        <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow">
-          <h1 class="text-2xl font-bold text-pink-500">Patanisha Admin</h1>
-          <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
+<div class="popup" id="profilePopup">
+  <span class="close-btn" onclick="closePopup('profilePopup')">×</span>
+  <div class="popup-content">
+    <img id="profileImg" src="" style="width:90px;height:90px;border-radius:50%">
+    <h2 id="profileName"></h2>
+    <p id="profileID"></p>
+    <p id="profileVIP"></p>
+    <p id="profileDetails"></p>
+    <button class="hi-btn" onclick="startChatFromProfile()">💬 Say Hi</button>
+  </div>
+</div>
+
+<div class="popup" id="chatPopup">
+  <span class="close-btn" onclick="closePopup('chatPopup')">×</span>
+  <div class="popup-content" style="text-align:left">
+    <h3>Chat with <span id="chatWithName"></span></h3>
+    <div class="chat-box" id="chatBox"></div>
+    <input type="text" id="msgInput" style="width:70%;padding:8px;border-radius:18px;border:1px solid #ddd;font-size:13px">
+    <button class="hi-btn" onclick="sendMsg()">Send</button>
+  </div>
+</div>
+
+<div class="popup" id="infoPopup">
+  <span class="close-btn" onclick="closePopup('infoPopup')">×</span>
+  <div class="popup-content">
+    <h2>ℹ️ About Patanisha</h2>
+    <p style="text-align:left;margin-top:10px;font-size:14px">
+      Patanisha v3.5<br><br>
+      Connect with people near you.<br>
+      Add friends to increase VIP level.<br><br>
+      Rules:<br>
+      Recommend: >30 friends<br>
+      Newcomer: <30 friends<br>
+      Nearby: Same city as you
+    </p>
+  </div>
+</div>
+
+<script>
+let currentTab = 'nearby';
+let currentChatUser = '';
+let userCity = 'Ruiru';
+let searchActive = false;
+
+let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
+  {id:"1001", name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:57, svip:"SVIP4", level:16, distance:"42.8km", age:20, city:"Nairobi"},
+  {id:"1002", name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:6, svip:"SVIP1", level:6, distance:"5.8km", age:20, desc:"I'm as open as much as you're willing to flip my pages", city:"Ruiru"},
+  {id:"1003", name:"Sam Aven", avatar:"https://i.pravatar.cc/100?img=13", friends:31, svip:"SVIP2", level:9, distance:"8.8km", age:20, photos:["https://picsum.photos/100?1","https://picsum.photos/100?2","https://picsum.photos/100?3","https://picsum.photos/100?4"], city:"Ruiru"},
+  {id:"1004", name:"lightening", avatar:"https://i.pravatar.cc/100?img=14", friends:18, level:1, distance:"51.2km", age:20, city:"Thika"}
+];
+
+function getVIPLevel(friends){
+  if(friends >= 50) return 5;
+  if(friends >= 40) return 4;
+  if(friends >= 30) return 3;
+  if(friends >= 20) return 2;
+  if(friends >= 10) return 1;
+  return 0;
+}
+
+function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
+
+function addFriend(name){
+  let u = users.find(x=>x.name==name);
+  u.friends += 5;
+  saveUsers();
+  loadUsers();
+  alert(`${name} +5 Friends! Now ${u.friends} friends`);
+}
+
+function switchTab(tab){
+  if(tab === 'top') return;
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  loadUsers();
+}
+
+function toggleSearch(){
+  searchActive = !searchActive;
+  document.getElementById('searchBox').style.display = searchActive ? 'block' : 'none';
+  if(!searchActive) loadUsers();
+}
+
+function searchUsers(){
+  let query = document.getElementById('searchInput').value.toLowerCase();
+  let filtered = users.filter(u => 
+    u.name.toLowerCase().includes(query) || 
+    u.id.includes(query)
+  );
+  renderUsers(filtered);
+}
+
+function filterUsers(){
+  if(currentTab === 'recommend') return users.filter(u => u.friends > 30);
+  if(currentTab === 'newcomer') return users.filter(u => u.friends < 30);
+  if(currentTab === 'nearby') return users.filter(u => u.city === userCity);
+  return users;
+}
+
+function loadUsers(){
+  let filtered = filterUsers();
+  renderUsers(filtered);
+}
+
+function renderUsers(list){
+  if(list.length === 0){
+    document.getElementById('userList').innerHTML = `<div class="empty">No users found</div>`;
+    return;
+  }
+  let html = '';
+  list.forEach(u=>{
+    let vipLevel = getVIPLevel(u.friends);
+    let vipBadge = vipLevel > 0 ? `VIP${vipLevel}` : '';
+    html += `
+    <div class="card">
+      <div class="avatar" onclick="viewProfile('${u.name}')">
+        <img src="${u.avatar}">
+        <div class="online"></div>
+        ${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}
+      </div>
+      <div class="card-info" onclick="viewProfile('${u.name}')">
+        <h3>${u.name}</h3>
+        <div class="friends-count">ID: ${u.id} • ${u.friends} friends</div>
+        <div class="badges">
+          ${u.svip?`<span class="badge badge-svip">${u.svip}</span>`:''}
+          ${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}
+          ${u.level?`<span class="badge badge-level">${u.level}</span>`:''}
         </div>
-
-        <div class="grid grid-cols-3 gap-4 mt-4">
-          <div class="bg-white p-4 rounded-xl shadow"><p class="text-gray-500">Total Users</p><p class="text-2xl font-bold">${users.length}</p></div>
-          <div class="bg-white p-4 rounded-xl shadow"><p class="text-gray-500">Total Coins</p><p class="text-2xl font-bold">S ${totalCoins}</p></div>
-          <div class="bg-white p-4 rounded-xl shadow"><p class="text-gray-500">Total Diamonds</p><p class="text-2xl font-bold">💎 ${totalDiamonds}</p></div>
+        <div class="badges">
+          <span class="badge badge-distance">${u.distance}</span>
+          <span class="badge badge-age">♂ ${u.age}</span>
         </div>
-
-        <div class="bg-white p-4 rounded-xl shadow mt-4">
-          <h2 class="font-bold text-lg mb-3">Pending Withdrawals: ${payments.length}</h2>
-          ${payments.length === 0 ? '<p class="text-gray-500">No pending withdrawals</p>' : 
-            payments.map(p => `
-              <div class="border p-3 rounded mb-2">
-                <p><b>User:</b> ${p.username || 'N/A'} (${p.userId || ''})</p>
-                <p><b>Amount:</b> S ${p.amount}</p>
-                <p><b>Method:</b> ${p.method} - ${p.account}</p>
-                <button onclick="approvePayment('${p.id}', '${p.userId}')" class="bg-green-500 text-white px-3 py-1 rounded mt-2">Approve</button>
-                <button onclick="rejectPayment('${p.id}')" class="bg-red-500 text-white px-3 py-1 rounded mt-2 ml-2">Reject</button>
-              </div>
-            `).join('')
-          }
-        </div>
-
-        <div class="bg-white p-4 rounded-xl shadow mt-4">
-          <h2 class="font-bold text-lg mb-3">Manage Users</h2>
-          <input id="search" onkeyup="searchUser()" placeholder="Search by username, ID, email" class="w-full p-2 border rounded mb-3">
-          <div id="userList">${renderUsers(users)}</div>
+        ${u.desc?`<p class="desc">${u.desc}</p>`:''}
+        <div class="btn-row">
+          <button class="hi-btn" onclick="startChat('${u.name}')">💬 Hi</button>
+          <button class="add-btn" onclick="addFriend('${u.name}')">+ Add Friend</button>
         </div>
       </div>
-      `;
-      window.allUsers = users;
-    }
+    </div>
+    ${u.photos?`<div class="photos">${u.photos.map(p=>`<img src="${p}">`).join('')}</div>`:''}
+    `
+  });
+  document.getElementById('userList').innerHTML = html;
+}
 
-    function renderUsers(users){
-      return users.map(u => `
-        <div class="flex items-center justify-between border-b py-2">
-          <div class="flex items-center">
-            <img src="${u.photo}" class="w-10 h-10 rounded-full mr-3">
-            <div>
-              <p class="font-bold">${u.username || 'undefined'} ${u.isBanned ? '🚫' : ''}</p>
-              <p class="text-xs text-gray-500">ID: ${u.id || 'N/A'} | Coins: ${u.coins || 0} | Diamonds: ${u.diamonds || 0}</p>
-            </div>
-          </div>
-          <div>
-            <button onclick="addCoins('${u.id}')" class="bg-yellow-400 text-xs px-2 py-1 rounded">+100 Coins</button>
-            <button onclick="toggleBan('${u.id}', ${u.isBanned})" class="${u.isBanned ? 'bg-green-500' : 'bg-red-500'} text-white text-xs px-2 py-1 rounded ml-1">${u.isBanned ? 'Unban' : 'Ban'}</button>
-            <button onclick="deleteUser('${u.id}')" class="bg-gray-500 text-white text-xs px-2 py-1 rounded ml-1">Delete</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function searchUser(){
-      const val = document.getElementById('search').value.toLowerCase();
-      const filtered = window.allUsers.filter(u => 
-        (u.username && u.username.toLowerCase().includes(val)) || 
-        (u.id && u.id.toLowerCase().includes(val)) ||
-        (u.email && u.email.toLowerCase().includes(val))
-      );
-      document.getElementById('userList').innerHTML = renderUsers(filtered);
-    }
-
-    async function addCoins(userId){
-      await db.collection("users").doc(userId).update({coins: firebase.firestore.FieldValue.increment(100)});
-      alert("100 Coins Added!");
-      showAdminPanel();
-    }
-
-    async function toggleBan(userId, isBanned){
-      await db.collection("users").doc(userId).update({isBanned: !isBanned});
-      alert(isBanned ? "User Unbanned" : "User Banned");
-      showAdminPanel();
-    }
-
-    async function deleteUser(userId){
-      if(confirm("Delete this user?")){
-        await db.collection("users").doc(userId).delete();
-        showAdminPanel();
-      }
-    }
-
-    async function approvePayment(paymentId, userId){
-      await db.collection("payments").doc(paymentId).update({status: "approved"});
-      alert("Payment Approved!");
-      showAdminPanel();
-    }
-
-    async function rejectPayment(paymentId){
-      await db.collection("payments").doc(paymentId).update({status: "rejected"});
-      alert("Payment Rejected!");
-      showAdminPanel();
-    }
-  </script>
+function viewProfile(name){
+  let u = users.find(x=>x.name==name);
+  let vipLevel = getVIPLevel(u.friends);
+  document.getElementById('profileImg').src = u.avatar;
+  document.getElementById('profileName').innerText = u.name;
+  document.getElementById('profileID').innerText = `ID: ${u.id}`;
+  document.getElementById('profileVIP').innerText = vipLevel > 0 ? `VIP${vipLevel} • ${u.friends} friends` : `${u.friends} friends`;
+  document.getElementById('profileDetails').innerText = `${u.distance} • ${u.age} years • ${u.city}`;
+  currentChatUser = name;
+  document.getElementById('profilePopup').style.display = 'block';
+}
+function startChat(name){
+  currentChatUser = name;
+  document.getElementById('chatWithName').innerText = name;
+  document.getElementById('chatPopup').style.display = 'block';
+}
+function startChatFromProfile(){
+  closePopup('profilePopup');
+  startChat(currentChatUser);
+}
+function sendMsg(){
+  let msg = document.getElementById('msgInput').value;
+  if(msg=='')return;
+  document.getElementById('chatBox').innerHTML += `<div class="msg me">You: ${msg}</div>`;
+  document.getElementById('msgInput').value='';
+}
+function showInfo(){
+  document.getElementById('infoPopup').style.display = 'block';
+}
+function closePopup(id){
+  document.getElementById(id).style.display = 'none';
+}
+loadUsers();
+</script>
 </body>
 </html>
