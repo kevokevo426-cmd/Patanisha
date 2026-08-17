@@ -3,111 +3,130 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Patanisha v2.1</title>
+<title>Patanisha</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
-body{background:#f5f5f5}
-.header{background:#FF1493;color:white;padding:15px;text-align:center}
-.header h1{font-size:24px}
-.nav{display:flex;background:white;position:fixed;bottom:0;width:100%;box-shadow:0 -2px 5px rgba(0,0,0,0.1)}
-.nav button{flex:1;padding:12px;border:none;background:none;font-size:12px;color:#888}
-.nav button.active{color:#FF1493}
-.page{display:none;padding:20px;padding-bottom:80px}
-.page.active{display:block}
-.input{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px}
-.btn{width:100%;padding:12px;background:#FF1493;color:white;border:none;border-radius:8px;font-weight:bold;margin:8px 0}
-.chat-box{height:300px;overflow-y:auto;background:white;border-radius:10px;padding:10px;margin-bottom:10px}
-.msg{background:#FF1493;color:white;padding:8px 12px;border-radius:15px;margin:5px 0;max-width:70%}
-.user{padding:12px;background:white;margin:8px 0;border-radius:8px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:#f5f5f5;padding-bottom:70px}
+
+/* Yellow Banner */
+.banner{background:linear-gradient(135deg,#FFD700,#FFA500);margin:10px;border-radius:15px;padding:15px;display:flex;justify-content:space-between;align-items:center}
+.banner-text{color:#000}
+.banner-text b{font-size:16px;display:block;margin-bottom:5px}
+.banner-text p{font-size:12px;opacity:0.8}
+.banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:10px 25px;border-radius:20px;font-weight:bold;font-size:16px}
+.gift-img{width:80px}
+
+/* Tabs */
+.tabs{display:flex;gap:20px;padding:15px 10px;overflow-x:auto}
+.tabs span{color:#999;font-weight:500;white-space:nowrap}
+.tabs .active{color:#000;font-weight:bold;font-size:18px;position:relative}
+.tabs .active::after{content:'';width:20px;height:4px;background:#FFD700;border-radius:2px;position:absolute;bottom:-5px;left:50%;transform:translateX(-50%)}
+
+/* User Card */
+.card{display:flex;background:white;margin:10px;padding:12px;border-radius:12px;align-items:flex-start}
+.avatar{width:70px;height:70px;border-radius:50%;border:3px solid #FFD700;position:relative;margin-right:10px}
+.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.avatar .online{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid white}
+.avatar-badge{position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);background:#8B5CF6;color:white;font-size:10px;padding:2px 6px;border-radius:8px}
+
+.card-info{flex:1}
+.card-info h3{font-size:16px;margin-bottom:4px}
+.badges{display:flex;gap:5px;margin:4px 0;flex-wrap:wrap}
+.badge{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;color:white}
+.badge-svip{background:linear-gradient(135deg,#00BFFF,#1E90FF)}
+.badge-vip{background:linear-gradient(135deg,#BA55D3,#9370DB)}
+.badge-level{background:#00C853}
+.badge-distance{background:#C8E6C9;color:#2E7D32}
+.badge-age{background:#BBDEFB;color:#1565C0}
+.badge-zodiac{background:#B2EBF2;color:#006064}
+.desc{font-size:12px;color:#666;margin-top:4px}
+
+.hi-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 15px;color:white;font-weight:bold;font-size:14px;margin-left:5px}
+
+/* Photos Row */
+.photos{display:flex;gap:5px;margin:5px 10px 10px 95px}
+.photos img{width:60px;height:60px;border-radius:8px;object-fit:cover}
+
+/* Bottom Nav */
+.nav{position:fixed;bottom:0;width:100%;background:white;display:flex;justify-content:space-around;padding:8px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1)}
+.nav-item{text-align:center;font-size:11px;color:#999}
+.nav-item.active{color:#000}
+.nav-icon{font-size:24px;display:block}
+.notif{position:absolute;background:red;color:white;border-radius:10px;font-size:10px;padding:1px 5px;margin-left:15px;margin-top:-5px}
 </style>
 </head>
 <body>
 
-<div class="header"><h1>Patanisha</h1></div>
-
-<div id="loginPage" class="page active">
-  <h2>Welcome BOSS</h2>
-  <input type="text" id="username" class="input" placeholder="Enter Username">
-  <button class="btn" onclick="login()">Login / Register</button>
+<!-- Banner -->
+<div class="banner">
+  <div class="banner-text">
+    <b>Set up 3 Say hi texts</b>
+    <p>The other user is more likely to reply to you</p>
+  </div>
+  <button class="btn banner-btn">Go</button>
+  <img src="https://i.imgur.com/8KmNlmH.png" class="gift-img">
 </div>
 
-<div id="homePage" class="page">
-  <h2>People Online</h2>
-  <div id="userList"></div>
+<!-- Tabs -->
+<div class="tabs">
+  <span>Recommend</span>
+  <span>Newcomer</span>
+  <span class="active">Nearby</span>
+  <span>🏆</span>
+  <span>🔍</span>
 </div>
 
-<div id="chatPage" class="page">
-  <h2>Chat with <span id="chatWith">Everyone</span></h2>
-  <div class="chat-box" id="chatBox"></div>
-  <input type="text" id="msgInput" class="input" placeholder="Type message...">
-  <button class="btn" onclick="sendMsg()">Send</button>
-</div>
+<!-- User Cards -->
+<div id="userList"></div>
 
-<div id="mePage" class="page">
-  <h2>Profile</h2>
-  <p><b>Name:</b> <span id="meName"></span></p>
-  <p><b>ID:</b> <span id="meID"></span></p>
-  <button class="btn" onclick="logout()" style="background:red">Logout</button>
-</div>
-
+<!-- Bottom Nav -->
 <div class="nav">
-  <button class="navBtn" onclick="showPage('homePage')">🏠 Home</button>
-  <button class="navBtn" onclick="showPage('chatPage')">💬 Chat</button>
-  <button class="navBtn" onclick="showPage('mePage')">👤 Me</button>
+  <div class="nav-item active"><span class="nav-icon">🏠</span>Home</div>
+  <div class="nav-item"><span class="nav-icon">⭕</span>Moment</div>
+  <div class="nav-item"><span class="nav-icon">💬</span>Chat<span class="notif">16</span></div>
+  <div class="nav-item"><span class="nav-icon">👤</span>Me</div>
 </div>
 
 <script>
-let currentUser = localStorage.getItem('patanisha_user');
-let users = ['Test1@gmail.com', 'Test2@gmail.com', 'DemoUser'];
-
-function showPage(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-  event.target.classList.add('active');
-  
-  if(currentUser){
-    document.getElementById('meName').innerText = currentUser;
-    document.getElementById('meID').innerText = 'ID_' + currentUser;
-    loadUsers();
-  }
-}
+const users = [
+  {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=1", svip:"SVIP4", vip:"VIP5", level:16, distance:"42.8km", age:20},
+  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=2", svip:"SVIP1", vip:"VIP3", level:6, distance:"5.8km", age:20, zodiac:"Taurus", desc:"I'm as open as much as you're willing to flip my pages"},
+  {name:"Sam Aven", avatar:"https://i.pravatar.cc/100?img=3", svip:"SVIP2", vip:"VIP4", level:9, distance:"8.8km", age:20, zodiac:"Naive", photos:["https://picsum.photos/100?1","https://picsum.photos/100?2","https://picsum.photos/100?3","https://picsum.photos/100?4"]},
+  {name:"lightening", avatar:"https://i.pravatar.cc/100?img=4", vip:"VIP3", level:1, distance:"51.2km", age:20}
+];
 
 function loadUsers(){
   let html = '';
   users.forEach(u=>{
-    if(u != currentUser) html += `<div class="user" onclick="startChat('${u}')">${u}</div>`
+    html += `
+    <div class="card">
+      <div class="avatar">
+        <img src="${u.avatar}">
+        <div class="online"></div>
+        ${u.vip?`<div class="avatar-badge">${u.vip}</div>`:''}
+      </div>
+      <div class="card-info">
+        <h3>${u.name}</h3>
+        <div class="badges">
+          ${u.svip?`<span class="badge badge-svip">${u.svip}</span>`:''}
+          ${u.vip?`<span class="badge badge-vip">${u.vip}</span>`:''}
+          ${u.level?`<span class="badge badge-level">${u.level}</span>`:''}
+        </div>
+        <div class="badges">
+          <span class="badge badge-distance">${u.distance}</span>
+          <span class="badge badge-age">♂ ${u.age}</span>
+          ${u.zodiac?`<span class="badge badge-zodiac">${u.zodiac}</span>`:''}
+        </div>
+        ${u.desc?`<p class="desc">${u.desc}</p>`:''}
+      </div>
+      <button class="hi-btn">💬 Hi</button>
+    </div>
+    ${u.photos?`<div class="photos">${u.photos.map(p=>`<img src="${p}">`).join('')}</div>`:''}
+    `
   });
   document.getElementById('userList').innerHTML = html;
 }
-
-function startChat(user){
-  document.getElementById('chatWith').innerText = user;
-  showPage('chatPage');
-}
-
-function login(){
-  let user = document.getElementById('username').value;
-  if(user.length < 3){ alert('Username too short'); return; }
-  localStorage.setItem('patanisha_user', user);
-  currentUser = user;
-  if(!users.includes(user)) users.push(user);
-  showPage('homePage');
-}
-
-function logout(){
-  localStorage.removeItem('patanisha_user');
-  location.reload();
-}
-
-function sendMsg(){
-  let msg = document.getElementById('msgInput').value;
-  if(msg=='')return;
-  document.getElementById('chatBox').innerHTML += `<div class="msg">${currentUser}: ${msg}</div>`;
-  document.getElementById('msgInput').value='';
-}
-
-if(currentUser){ showPage('homePage'); }
+loadUsers();
 </script>
 </body>
 </html>
