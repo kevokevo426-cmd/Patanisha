@@ -34,6 +34,8 @@
   </div>
 
 <script>
+  console.log("🚀 Admin Panel Starting...");
+
   const firebaseConfig = {
     apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
     authDomain: "patanisha-49561.firebaseapp.com",
@@ -42,21 +44,32 @@
     messagingSenderId: "363879415134",
     appId: "1:363879415134:web:81b99ab93290a3e45723cf"
   };
-  firebase.initializeApp(firebaseConfig);
+  
+  try {
+    firebase.initializeApp(firebaseConfig);
+    console.log("✅ Firebase Initialized in Admin");
+  } catch(e) {
+    console.error("❌ Firebase Init Error:", e);
+  }
+
   const auth = firebase.auth();
   const db = firebase.firestore();
   
   let allUsers = [];
 
   // CHANGE THIS TO YOUR EMAIL TO BECOME ADMIN
-  const ADMIN_EMAIL = "youradminemail@gmail.com"; 
+  const ADMIN_EMAIL = "kevokevo426@gmail.com"; 
+  console.log("👑 Admin Email set to:", ADMIN_EMAIL);
 
   auth.onAuthStateChanged(async (user) => {
+    console.log("👤 Auth State Changed:", user? user.email : "No User");
     if(user && user.email === ADMIN_EMAIL){
+      console.log("✅ Admin Access Granted");
       document.getElementById('loginBox').classList.add('hidden');
       document.getElementById('adminPanel').classList.remove('hidden');
       loadUsers();
     } else {
+      console.log("📝 Showing Admin Login");
       document.getElementById('loginBox').classList.remove('hidden');
       document.getElementById('adminPanel').classList.add('hidden');
     }
@@ -65,35 +78,51 @@
   function adminLogin(){
     const email = document.getElementById('adminEmail').value;
     const pass = document.getElementById('adminPass').value;
-    auth.signInWithEmailAndPassword(email, pass).catch(e => {
-      document.getElementById('error').innerText = e.message;
-    });
+    console.log("🔑 Admin Login Attempt:", email);
+    document.getElementById('error').innerText = "";
+    auth.signInWithEmailAndPassword(email, pass)
+      .then(() => console.log("✅ Admin Login Success"))
+      .catch(e => {
+        console.error("❌ Admin Login Error:", e.message);
+        document.getElementById('error').innerText = e.message;
+      });
   }
 
-  function logout(){ auth.signOut(); }
+  function logout(){ 
+    console.log("🚪 Admin Logging out");
+    auth.signOut(); 
+  }
 
   async function loadUsers(){
-    const snap = await db.collection("users").get();
-    allUsers = [];
-    let totalCoins = 0, totalDiamonds = 0;
-    
-    snap.forEach(doc => {
-      const data = doc.data();
-      data.id = doc.id;
-      allUsers.push(data);
-      totalCoins += data.coins || 0;
-      totalDiamonds += data.diamonds || 0;
-    });
+    console.log("📊 Loading all users from Firestore...");
+    try {
+      const snap = await db.collection("users").get();
+      allUsers = [];
+      let totalCoins = 0, totalDiamonds = 0;
+      
+      snap.forEach(doc => {
+        const data = doc.data();
+        data.id = doc.id;
+        allUsers.push(data);
+        totalCoins += data.coins || 0;
+        totalDiamonds += data.diamonds || 0;
+      });
 
-    document.getElementById('stats').innerHTML = `
-      <div class="bg-white p-4 rounded shadow"><p class="text-gray-500">Total Users</p><p class="text-2xl font-bold">${allUsers.length}</p></div>
-      <div class="bg-white p-4 rounded shadow"><p class="text-gray-500">Total Coins</p><p class="text-2xl font-bold">S ${totalCoins}</p></div>
-      <div class="bg-white p-4 rounded shadow"><p class="text-gray-500">Total Diamonds</p><p class="text-2xl font-bold">💎 ${totalDiamonds}</p></div>
-    `;
-    renderUsers(allUsers);
+      console.log(`✅ Loaded ${allUsers.length} users. Total Coins: ${totalCoins}, Diamonds: ${totalDiamonds}`);
+
+      document.getElementById('stats').innerHTML = `
+        <div class="bg-white p-4 rounded shadow"><p class="text-gray-500">Total Users</p><p class="text-2xl font-bold">${allUsers.length}</p></div>
+        <div class="bg-white p-4 rounded shadow"><p class="text-gray-500">Total Coins</p><p class="text-2xl font-bold">S ${totalCoins}</p></div>
+        <div class="bg-white p-4 rounded shadow"><p class="text-gray-500">Total Diamonds</p><p class="text-2xl font-bold">💎 ${totalDiamonds}</p></div>
+      `;
+      renderUsers(allUsers);
+    } catch(e) {
+      console.error("❌ Error loading users:", e);
+    }
   }
 
   function renderUsers(users){
+    console.log("🖼️ Rendering", users.length, "users");
     const list = document.getElementById('usersList');
     list.innerHTML = users.map(u => `
       <div class="bg-white p-4 rounded shadow flex items-center justify-between">
@@ -115,6 +144,7 @@
 
   function searchUsers(){
     const term = document.getElementById('searchInput').value.toLowerCase();
+    console.log("🔍 Searching for:", term);
     const filtered = allUsers.filter(u => 
       u.username.toLowerCase().includes(term) || 
       u.userId.toLowerCase().includes(term)
@@ -123,16 +153,20 @@
   }
 
   async function addCoins(uid){
+    console.log("💰 Adding 100 coins to:", uid);
     await db.collection("users").doc(uid).update({
       coins: firebase.firestore.FieldValue.increment(100)
     });
+    console.log("✅ Coins added");
     alert("Added 100 coins");
     loadUsers();
   }
 
   async function deleteUser(uid){
+    console.log("🗑️ Deleting user:", uid);
     if(confirm("Delete this user?")){
       await db.collection("users").doc(uid).delete();
+      console.log("✅ User deleted");
       loadUsers();
     }
   }
