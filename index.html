@@ -3,108 +3,110 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Patanisha - Home</title>
+<title>Patanisha</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
-body{background:#f5f5f5;padding-bottom:80px}
-.header{background:#fff;padding:12px 16px;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10}
-.tabs{display:flex;gap:24px;font-weight:600}
-.tabs div{padding:8px 0;cursor:pointer;color:#888}
-.tabs.active{color:#000;border-bottom:2px solid #ffc107}
-.banner{background:linear-gradient(90deg,#ffc107,#ff9800);padding:16px;margin:12px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;color:#000}
-.banner button{background:#ff1744;color:#fff;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer}
-.user-card{background:#fff;margin:12px;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.user-top{display:flex;gap:12px;align-items:center}
-.avatar{width:60px;height:60px;border-radius:50%;border:3px solid #ffc107;object-fit:cover}
-.user-info h3{margin:0;font-size:18px}
-.user-info p{color:#666;font-size:13px;margin:2px 0}
-.badges{display:flex;gap:6px;margin:6px 0}
-.badge{padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600}
-.badge.green{background:#4caf50;color:#fff}
-.badge.blue{background:#e3f2fd;color:#1976d2}
-.badge.yellow{background:#fff3e0;color:#e65100}
-.photos{display:flex;gap:8px;margin:10px 0}
-.photos img{width:80px;height:80px;border-radius:8px;object-fit:cover}
-.btns{display:flex;gap:10px}
-.btn{flex:1;padding:10px;border:none;border-radius:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+body{background:#f5f5f5;padding-bottom:70px}
+.header{position:sticky;top:0;background:#fff;padding:12px;display:flex;justify-content:space-around;border-bottom:1px solid #eee;z-index:10}
+.tab{color:#999;font-weight:600;cursor:pointer}
+.tab.active{color:#ff9800;border-bottom:2px solid #ff9800}
+.banner{background:linear-gradient(90deg,#ff9800,#ffc107);margin:12px;border-radius:12px;padding:16px;color:#fff;display:flex;justify-content:space-between;align-items:center}
+.banner button{background:#e91e63;color:#fff;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer}
+.card{background:#fff;margin:12px;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.card-top{display:flex;gap:12px}
+.avatar{width:80px;height:80px;border-radius:50%;border:3px solid #ffc107;object-fit:cover}
+.info h3{margin-bottom:4px}
+.tags{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}
+.tag{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.tag.green{background:#4caf50;color:#fff}
+.tag.blue{background:#e3f2fd;color:#2196f3}
+.tag.orange{background:#fff3e0;color:#ff9800}
+.actions{display:flex;gap:10px;margin-top:12px}
+.btn{flex:1;padding:12px;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer}
 .btn.orange{background:#ff9800;color:#fff}
 .btn.green{background:#4caf50;color:#fff}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:space-around;padding:8px 0}
-.nav-item{text-align:center;font-size:12px;color:#888;cursor:pointer}
-.nav-item.active{color:#1976d2}
-.nav-item span{font-size:24px;display:block}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:8px 0;border-top:1px solid #eee}
+.nav-item{text-align:center;color:#999;font-size:12px;cursor:pointer}
+.nav-item.active{color:#ff9800}
+.vip-banner{background:#ffd700;color:#000;text-align:center;padding:8px;font-weight:700}
 </style>
 </head>
 <body>
 
+<div id="vipBanner" class="vip-banner" style="display:none">👑 VIP MEMBER</div>
+
 <div class="header">
-  <div class="tabs">
-    <div>Newcomer</div>
-    <div class="active">Nearby</div>
-    <div>🏆 Top</div>
-    <div>🔍 Search</div>
-  </div>
+  <div class="tab active" onclick="alert('Newcomer Tab')">Newcomer</div>
+  <div class="tab" onclick="alert('Nearby Tab')">Nearby</div>
+  <div class="tab" onclick="alert('Top Tab')">🏆 Top</div>
+  <div class="tab" onclick="alert('Search Tab')">🔍 Search</div>
 </div>
 
 <div class="banner">
   <div>
-    <div style="font-weight:700;font-size:16px">Set up 3 Say hi texts</div>
-    <div style="font-size:13px">The other user is more likely to reply to you</div>
+    <b>Set up 3 Say hi texts</b><br>
+    <small>The other user is more likely to reply to you</small>
   </div>
-  <button onclick="alert('Coming soon!')">Go</button>
+  <button onclick="alert('Go to Say Hi setup')">Go</button>
 </div>
 
-<div id="users-list"></div>
+<div id="profileList"></div>
 
-<div class="bottom-nav">
-  <div class="nav-item active"><span>🏠</span>Home</div>
-  <div class="nav-item"><span>ℹ️</span>Info</div>
-  <div class="nav-item"><span>💬</span>Chat</div>
-  <div class="nav-item"><span>👤</span>Me</div>
+<div class="nav">
+  <div class="nav-item active" onclick="alert('Home')">🏠<br>Home</div>
+  <div class="nav-item" onclick="alert('Info Page')">ℹ️<br>Info</div>
+  <div class="nav-item" onclick="alert('Chat Page')">💬<br>Chat</div>
+  <div class="nav-item" onclick="window.location='register/index.html'">👤<br>Me</div>
 </div>
 
 <script>
 const myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
-const allUsers = JSON.parse(localStorage.getItem('patanisha_users')) || [];
+const users = JSON.parse(localStorage.getItem('patanisha_users')) || [];
 
-// FIXED: Relative path for Github Pages
-if(!myProfile){
-  window.location.href = 'register/index.html';
-}
+// Show VIP if level > 1
+if(myProfile && myProfile.level > 1) document.getElementById('vipBanner').style.display = 'block';
 
-function renderUsers(){
-  const list = document.getElementById('users-list');
-  if(allUsers.length === 0){
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">No users yet. Add some in Admin!</div>';
-    return;
-  }
+function renderProfiles(){
+  const list = document.getElementById('profileList');
+  const allUsers = users.length ? users : [{
+    name: 'SomahubKenya', age:20, city:'Nairobi', level:1, distance:'1km', 
+    friends:0, hobbies:['Music'], avatar:'https://via.placeholder.com/80'
+  }];
+  
   list.innerHTML = allUsers.map(u => `
-    <div class="user-card">
-      <div class="user-top">
+    <div class="card">
+      <div class="card-top">
         <img src="${u.avatar}" class="avatar">
-        <div class="user-info">
+        <div class="info">
           <h3>${u.name}</h3>
-          <p>${u.friends || 0} friends</p>
-          <div class="badges">
-            <span class="badge green">Lv${u.level || 1}</span>
-            <span class="badge green">${u.distance || '1km'}</span>
-            <span class="badge blue">♂ ${u.age}</span>
+          <div>${u.friends} friends</div>
+          <div class="tags">
+            <div class="tag green">Lv${u.level}</div>
+            <div class="tag green">${u.distance}</div>
+            <div class="tag blue">♂ ${u.age}</div>
           </div>
-          <p>${u.bio || ''}</p>
-          <div class="badges">${(u.hobbies||[]).map(h=>`<span class="badge yellow">${h}</span>`).join('')}</div>
+          <div>To</div>
+          <div class="tags">${u.hobbies.map(h=>`<div class="tag orange">${h}</div>`).join('')}</div>
         </div>
       </div>
-      <div class="photos">
-        ${(u.photos||[]).map(p=>`<img src="${p}">`).join('')}
-      </div>
-      <div class="btns">
-        <button class="btn orange" onclick="alert('Hi sent to ${u.name}!')">💬 Hi</button>
-        <button class="btn green" onclick="alert('Added ${u.name}!')">+ Add</button>
+      <div class="actions">
+        <button class="btn orange" onclick="sayHi('${u.name}')">💬 Hi</button>
+        <button class="btn green" onclick="addFriend('${u.name}')">+ Add</button>
       </div>
     </div>
   `).join('');
 }
-renderUsers();
+
+function sayHi(name){
+  alert('Hi sent to ' + name + '!');
+  // TODO: save to chat
+}
+
+function addFriend(name){
+  alert('Friend request sent to ' + name + '!');
+}
+
+renderProfiles();
 </script>
 </body>
 </html>
