@@ -34,15 +34,15 @@
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         currentUser = user;
-        await ensureUserData(user.uid);
+        await ensureUserData(user);
         showHome();
       } else {
         showLogin();
       }
     });
 
-    // FIXED: This now saves correctly and won't create "undefined"
-    async function ensureUserData(uid){
+    async function ensureUserData(user){
+      const uid = user.uid;
       const docRef = db.collection("users").doc(uid);
       const snap = await docRef.get();
       
@@ -51,18 +51,22 @@
       
       const defaultData = {
         username: newUsername,
-        id: newUserId, // CHANGED: was userId. Now matches admin
-        email: user.email, // ADDED: for admin search
+        id: newUserId, 
+        email: user.email,
         photo: `https://i.pravatar.cc/150?u=${uid}`,
         coins: 6, diamonds: 10, friends: 0, following: 0, followers: 0, visitors: 0,
-        totalIncome: 0, todayIncome: 0, gender: "female", isPremium: true
+        totalIncome: 0, todayIncome: 0, gender: "female", isPremium: true, isBanned: false
       };
 
       if(!snap.exists){
-        await docRef.set(defaultData); // New user gets all defaults
+        await docRef.set(defaultData);
       } else {
-        // Existing user: only add fields that are missing, don't overwrite
         const existingData = snap.data();
+        if(existingData.isBanned){
+          alert("Your account has been banned");
+          auth.signOut();
+          return;
+        }
         const dataToMerge = {};
         for(let key in defaultData){
           if(existingData[key] === undefined){
@@ -76,6 +80,7 @@
       currentUserData = (await docRef.get()).data();
     }
 
+    // FIXED: Added "flex" here
     function showLogin(){
       root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex flex-col justify-center bg-black">
         <h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1>
@@ -85,8 +90,16 @@
         <button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button>
       </div>`;
     }
-    function signup(){ const email = document.getElementById('email').value; const pass = document.getElementById('pass').value; auth.createUserWithEmailAndPassword(email, pass).catch(e => alert(e.message)); }
-    function login(){ const email = document.getElementById('email').value; const pass = document.getElementById('pass').value; auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message)); }
+    function signup(){ 
+      const email = document.getElementById('email').value; 
+      const pass = document.getElementById('pass').value; 
+      auth.createUserWithEmailAndPassword(email, pass).catch(e => alert(e.message)); 
+    }
+    function login(){ 
+      const email = document.getElementById('email').value; 
+      const pass = document.getElementById('pass').value; 
+      auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message)); 
+    }
     function logout(){ auth.signOut(); }
 
     function renderBottomNav(){
@@ -114,7 +127,7 @@
 
     function showInfo(){
       currentPage = 'info';
-      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Information</h1></div><div class="p-4"><h2 class="font-bold">About Patanisha</h2><p class="text-sm mt-2">Connect, Chat, and Earn. Version 1.1</p><button onclick="logout()" class="w-full bg-red-500 text-white p-3 rounded-xl font-bold mt-6">Logout</button></div>${renderBottomNav()}</div>`;
+      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Information</h1></div><div class="p-4"><h2 class="font-bold">About Patanisha</h2><p class="text-sm mt-2">Connect, Chat, and Earn. Version 1.3</p><button onclick="logout()" class="w-full bg-red-500 text-white p-3 rounded-xl font-bold mt-6">Logout</button></div>${renderBottomNav()}</div>`;
     }
 
     function showMe(){
@@ -171,7 +184,7 @@
         coins: firebase.firestore.FieldValue.increment(800)
       });
       alert("Exchanged!");
-      await ensureUserData(currentUser.uid);
+      await ensureUserData(currentUser);
       showIncome();
     }
   </script>
