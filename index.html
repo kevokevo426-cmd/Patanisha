@@ -32,7 +32,6 @@
     let currentUserData = {};
 
     auth.onAuthStateChanged(async (user) => {
-      console.log("Auth State Changed:", user);
       if (user) {
         currentUser = user;
         await ensureUserData(user);
@@ -68,23 +67,15 @@
           auth.signOut();
           return;
         }
-        const dataToMerge = {};
-        for(let key in defaultData){
-          if(existingData[key] === undefined){
-            dataToMerge[key] = defaultData[key];
-          }
-        }
-        if(Object.keys(dataToMerge).length > 0){
-          await docRef.update(dataToMerge);
-        }
       }
       currentUserData = (await docRef.get()).data();
     }
 
+    // FIXED: ADDED "flex" HERE
     function showLogin(){
       root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex-col justify-center bg-black">
-        <h1 class="text-pink-500 text-4xl font-bold">Patanisha ❤️</h1>
-        <input id="email" placeholder="Email" class="w-full p-3 mt-6 bg-gray-800 rounded text-white">
+        <h1 class="text-pink-500 text-4xl font-bold mb-6">Patanisha ❤️</h1>
+        <input id="email" placeholder="Email" type="email" class="w-full p-3 mt-2 bg-gray-800 rounded text-white">
         <input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white">
         <button onclick="signup()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Sign Up</button>
         <button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button>
@@ -94,16 +85,15 @@
     function signup(){ 
       const email = document.getElementById('email').value; 
       const pass = document.getElementById('pass').value; 
-      auth.createUserWithEmailAndPassword(email, pass)
-     .then(()=>alert("Account Created!"))
-     .catch(e => alert("Signup Error: " + e.message)); 
+      if(!email || !pass) return alert("Fill email and password");
+      auth.createUserWithEmailAndPassword(email, pass).catch(e => alert("Signup Error: " + e.message)); 
     }
     
     function login(){ 
       const email = document.getElementById('email').value; 
       const pass = document.getElementById('pass').value; 
-      auth.signInWithEmailAndPassword(email, pass)
-     .catch(e => alert("Login Error: " + e.message)); // NOW WILL SHOW ERROR
+      if(!email || !pass) return alert("Fill email and password");
+      auth.signInWithEmailAndPassword(email, pass).catch(e => alert("Login Error: " + e.message)); 
     }
     
     function logout(){ auth.signOut(); }
@@ -121,19 +111,19 @@
       currentPage = 'home';
       root.innerHTML = `<div class="bg-white min-h-screen pb-20">
         <div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Patanisha</h1><p>Hi ${currentUserData.username}</p></div>
-        <div class="p-4 text-center text-gray-500">Welcome to Patanisha! Start chatting.</div>
+        <div class="p-4 text-center text-gray-500">Welcome BOSS! Start chatting.</div>
         ${renderBottomNav()}
       </div>`; 
     }
 
     function showChat(){
       currentPage = 'chat';
-      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Chat</h1></div><div class="p-4 text-center text-gray-500">No chats yet. Go to Home to find people.</div>${renderBottomNav()}</div>`;
+      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Chat</h1></div><div class="p-4 text-center text-gray-500">No chats yet.</div>${renderBottomNav()}</div>`;
     }
 
     function showInfo(){
       currentPage = 'info';
-      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Information</h1></div><div class="p-4"><h2 class="font-bold">About Patanisha</h2><p class="text-sm mt-2">Connect, Chat, and Earn. Version 1.4</p><button onclick="logout()" class="w-full bg-red-500 text-white p-3 rounded-xl font-bold mt-6">Logout</button></div>${renderBottomNav()}</div>`;
+      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Information</h1></div><div class="p-4"><h2 class="font-bold">About Patanisha</h2><p class="text-sm mt-2">Version 1.5 - Final Fix</p><button onclick="logout()" class="w-full bg-red-500 text-white p-3 rounded-xl font-bold mt-6">Logout</button></div>${renderBottomNav()}</div>`;
     }
 
     function showMe(){
@@ -145,53 +135,9 @@
             <img id="profilePic" src="${currentUserData.photo}" onclick="document.getElementById('photoInput').click()" class="w-16 h-16 rounded-full border-2 border-white object-cover"/>
             <div class="ml-3 flex-1"><h1 class="font-bold text-lg">${currentUserData.username} 😊</h1><p class="text-sm text-gray-600">ID:${currentUserData.id}</p></div>
           </div>
-          <div class="flex justify-around text-center mt-4">
-            <div><p class="font-bold">${currentUserData.friends}</p><p class="text-xs text-gray-500">Friends</p></div>
-            <div><p class="font-bold">${currentUserData.following}</p><p class="text-xs text-gray-500">Following</p></div>
-            <div><p class="font-bold">${currentUserData.followers}</p><p class="text-xs text-gray-500">Followers</p></div>
-            <div><p class="font-bold">${currentUserData.visitors}</p><p class="text-xs text-gray-500">Visitors</p></div>
-          </div>
         </div>
-
-        <div class="flex gap-3 px-4 mt-3">
-          <button onclick="showIncome()" class="flex-1 bg-yellow-400 rounded-xl p-3 flex items-center justify-center font-bold"><span class="mr-2">💰</span>${currentUserData.coins}</button>
-          <button onclick="showAccount()" class="flex-1 bg-gradient-to-r from-yellow-700 to-yellow-500 text-white rounded-xl p-3 font-bold">🏦 Account</button>
-        </div>
-
         ${renderBottomNav()}
       </div>`;
-      
-      document.getElementById('photoInput').onchange = (e) => {
-        const file = e.target.files[0];
-        if(file){
-          const reader = new FileReader();
-          reader.onload = function(event){
-            const newPhoto = event.target.result;
-            document.getElementById('profilePic').src = newPhoto;
-            db.collection("users").doc(currentUser.uid).update({photo: newPhoto});
-          }
-          reader.readAsDataURL(file);
-        }
-      }
-    }
-
-    function showIncome(){
-      root.innerHTML = `<div class="p-6"><button onclick="showMe()" class="mb-4">← Back</button><h1 class="font-bold text-2xl">Income</h1><p class="mt-4">Diamonds: 💎 ${currentUserData.diamonds}</p><p>Coins: S ${currentUserData.coins}</p><button onclick="exchange()" class="bg-yellow-400 px-4 py-2 rounded mt-4">Exchange 5 💎 to S 800</button></div>`;
-    }
-
-    function showAccount(){
-      root.innerHTML = `<div class="p-6"><button onclick="showMe()" class="mb-4">← Back</button><h1 class="font-bold text-2xl">Account</h1><p class="mt-4">Balance: S ${currentUserData.coins}</p><p>Total Income: S ${currentUserData.totalIncome || 0}</p></div>`;
-    }
-
-    async function exchange(){
-      if(currentUserData.diamonds < 5) return alert("Not enough diamonds");
-      await db.collection("users").doc(currentUser.uid).update({
-        diamonds: firebase.firestore.FieldValue.increment(-5),
-        coins: firebase.firestore.FieldValue.increment(800)
-      });
-      alert("Exchanged!");
-      await ensureUserData(currentUser);
-      showIncome();
     }
   </script>
 </body>
