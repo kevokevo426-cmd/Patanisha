@@ -29,42 +29,19 @@ input[type="file"]{padding:8px}
       <img id="avatarPrev" src="https://via.placeholder.com/100" class="avatar-preview">
       <input type="file" id="avatar" accept="image/*" required>
     </div>
-
-    <div class="form-group">
-      <label>Full Name</label>
-      <input type="text" id="name" required>
-    </div>
-
-    <div class="form-group">
-      <label>Age</label>
-      <input type="number" id="age" min="18" max="99" required>
-    </div>
-
-    <div class="form-group">
-      <label>City</label>
-      <input type="text" id="city" placeholder="e.g. Ruiru, Nairobi" required>
-    </div>
-
-    <div class="form-group">
-      <label>Hobbies (comma separated)</label>
-      <input type="text" id="hobbies" placeholder="Travel, Music, Gym">
-    </div>
-
-    <div class="form-group">
-      <label>Bio</label>
-      <textarea id="bio" rows="2" placeholder="Introvert, Love travel..."></textarea>
-    </div>
-
+    <div class="form-group"><label>Full Name</label><input type="text" id="name" required></div>
+    <div class="form-group"><label>Age</label><input type="number" id="age" min="18" max="99" required></div>
+    <div class="form-group"><label>City</label><input type="text" id="city" placeholder="e.g. Ruiru, Nairobi" required></div>
+    <div class="form-group"><label>Hobbies (comma separated)</label><input type="text" id="hobbies" placeholder="Travel, Music, Gym"></div>
+    <div class="form-group"><label>Bio</label><textarea id="bio" rows="2" placeholder="Introvert, Love travel..."></textarea></div>
     <div class="form-group">
       <label>Upload 3 Photos <small style="color:#999">(Max 500KB each)</small></label>
       <input type="file" id="photos" accept="image/*" multiple>
       <div class="preview" id="photoPrev"></div>
     </div>
-
     <button type="submit" id="submitBtn" class="btn">Save & Go to Home</button>
   </form>
 </div>
-
 <script>
 function compressImage(file, maxSizeKB=500){
   return new Promise((resolve) => {
@@ -85,31 +62,25 @@ function compressImage(file, maxSizeKB=500){
     reader.readAsDataURL(file);
   });
 }
-
 document.getElementById('avatar').onchange = async e => {
   const file = e.target.files[0];
   if(file) document.getElementById('avatarPrev').src = await compressImage(file);
 }
-
 document.getElementById('photos').onchange = async e => {
   const files = Array.from(e.target.files).slice(0,3);
   const previews = await Promise.all(files.map(f => compressImage(f)));
   document.getElementById('photoPrev').innerHTML = previews.map(src=>`<img src="${src}">`).join('');
   window.photoData = previews;
 }
-
 document.getElementById('regForm').onsubmit = async e => {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.innerText = 'Saving...';
-  
   try {
     const avatarFile = document.getElementById('avatar').files[0];
     if(!avatarFile) throw new Error('Please select an avatar');
-    
     const avatar = await compressImage(avatarFile);
-
     const profile = {
       id: Date.now(),
       name: document.getElementById('name').value,
@@ -123,17 +94,12 @@ document.getElementById('regForm').onsubmit = async e => {
       distance: '1km',
       friends: 0
     };
-
     localStorage.setItem('patanisha_myProfile', JSON.stringify(profile));
-
     let users = JSON.parse(localStorage.getItem('patanisha_users')) || [];
-    users = users.filter(u => u.id!== profile.id); // prevent duplicates
+    users = users.filter(u => u.id!== profile.id);
     users.push(profile);
     localStorage.setItem('patanisha_users', JSON.stringify(users));
-
-    // SUCCESS - GO HOME
     window.location.href = '../index.html';
-    
   } catch(err) {
     alert('Error: ' + err.message + '\n\nTry smaller photos < 500KB');
     btn.disabled = false;
