@@ -25,9 +25,9 @@ input[type="file"]{padding:8px}
   <h1>Complete Your Profile</h1>
   <form id="regForm">
     <div class="form-group">
-      <label>Profile Avatar <small style="color:red">Required</small></label>
-      <img id="avatarPrev" src="https://via.placeholder.com/100" class="avatar-preview">
-      <input type="file" id="avatar" accept="image/*" required>
+      <label>Profile Avatar <small style="color:#999">Optional</small></label>
+      <img id="avatarPrev" src="https://via.placeholder.com/100/ff9800/fff?text=You" class="avatar-preview">
+      <input type="file" id="avatar" accept="image/*">
     </div>
     <div class="form-group"><label>Full Name</label><input type="text" id="name" required></div>
     <div class="form-group"><label>Age</label><input type="number" id="age" min="18" max="99" required></div>
@@ -35,7 +35,7 @@ input[type="file"]{padding:8px}
     <div class="form-group"><label>Hobbies</label><input type="text" id="hobbies" placeholder="Travel, Music, Gym"></div>
     <div class="form-group"><label>Bio</label><textarea id="bio" rows="2"></textarea></div>
     <div class="form-group">
-      <label>1 Photo Only <small style="color:red">More will break it</small></label>
+      <label>1 Photo <small style="color:#999">Optional</small></label>
       <input type="file" id="photo" accept="image/*">
       <div class="preview" id="photoPrev"></div>
     </div>
@@ -51,11 +51,11 @@ function compressImage(file){
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let {width, height} = img;
-        const maxW = 400; // MUCH SMALLER
+        const maxW = 400;
         if(width > maxW){ height *= maxW/width; width = maxW; }
         canvas.width = width; canvas.height = height;
         canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.5)); // 50% quality
+        resolve(canvas.toDataURL('image/jpeg', 0.5));
       }
       img.src = e.target.result;
     }
@@ -80,11 +80,11 @@ document.getElementById('regForm').onsubmit = async e => {
   btn.disabled = true;
   btn.innerText = 'Saving...';
   
-  setTimeout(async ()=>{ // give UI time to update
+  setTimeout(async ()=>{
   try {
+    let avatar = 'https://via.placeholder.com/100/ff9800/fff?text=You'; // default
     const avatarFile = document.getElementById('avatar').files[0];
-    if(!avatarFile) throw new Error('Please select an avatar');
-    const avatar = await compressImage(avatarFile);
+    if(avatarFile) avatar = await compressImage(avatarFile);
 
     const profile = {
       id: Date.now(),
@@ -100,13 +100,13 @@ document.getElementById('regForm').onsubmit = async e => {
       friends: 0
     };
 
-    localStorage.clear(); // CLEAR OLD DATA FIRST
+    localStorage.clear(); 
     localStorage.setItem('patanisha_myProfile', JSON.stringify(profile));
     localStorage.setItem('patanisha_users', JSON.stringify([profile]));
 
     window.location.href = '../index.html';
   } catch(err) {
-    alert('Error: Storage full. Use smaller photos.\n' + err.message);
+    alert('Error: ' + err.message);
     btn.disabled = false;
     btn.innerText = 'Save & Go to Home';
   }
