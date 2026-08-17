@@ -5,21 +5,42 @@
 <title>Patanisha</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-body{background:#f5f5f5;padding-bottom:70px}
-.banner{background:linear-gradient(135deg,#FFD700,#FFA500);margin:10px;border-radius:15px;padding:15px;display:flex;justify-content:space-between;align-items:center}
+body{background:#f5f5f5;padding-bottom:80px}
+
+/* WRAPPER FOR PC CENTERING */
+.wrapper{max-width:1200px;margin:0 auto}
+
+.banner{background:linear-gradient(135deg,#FFD700,#FFA500);margin:10px;border-radius:15px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
 .banner-text b{font-size:16px;display:block;margin-bottom:5px;color:#000}
 .banner-text p{font-size:12px;color:#333}
-.banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:10px 25px;border-radius:20px;font-weight:bold;cursor:pointer}
-.tabs{display:flex;gap:25px;padding:15px 10px;border-bottom:2px solid #eee;overflow-x:auto}
-.tab{color:#666;font-weight:500;font-size:16px;padding-bottom:8px;cursor:pointer;white-space:nowrap;position:relative}
+.banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:10px 25px;border-radius:20px;font-weight:bold;cursor:pointer;transition:0.2s}
+.banner-btn:hover{transform:scale(1.05)}
+
+/* STICKY TABS FOR EASY NAV */
+.tabs-wrapper{position:sticky;top:0;background:#f5f5f5;z-index:10}
+.tabs{display:flex;gap:25px;padding:15px 10px;border-bottom:2px solid #eee;overflow-x:auto;background:white}
+.tab{color:#666;font-weight:500;font-size:16px;padding-bottom:8px;cursor:pointer;white-space:nowrap;position:relative;transition:0.2s}
 .tab.active{color:#000;font-weight:bold;font-size:17px}
 .tab.active::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:3px;background:#FFD700;border-radius:2px}
-.card{display:flex;background:white;margin:10px;padding:12px;border-radius:12px;align-items:flex-start}
-.avatar{width:70px;height:70px;border-radius:50%;border:3px solid #FFD700;position:relative;margin-right:10px;cursor:pointer}
+
+/* GRID FOR PC - 2 to 3 COLUMNS */
+#userList{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:768px){
+  #userList{grid-template-columns:1fr 1fr;padding:0 10px}
+ .banner{margin:20px}
+ .tabs{border-radius:12px;margin:10px}
+}
+@media(min-width:1024px){
+  #userList{grid-template-columns:1fr 1fr 1fr}
+}
+
+.card{display:flex;background:white;margin:10px;padding:15px;border-radius:12px;align-items:flex-start;box-shadow:0 2px 5px rgba(0,0,0,0.05);transition:0.2s}
+.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.avatar{width:70px;height:70px;border-radius:50%;border:3px solid #FFD700;position:relative;margin-right:12px;cursor:pointer;flex-shrink:0}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .online{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid white}
 .avatar-badge{position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);background:#8B5CF6;color:white;font-size:10px;padding:2px 6px;border-radius:8px}
-.card-info{flex:1;cursor:pointer}
+.card-info{flex:1;cursor:pointer;min-width:0}
 .card-info h3{font-size:16px;margin-bottom:2px}
 .friends-count{font-size:11px;color:#888;margin-bottom:4px}
 .badges{display:flex;gap:5px;margin:4px 0;flex-wrap:wrap}
@@ -30,29 +51,38 @@ body{background:#f5f5f5;padding-bottom:70px}
 .badge-distance{background:#C8E6C9;color:#2E7D32}
 .badge-age{background:#BBDEFB;color:#1565C0}
 .desc{font-size:12px;color:#666;margin-top:4px}
-.btn-row{display:flex;gap:5px;margin-top:5px}
-.hi-btn,.add-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 12px;color:white;font-weight:bold;font-size:13px;cursor:pointer}
+.btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.hi-btn,.add-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 16px;color:white;font-weight:bold;font-size:13px;cursor:pointer;transition:0.2s}
+.hi-btn:hover,.add-btn:hover{transform:scale(1.05)}
 .add-btn{background:linear-gradient(135deg,#00C853,#00BFA5)}
-.photos{display:flex;gap:5px;margin:5px 10px 10px 95px}
-.photos img{width:60px;height:60px;border-radius:8px;object-fit:cover}
-.nav{position:fixed;bottom:0;width:100%;background:white;display:flex;justify-content:space-around;padding:8px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1)}
-.nav-item{text-align:center;font-size:11px;color:#999;cursor:pointer;position:relative}
+.photos{display:flex;gap:5px;margin:5px 10px 10px 95px;overflow-x:auto}
+.photos img{width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0}
+
+/* BOTTOM NAV - WORKS ON PC TOO */
+.nav{position:fixed;bottom:0;left:0;width:100%;background:white;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:99}
+@media(min-width:768px){
+ .nav{max-width:600px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0}
+}
+.nav-item{text-align:center;font-size:11px;color:#999;cursor:pointer;position:relative;flex:1;transition:0.2s}
+.nav-item:hover{color:#FF8C00}
 .nav-item.active{color:#FF8C00}
-.nav-icon{font-size:24px;display:block}
-.notif{position:absolute;background:red;color:white;border-radius:10px;font-size:10px;padding:1px 5px;top:-2px;right:15px}
+.nav-icon{font-size:26px;display:block}
+.notif{position:absolute;background:red;color:white;border-radius:10px;font-size:10px;padding:1px 5px;top:-2px;right:calc(50% - 20px)}
+
 .popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;overflow-y:auto}
-.popup-content{background:white;margin:15% 10px;padding:20px;border-radius:15px;text-align:center;position:relative}
+.popup-content{background:white;margin:10% auto;padding:20px;border-radius:15px;text-align:center;position:relative;max-width:500px;width:90%}
 .close-btn{position:absolute;top:10px;right:20px;font-size:30px;color:#666;cursor:pointer}
-.chat-box{height:250px;overflow-y:auto;background:#f5f5f5;border-radius:10px;padding:10px;margin:10px 0;text-align:left}
+.chat-box{height:300px;overflow-y:auto;background:#f5f5f5;border-radius:10px;padding:10px;margin:10px 0;text-align:left}
 .msg{background:#FFA500;color:white;padding:8px 12px;border-radius:15px;margin:5px 0;max-width:70%;display:inline-block;clear:both;float:left}
 .msg.me{background:#FFD700;color:#000;float:right}
 .empty{text-align:center;padding:40px;color:#999}
-.search-box{width:90%;margin:10px;padding:10px;border:1px solid #ddd;border-radius:20px}
+.search-box{width:90%;max-width:500px;margin:10px auto;display:block;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:16px}
 .hi-template{padding:10px;margin:8px 0;background:#fff7e6;border-radius:10px;cursor:pointer;text-align:left}
 .block-btn{background:#ff5252}
 </style>
 </head>
 <body>
+<div class="wrapper">
 
 <div class="banner">
   <div class="banner-text">
@@ -62,12 +92,14 @@ body{background:#f5f5f5;padding-bottom:70px}
   <button class="banner-btn" onclick="openHiSetup()">Go</button>
 </div>
 
-<div class="tabs" id="tabs">
-  <span class="tab" onclick="switchTab('recommend')">Recommend</span>
-  <span class="tab" onclick="switchTab('newcomer')">Newcomer</span>
-  <span class="tab active" onclick="switchTab('nearby')">Nearby</span>
-  <span class="tab" onclick="switchTab('top')">🏆</span>
-  <span class="tab" onclick="switchTab('search')">🔍</span>
+<div class="tabs-wrapper">
+  <div class="tabs" id="tabs">
+    <span class="tab" onclick="switchTab('recommend', this)">Recommend</span>
+    <span class="tab" onclick="switchTab('newcomer', this)">Newcomer</span>
+    <span class="tab active" onclick="switchTab('nearby', this)">Nearby</span>
+    <span class="tab" onclick="switchTab('top', this)">🏆 Top</span>
+    <span class="tab" onclick="switchTab('search', this)">🔍 Search</span>
+  </div>
 </div>
 
 <div id="searchBox" style="display:none;text-align:center">
@@ -76,6 +108,9 @@ body{background:#f5f5f5;padding-bottom:70px}
 
 <div id="userList"></div>
 
+</div><!-- end wrapper -->
+
+<!-- NAVIGATION - ALL CLICKABLE NOW -->
 <div class="nav">
   <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
   <div class="nav-item" onclick="openMoment()"><span class="nav-icon">⭕</span>Moment</div>
@@ -83,7 +118,7 @@ body{background:#f5f5f5;padding-bottom:70px}
   <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
 </div>
 
-<!-- Profile Popup -->
+<!-- POPUPS SAME AS BEFORE -->
 <div class="popup" id="profilePopup">
   <span class="close-btn" onclick="closePopup('profilePopup')">×</span>
   <div class="popup-content">
@@ -96,7 +131,6 @@ body{background:#f5f5f5;padding-bottom:70px}
   </div>
 </div>
 
-<!-- Chat Popup -->
 <div class="popup" id="chatPopup">
   <span class="close-btn" onclick="closePopup('chatPopup')">×</span>
   <div class="popup-content" style="text-align:left">
@@ -107,7 +141,6 @@ body{background:#f5f5f5;padding-bottom:70px}
   </div>
 </div>
 
-<!-- Chat List Popup -->
 <div class="popup" id="chatListPopup">
   <span class="close-btn" onclick="closePopup('chatListPopup')">×</span>
   <div class="popup-content" style="text-align:left">
@@ -116,7 +149,6 @@ body{background:#f5f5f5;padding-bottom:70px}
   </div>
 </div>
 
-<!-- Hi Templates Popup -->
 <div class="popup" id="hiSetupPopup">
   <span class="close-btn" onclick="closePopup('hiSetupPopup')">×</span>
   <div class="popup-content" style="text-align:left">
@@ -163,10 +195,10 @@ function addFriend(name){
   alert(`${name} +5 Friends! Now ${u.friends} friends`);
 }
 
-function switchTab(tab){
+function switchTab(tab, el){
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  event.target.classList.add('active');
+  el.classList.add('active');
   document.getElementById('searchBox').style.display = tab==='search'? 'block' : 'none';
   loadUsers();
 }
@@ -193,7 +225,7 @@ function loadUsers(){
 
 function renderUsers(filtered){
   if(filtered.length === 0){
-    document.getElementById('userList').innerHTML = `<div class="empty">No users found</div>`;
+    document.getElementById('userList').innerHTML = `<div class="empty" style="grid-column:1/-1">No users found</div>`;
     return;
   }
   let html = '';
@@ -221,12 +253,12 @@ function renderUsers(filtered){
         </div>
         ${u.desc?`<p class="desc">${u.desc}</p>`:''}
         <div class="btn-row">
-          <button class="hi-btn" onclick="startChat('${u.name}')">💬 Hi</button>
-          <button class="add-btn" onclick="addFriend('${u.name}')">+ Add Friend</button>
+          <button class="hi-btn" onclick="event.stopPropagation();startChat('${u.name}')">💬 Hi</button>
+          <button class="add-btn" onclick="event.stopPropagation();addFriend('${u.name}')">+ Add</button>
         </div>
       </div>
     </div>
-    ${u.photos?`<div class="photos">${u.photos.map(p=>`<img src="${p}">`).join('')}</div>`:''}
+    ${u.photos?`<div class="photos" style="grid-column:1/-1">${u.photos.map(p=>`<img src="${p}">`).join('')}</div>`:''}
     `
   });
   document.getElementById('userList').innerHTML = html;
@@ -314,9 +346,9 @@ function blockUser(){
   }
 }
 
-function openMoment(){alert('Moment page coming soon!')}
-function openMe(){alert('Profile page coming soon!')}
-function goHome(){window.location.reload()}
+function openMoment(){alert('Moment page - Coming Soon!')}
+function openMe(){alert('My Profile - Coming Soon!')}
+function goHome(){document.querySelector('.tab.active')?.classList.remove('active');document.querySelectorAll('.tab')[2].classList.add('active');currentTab='nearby';loadUsers();window.scrollTo(0,0)}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
 
 loadUsers();
