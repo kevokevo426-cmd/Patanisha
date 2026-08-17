@@ -3,141 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Patanisha</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <style>.nav-active { color: #ec4899; }.nav-inactive { color: #9ca3af; } </style>
+  <title>PATANISHA - Anonymous Confessions</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      color: #764ba2;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #555;
+    }
+    textarea {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      resize: vertical;
+      min-height: 150px;
+      font-family: inherit;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    button {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    .confessions {
+      margin-top: 40px;
+    }
+    .confession-card {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      border-left: 4px solid #667eea;
+    }
+    .confession-date {
+      font-size: 12px;
+      color: #999;
+      margin-top: 10px;
+    }
+    .anonymous {
+      color: #764ba2;
+      font-weight: bold;
+    }
+  </style>
 </head>
-<body class="bg-gray-100">
-  <div id="root">Loading Patanisha...</div>
-  <input type="file" id="photoInput" accept="image/*" style="display:none">
+<body>
+  <div class="container">
+    <h1>🔥 PATANISHA</h1>
+    <p class="subtitle">Share anonymously. Be heard.</p>
+
+    <div class="form-group">
+      <label for="confession">Your Confession</label>
+      <textarea id="confession" placeholder="Write what’s on your mind... No one will know it's you."></textarea>
+    </div>
+    <button onclick="postConfession()">Post Anonymously</button>
+
+    <div class="confessions">
+      <h2>Recent Confessions</h2>
+      <div id="confessionList">
+        <div class="confession-card">
+          <p>I'm tired of pretending I'm okay when I'm not.</p>
+          <div class="confession-date">Posted by <span class="anonymous">Anonymous</span> • Just now</div>
+        </div>
+        <div class="confession-card">
+          <p>I failed my exams but I'm too scared to tell my parents.</p>
+          <div class="confession-date">Posted by <span class="anonymous">Anonymous</span> • 2 hours ago</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
-      authDomain: "patanisha-49561.firebaseapp.com",
-      projectId: "patanisha-49561",
-      storageBucket: "patanisha-49561.firebasestorage.app",
-      messagingSenderId: "363879415134",
-      appId: "1:363879415134:web:81b99ab93290a3e45723cf"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const root = document.getElementById('root');
-    let currentPage = 'home';
-    let currentUser = null;
-    let currentUserData = {};
-
-    auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        currentUser = user;
-        await ensureUserData(user);
-        showHome();
-      } else {
-        showLogin();
+    function postConfession() {
+      const text = document.getElementById('confession').value;
+      if(text.trim() === '') {
+        alert('Please write something first!');
+        return;
       }
-    });
-
-    async function ensureUserData(user){
-      const uid = user.uid;
-      const docRef = db.collection("users").doc(uid);
-      const snap = await docRef.get();
       
-      const newUserId = "PT" + Math.floor(Math.random()*900000 + 100000);
-      const newUsername = "User" + Math.floor(Math.random()*9999);
-      
-      const defaultData = {
-        username: newUsername,
-        id: newUserId, 
-        email: user.email,
-        photo: `https://i.pravatar.cc/150?u=${uid}`,
-        coins: 6, diamonds: 10, friends: 0, following: 0, followers: 0, visitors: 0,
-        totalIncome: 0, todayIncome: 0, gender: "female", isPremium: true, isBanned: false
-      };
-
-      if(!snap.exists){
-        await docRef.set(defaultData);
-      } else {
-        const existingData = snap.data();
-        if(existingData.isBanned){
-          alert("Your account has been banned");
-          auth.signOut();
-          return;
-        }
-      }
-      currentUserData = (await docRef.get()).data();
-    }
-
-    // FIXED: ADDED "flex" HERE
-    function showLogin(){
-      root.innerHTML = `<div class="text-white text-center p-8 max-w-md mx-auto min-h-screen flex-col justify-center bg-black">
-        <h1 class="text-pink-500 text-4xl font-bold mb-6">Patanisha ❤️</h1>
-        <input id="email" placeholder="Email" type="email" class="w-full p-3 mt-2 bg-gray-800 rounded text-white">
-        <input id="pass" type="password" placeholder="Password" class="w-full p-3 mt-3 bg-gray-800 rounded text-white">
-        <button onclick="signup()" class="bg-pink-500 w-full py-3 rounded mt-4 font-bold">Sign Up</button>
-        <button onclick="login()" class="bg-gray-600 w-full py-3 rounded mt-2">Login</button>
-      </div>`;
-    }
-    
-    function signup(){ 
-      const email = document.getElementById('email').value; 
-      const pass = document.getElementById('pass').value; 
-      if(!email || !pass) return alert("Fill email and password");
-      auth.createUserWithEmailAndPassword(email, pass).catch(e => alert("Signup Error: " + e.message)); 
-    }
-    
-    function login(){ 
-      const email = document.getElementById('email').value; 
-      const pass = document.getElementById('pass').value; 
-      if(!email || !pass) return alert("Fill email and password");
-      auth.signInWithEmailAndPassword(email, pass).catch(e => alert("Login Error: " + e.message)); 
-    }
-    
-    function logout(){ auth.signOut(); }
-
-    function renderBottomNav(){
-      return `<div class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2">
-        <button onclick="showHome()" class="flex flex-col items-center ${currentPage==='home'?'nav-active':'nav-inactive'}">🏠<span class="text-xs">Home</span></button>
-        <button onclick="showChat()" class="flex flex-col items-center ${currentPage==='chat'?'nav-active':'nav-inactive'}">💬<span class="text-xs">Chat</span></button>
-        <button onclick="showMe()" class="flex flex-col items-center ${currentPage==='me'?'nav-active':'nav-inactive'}">👤<span class="text-xs">Me</span></button>
-        <button onclick="showInfo()" class="flex flex-col items-center ${currentPage==='info'?'nav-active':'nav-inactive'}">ℹ️<span class="text-xs">Info</span></button>
-      </div>`;
-    }
-    
-    function showHome(){ 
-      currentPage = 'home';
-      root.innerHTML = `<div class="bg-white min-h-screen pb-20">
-        <div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Patanisha</h1><p>Hi ${currentUserData.username}</p></div>
-        <div class="p-4 text-center text-gray-500">Welcome BOSS! Start chatting.</div>
-        ${renderBottomNav()}
-      </div>`; 
-    }
-
-    function showChat(){
-      currentPage = 'chat';
-      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Chat</h1></div><div class="p-4 text-center text-gray-500">No chats yet.</div>${renderBottomNav()}</div>`;
-    }
-
-    function showInfo(){
-      currentPage = 'info';
-      root.innerHTML = `<div class="bg-white min-h-screen pb-20"><div class="p-4 bg-pink-500 text-white"><h1 class="font-bold text-2xl">Information</h1></div><div class="p-4"><h2 class="font-bold">About Patanisha</h2><p class="text-sm mt-2">Version 1.5 - Final Fix</p><button onclick="logout()" class="w-full bg-red-500 text-white p-3 rounded-xl font-bold mt-6">Logout</button></div>${renderBottomNav()}</div>`;
-    }
-
-    function showMe(){
-      currentPage = 'me';
-      root.innerHTML = `
-      <div class="min-h-screen pb-20">
-        <div class="bg-gradient-to-b from-yellow-100 to-white p-4">
-          <div class="flex items-center">
-            <img id="profilePic" src="${currentUserData.photo}" onclick="document.getElementById('photoInput').click()" class="w-16 h-16 rounded-full border-2 border-white object-cover"/>
-            <div class="ml-3 flex-1"><h1 class="font-bold text-lg">${currentUserData.username} 😊</h1><p class="text-sm text-gray-600">ID:${currentUserData.id}</p></div>
-          </div>
-        </div>
-        ${renderBottomNav()}
-      </div>`;
+      const list = document.getElementById('confessionList');
+      const newConfession = document.createElement('div');
+      newConfession.className = 'confession-card';
+      newConfession.innerHTML = `
+        <p>${text}</p>
+        <div class="confession-date">Posted by <span class="anonymous">Anonymous</span> • Just now</div>
+      `;
+      list.prepend(newConfession);
+      document.getElementById('confession').value = '';
+      alert('Posted! Your confession is live 🔥');
     }
   </script>
 </body>
