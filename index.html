@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Patanisha</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
@@ -29,7 +28,9 @@ body{background:#f5f5f5;padding-bottom:70px}
 .badge-distance{background:#C8E6C9;color:#2E7D32}
 .badge-age{background:#BBDEFB;color:#1565C0}
 .desc{font-size:12px;color:#666;margin-top:4px}
-.hi-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 15px;color:white;font-weight:bold;font-size:14px;margin-left:5px;cursor:pointer}
+.btn-row{display:flex;gap:5px;margin-top:5px}
+.hi-btn,.add-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 12px;color:white;font-weight:bold;font-size:13px;cursor:pointer}
+.add-btn{background:linear-gradient(135deg,#00C853,#00BFA5)}
 .photos{display:flex;gap:5px;margin:5px 10px 10px 95px}
 .photos img{width:60px;height:60px;border-radius:8px;object-fit:cover}
 .nav{position:fixed;bottom:0;width:100%;background:white;display:flex;justify-content:space-around;padding:8px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1)}
@@ -95,6 +96,13 @@ body{background:#f5f5f5;padding-bottom:70px}
 
 <script>
 let currentChatUser = '';
+let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
+  {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:52, svip:"SVIP4", level:16, distance:"42.8km", age:20},
+  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:6, svip:"SVIP1", level:6, distance:"5.8km", age:20, zodiac:"Taurus", desc:"I'm as open as much as you're willing to flip my pages"},
+  {name:"Sam Aven", avatar:"https://i.pravatar.cc/100?img=13", friends:31, svip:"SVIP2", level:9, distance:"8.8km", age:20, zodiac:"Naive", photos:["https://picsum.photos/100?1","https://picsum.photos/100?2","https://picsum.photos/100?3","https://picsum.photos/100?4"]},
+  {name:"lightening", avatar:"https://i.pravatar.cc/100?img=14", friends:18, level:1, distance:"51.2km", age:20}
+];
+
 function getVIPLevel(friends){
   if(friends >= 50) return 5;
   if(friends >= 40) return 4;
@@ -103,12 +111,17 @@ function getVIPLevel(friends){
   if(friends >= 10) return 1;
   return 0;
 }
-const users = [
-  {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:52, svip:"SVIP4", level:16, distance:"42.8km", age:20},
-  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:6, svip:"SVIP1", level:6, distance:"5.8km", age:20, zodiac:"Taurus", desc:"I'm as open as much as you're willing to flip my pages"},
-  {name:"Sam Aven", avatar:"https://i.pravatar.cc/100?img=13", friends:31, svip:"SVIP2", level:9, distance:"8.8km", age:20, zodiac:"Naive", photos:["https://picsum.photos/100?1","https://picsum.photos/100?2","https://picsum.photos/100?3","https://picsum.photos/100?4"]},
-  {name:"lightening", avatar:"https://i.pravatar.cc/100?img=14", friends:18, level:1, distance:"51.2km", age:20}
-];
+
+function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
+
+function addFriend(name){
+  let u = users.find(x=>x.name==name);
+  u.friends += 5;
+  saveUsers();
+  loadUsers();
+  alert(`${name} +5 Friends! Now ${u.friends} friends`);
+}
+
 function loadUsers(){
   let html = '';
   users.forEach(u=>{
@@ -134,14 +147,18 @@ function loadUsers(){
           <span class="badge badge-age">♂ ${u.age}</span>
         </div>
         ${u.desc?`<p class="desc">${u.desc}</p>`:''}
+        <div class="btn-row">
+          <button class="hi-btn" onclick="startChat('${u.name}')">💬 Hi</button>
+          <button class="add-btn" onclick="addFriend('${u.name}')">+ Add Friend</button>
+        </div>
       </div>
-      <button class="hi-btn" onclick="startChat('${u.name}')">💬 Hi</button>
     </div>
     ${u.photos?`<div class="photos">${u.photos.map(p=>`<img src="${p}">`).join('')}</div>`:''}
     `
   });
   document.getElementById('userList').innerHTML = html;
 }
+
 function viewProfile(name){
   let u = users.find(x=>x.name==name);
   let vipLevel = getVIPLevel(u.friends);
