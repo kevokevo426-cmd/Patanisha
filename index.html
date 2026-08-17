@@ -35,6 +35,8 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .badge-distance{background:#C8E6C9;color:#2E7D32}
 .badge-age{background:#BBDEFB;color:#1565C0}
 .desc{font-size:12px;color:#666;margin-top:4px}
+.hobbies-row{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
+.hobby-pill{font-size:10px;background:#FFF7E6;color:#FF8C00;padding:2px 6px;border-radius:10px}
 .btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .hi-btn,.add-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 16px;color:white;font-weight:bold;font-size:13px;cursor:pointer}
 .add-btn{background:linear-gradient(135deg,#00C853,#00BFA5)}
@@ -52,6 +54,8 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .msg.me{background:#FFD700;color:#000;float:right}
 .empty{text-align:center;padding:40px;color:#999}
 .search-box{width:90%;max-width:500px;margin:10px auto;display:block;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:16px}
+.photo-gallery{display:flex;gap:5px;margin-top:8px}
+.photo-gallery img{width:60px;height:60px;border-radius:8px;object-fit:cover}
 </style>
 </head>
 <body>
@@ -97,6 +101,8 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
     <h2 id="profileName"></h2>
     <p id="profileVIP"></p>
     <p id="profileDetails"></p>
+    <div id="profileHobbies" class="hobbies-row" style="justify-content:center"></div>
+    <div id="profilePhotos" class="photo-gallery" style="justify-content:center"></div>
     <button class="hi-btn" onclick="startChatFromProfile()">💬 Say Hi</button>
     <button class="hi-btn" style="background:#ff5252" onclick="blockUser()">🚫 Block</button>
   </div>
@@ -142,10 +148,19 @@ let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || [];
 
 let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
   {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:57, svip:"SVIP4", level:16, distance:"42.8km", age:20, city:"Nairobi"},
-  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:6, svip:"SVIP1", level:6, distance:"5.8km", age:20, zodiac:"Taurus", desc:"I'm as open as much as you're willing to flip my pages", city:"Ruiru"},
-  {name:"Sam Aven", avatar:"https://i.pravatar.cc/100?img=13", friends:31, svip:"SVIP2", level:9, distance:"8.8km", age:20, zodiac:"Naive", photos:["https://picsum.photos/100?1","https://picsum.photos/100?2","https://picsum.photos/100?3","https://picsum.photos/100?4"], city:"Ruiru"},
+  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:6, svip:"SVIP1", level:6, distance:"5.8km", age:20, hobbies:["Music","Dancing"], bio:"I'm as open as much as you're willing to flip my pages", city:"Ruiru", photos:["https://picsum.photos/100?1","https://picsum.photos/100?2"]},
+  {name:"Sam Aven", avatar:"https://i.pravatar.cc/100?img=13", friends:31, svip:"SVIP2", level:9, distance:"8.8km", age:20, hobbies:["Gym","Travel"], city:"Ruiru", photos:["https://picsum.photos/100?3","https://picsum.photos/100?4"]},
   {name:"lightening", avatar:"https://i.pravatar.cc/100?img=14", friends:18, level:1, distance:"51.2km", age:20, city:"Thika"}
 ];
+
+// CHECK REGISTRATION
+window.onload = function(){
+  let myProfile = JSON.parse(localStorage.getItem('myProfile'));
+  if(!myProfile){window.location.href = '/register/'; return;}
+  if(myProfile.city) userCity = myProfile.city;
+  loadUsers();
+  updateChatNotif();
+}
 
 function getVIPLevel(friends){if(friends >= 50) return 5;if(friends >= 40) return 4;if(friends >= 30) return 3;if(friends >= 20) return 2;if(friends >= 10) return 1;return 0;}
 function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
@@ -180,7 +195,9 @@ function renderUsers(filtered){
   filtered.forEach(u=>{
     let vipLevel = getVIPLevel(u.friends);
     let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';
-    html += '<div class="card"><div class="avatar" onclick="viewProfile(\'' + u.name + '\')"><img src="' + u.avatar + '"><div class="online"></div>' + (vipBadge?'<div class="avatar-badge">'+vipBadge+'</div>':'') + '</div><div class="card-info" onclick="viewProfile(\'' + u.name + '\')"><h3>' + u.name + '</h3><div class="friends-count">' + u.friends + ' friends</div><div class="badges">' + (u.svip?'<span class="badge badge-svip">'+u.svip+'</span>':'') + (vipBadge?'<span class="badge badge-vip">'+vipBadge+'</span>':'') + (u.level?'<span class="badge badge-level">Lv'+u.level+'</span>':'') + '</div><div class="badges"><span class="badge badge-distance">' + u.distance + '</span><span class="badge badge-age">♂ ' + u.age + '</span></div>' + (u.desc?'<p class="desc">'+u.desc+'</p>':'') + '<div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();startChat(\'' + u.name + '\')">💬 Hi</button><button class="add-btn" onclick="event.stopPropagation();addFriend(\'' + u.name + '\')">+ Add</button></div></div></div>' + (u.photos?'<div class="photos" style="grid-column:1/-1">' + u.photos.map(p=>'<img src="'+p+'">').join('') + '</div>':'')
+    let hobbies = u.hobbies? u.hobbies.map(h=>'<span class="hobby-pill">'+h+'</span>').join('') : '';
+    let photos = u.photos? '<div class="photo-gallery">'+u.photos.map(p=>'<img src="'+p+'">').join('')+'</div>' : '';
+    html += '<div class="card"><div class="avatar" onclick="viewProfile(\'' + u.name + '\')"><img src="' + u.avatar + '"><div class="online"></div>' + (vipBadge?'<div class="avatar-badge">'+vipBadge+'</div>':'') + '</div><div class="card-info" onclick="viewProfile(\'' + u.name + '\')"><h3>' + u.name + '</h3><div class="friends-count">' + u.friends + ' friends</div><div class="badges">' + (u.svip?'<span class="badge badge-svip">'+u.svip+'</span>':'') + (vipBadge?'<span class="badge badge-vip">'+vipBadge+'</span>':'') + (u.level?'<span class="badge badge-level">Lv'+u.level+'</span>':'') + '</div><div class="badges"><span class="badge badge-distance">' + u.distance + '</span><span class="badge badge-age">♂ ' + u.age + '</span></div>' + (u.bio?'<p class="desc">'+u.bio+'</p>':'') + hobbies + photos + '<div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();startChat(\'' + u.name + '\')">💬 Hi</button><button class="add-btn" onclick="event.stopPropagation();addFriend(\'' + u.name + '\')">+ Add</button></div></div></div>'
   });
   document.getElementById('userList').innerHTML = html;
 }
@@ -192,45 +209,29 @@ document.getElementById('userList').addEventListener('touchstart', e => {touchst
 document.getElementById('userList').addEventListener('touchend', e => {touchendX = e.changedTouches[0].screenX;handleSwipe();});
 function handleSwipe(){let currentIndex = tabsOrder.indexOf(currentTab);if(touchendX < touchstartX - 50){if(currentIndex < tabsOrder.length - 1) switchTab(tabsOrder[currentIndex + 1]);}if(touchendX > touchstartX + 50){if(currentIndex > 0) switchTab(tabsOrder[currentIndex - 1]);}}
 
-function viewProfile(name){let u = users.find(x=>x.name==name);let vipLevel = getVIPLevel(u.friends);document.getElementById('profileImg').src = u.avatar;document.getElementById('profileName').innerText = u.name;document.getElementById('profileVIP').innerText = vipLevel > 0? 'VIP' + vipLevel + ' • ' + u.friends + ' friends' : u.friends + ' friends';document.getElementById('profileDetails').innerText = u.distance + ' • ' + u.age + ' years • ' + u.city;currentChatUser = name;document.getElementById('profilePopup').style.display = 'block';}
+function viewProfile(name){let u = users.find(x=>x.name==name);let vipLevel = getVIPLevel(u.friends);document.getElementById('profileImg').src = u.avatar;document.getElementById('profileName').innerText = u.name;document.getElementById('profileVIP').innerText = vipLevel > 0? 'VIP' + vipLevel + ' • ' + u.friends + ' friends' : u.friends + ' friends';document.getElementById('profileDetails').innerText = u.distance + ' • ' + u.age + ' years • ' + u.city;document.getElementById('profileHobbies').innerHTML = u.hobbies? u.hobbies.map(h=>'<span class="hobby-pill">'+h+'</span>').join('') : '';document.getElementById('profilePhotos').innerHTML = u.photos? u.photos.map(p=>'<img src="'+p+'">').join('') : '';currentChatUser = name;document.getElementById('profilePopup').style.display = 'block';}
 function startChat(name){currentChatUser = name;document.getElementById('chatWithName').innerText = name;document.getElementById('chatPopup').style.display = 'block';loadChatHistory(name);}
 function startChatFromProfile(){closePopup('profilePopup');startChat(currentChatUser);}
 function loadChatHistory(name){let history = chats[name] || [];document.getElementById('chatBox').innerHTML = history.map(m=>'<div class="msg ' + (m.me?'me':'') + '">' + m.text + '</div>').join('');document.getElementById('chatBox').scrollTop = 99999;}
 function sendMsg(){let msg = document.getElementById('msgInput').value;if(msg=='')return;if(!chats[currentChatUser]) chats[currentChatUser] = [];chats[currentChatUser].push({text: msg, me: true, time: Date.now()});saveChats();document.getElementById('chatBox').innerHTML += '<div class="msg me">' + msg + '</div>';document.getElementById('msgInput').value='';updateChatNotif();}
 
-// FIXED CHAT FUNCTION - NO MORE HANGING
 function openChatList(){
   let chatKeys = Object.keys(chats);
-  if(chatKeys.length === 0){
-    alert('No chats yet. Tap "Hi" on any user to start chatting');
-    return;
-  }
+  if(chatKeys.length === 0){alert('No chats yet. Tap "Hi" on any user to start chatting');return;}
   let html = '';
-  chatKeys.forEach(name=>{
-    let lastMsg = chats[name][chats[name].length-1]?.text || '';
-    html += '<div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer" onclick="startChat(\''+name+'\');closePopup(\'chatListPopup\')"><b>' + name + '</b><br><span style="font-size:12px;color:#666">' + lastMsg + '</span></div>' 
-  });
+  chatKeys.forEach(name=>{let lastMsg = chats[name][chats[name].length-1]?.text || '';html += '<div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer" onclick="startChat(\''+name+'\');closePopup(\'chatListPopup\')"><b>' + name + '</b><br><span style="font-size:12px;color:#666">' + lastMsg + '</span></div>' });
   document.getElementById('chatList').innerHTML = html;
   document.getElementById('chatListPopup').style.display = 'block';
 }
 
-function updateChatNotif(){
-  let total = Object.keys(chats).length;
-  let notif = document.getElementById('chatNotif');
-  notif.innerText = total;
-  notif.style.display = total>0?'block':'none';
-}
-
+function updateChatNotif(){let total = Object.keys(chats).length;let notif = document.getElementById('chatNotif');notif.innerText = total;notif.style.display = total>0?'block':'none';}
 function openHiSetup(){document.getElementById('hi1').value = hiTemplates[0];document.getElementById('hi2').value = hiTemplates[1];document.getElementById('hi3').value = hiTemplates[2];document.getElementById('hiSetupPopup').style.display = 'block';}
 function saveHiTemplates(){hiTemplates = [document.getElementById('hi1').value,document.getElementById('hi2').value,document.getElementById('hi3').value];localStorage.setItem('hiTemplates', JSON.stringify(hiTemplates));alert('Saved!');closePopup('hiSetupPopup');}
 function blockUser(){if(confirm('Block ' + currentChatUser + '?')){blocked.push(currentChatUser);localStorage.setItem('blockedUsers', JSON.stringify(blocked));closePopup('profilePopup');loadUsers();}}
 function openInfo(){alert('Patanisha v1.0\nConnect with people near you\nSwipe left/right to change tabs\nTap Hi to start chatting')}
-function openMe(){alert('My Profile - Coming Soon!')}
+function openMe(){alert('My Profile - Edit coming soon!')}
 function goHome(){switchTab('nearby');window.scrollTo(0,0)}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
-
-loadUsers();
-updateChatNotif();
 </script>
 </body>
 </html>
