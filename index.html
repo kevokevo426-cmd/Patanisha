@@ -29,7 +29,6 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .friends-count{font-size:11px;color:#888;margin-bottom:4px}
 .badges{display:flex;gap:5px;margin:4px 0;flex-wrap:wrap}
 .badge{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;color:white}
-.badge-svip{background:linear-gradient(135deg,#00BFFF,#1E90FF)}
 .badge-vip{background:linear-gradient(135deg,#BA55D3,#9370DB)}
 .badge-level{background:#00C853}
 .badge-distance{background:#C8E6C9;color:#2E7D32}
@@ -54,8 +53,11 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .msg.me{background:#FFD700;color:#000;float:right}
 .empty{text-align:center;padding:40px;color:#999}
 .search-box{width:90%;max-width:500px;margin:10px auto;display:block;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:16px}
+.form-group{margin-bottom:16px;text-align:left;padding:0 20px}
+.form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:14px;color:#333}
+.form-group input{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:15px;background:#f8f8f8}
 
-/* ME PAGE NEW DESIGN */
+/* ME PAGE */
 .me-header{background:linear-gradient(135deg,#FFD700,#FFA500);padding:25px 20px;border-radius:15px 15px 0 0}
 .me-stats{display:flex;justify-content:space-around;padding:15px 10px;background:white}
 .stat-item{text-align:center;cursor:pointer}
@@ -64,14 +66,13 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .me-cards{display:flex;gap:10px;padding:0 15px 15px}
 .me-card{flex:1;border-radius:12px;padding:15px;display:flex;align-items:center;gap:8px;cursor:pointer}
 .coin-card{background:#FFD700}
-.vip-card{background:linear-gradient(135deg,#C0A060,#8B7355);color:white;justify-content:center}
 .relation-card{background:#E3F2FD;margin:0 15px 15px;padding:15px;border-radius:12px;text-align:left}
 .menu-item{padding:12px 0;border-bottom:1px solid #eee;text-align:left;display:flex;align-items:center;gap:10px;cursor:pointer}
 .menu-item:hover{background:#f9f9f9}
-.income-btns{display:flex;gap:10px;margin-top:10px}
-.income-btn{flex:1;padding:10px;border:none;border-radius:10px;font-weight:bold;cursor:pointer}
-.income-btn.in{background:#00C853;color:white}
-.income-btn.out{background:#FF5252;color:white}
+.btn{width:100%;padding:16px;background:linear-gradient(135deg,#BA55D3,#9370DB);color:#fff;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px}
+
+/* SUCCESS TOAST */
+#successToast{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#E8F5E9;color:#2E7D32;padding:12px 20px;border-radius:12px;font-weight:600;z-index:1001;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
 </style>
 </head>
 <body>
@@ -123,7 +124,6 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
   </div>
 </div>
 
-<!-- UPDATED ME POPUP -->
 <div class="popup" id="mePopup">
   <span class="close-btn" onclick="closePopup('mePopup')">×</span>
   <div class="popup-content" style="text-align:left; padding:0">
@@ -141,29 +141,86 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
       </div>
     </div>
     <div class="me-stats">
-      <div class="stat-item" onclick="alert('Friends: People who accepted each other')"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div>
-      <div class="stat-item" onclick="alert('Following: People you follow')"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div>
-      <div class="stat-item" onclick="alert('Followers: People following you')"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div>
-      <div class="stat-item" onclick="alert('Visitors: People who viewed your profile')"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
+      <div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div>
+      <div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div>
+      <div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div>
+      <div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
     </div>
     <div class="me-cards">
-      <div class="me-card coin-card"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><b id="meCoins">20</b></div>
-      <div class="me-card vip-card"><b id="meVIPCard">VIP0</b></div>
+      <div class="me-card coin-card" onclick="alert('Total Income: ' + (myProfile?.coins || 20) + ' Coins')">
+        <span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span>
+        <div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div>
+      </div>
+      <div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()">
+        <b>Withdraw</b>
+      </div>
     </div>
     <div class="relation-card"><b>Friend</b> <span style="color:#666">No Relation</span><button style="background:#000;color:white;border:none;padding:8px 20px;border-radius:15px;margin-top:8px;display:block">Invite</button></div>
     <div style="padding:0 15px 80px">
-      <div class="menu-item">💰 Income
-        <div class="income-btns">
-          <button class="income-btn in" onclick="addIncome()">+ Add Coins</button>
-          <button class="income-btn out" onclick="withdraw()">Withdraw</button>
-        </div>
-      </div>
+      <div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div>
+      <div class="menu-item" onclick="openAccountSettings()">🏦 Receiving Account</div>
       <div class="menu-item">🎒 Bag</div>
       <div class="menu-item">🏆 Level</div>
       <button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button>
     </div>
   </div>
 </div>
+
+<div class="popup" id="withdrawFormPopup">
+  <span class="close-btn" onclick="closePopup('withdrawFormPopup')">×</span>
+  <div class="popup-content" style="text-align:left;padding:20px">
+    <h3>Request Withdrawal</h3>
+    <div class="form-group">
+      <label>Receiving M-Pesa Number</label>
+      <input type="text" id="withdrawMpesa" placeholder="07XXXXXXXX">
+    </div>
+    <div class="form-group">
+      <label>Withdrawal PIN</label>
+      <input type="password" id="withdrawPin" placeholder="Enter 4-6 digit PIN">
+    </div>
+    <p style="font-size:12px;color:#888;padding:0 20px">Min 100 Coins = KES 100. Fee: KES 5</p>
+    <button class="btn" onclick="submitWithdraw()">Submit Request</button>
+  </div>
+</div>
+
+<div class="popup" id="accountSettingsPopup">
+  <span class="close-btn" onclick="closePopup('accountSettingsPopup')">×</span>
+  <div class="popup-content" style="text-align:left;padding:20px">
+    <h3>Receiving Account</h3>
+    <div class="form-group">
+      <label>M-Pesa Number</label>
+      <input type="text" id="settingMpesa" placeholder="07XXXXXXXX">
+    </div>
+    <div class="form-group">
+      <label>Set Withdrawal PIN</label>
+      <input type="password" id="settingPin" placeholder="4-6 digits">
+    </div>
+    <button class="btn" onclick="saveAccountSettings()">Save</button>
+  </div>
+</div>
+
+<div class="popup" id="withdrawPopup">
+  <span class="close-btn" onclick="closePopup('withdrawPopup')">×</span>
+  <div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white">
+    <h3>Withdrawal history</h3>
+    <div id="withdrawList" style="margin-top:15px"></div>
+  </div>
+</div>
+
+<div class="popup" id="withdrawSuccessPopup">
+  <span class="close-btn" onclick="closePopup('withdrawSuccessPopup')">×</span>
+  <div class="popup-content" style="text-align:center;padding:30px 20px;background:#1E1E1E;color:white">
+    <div style="width:70px;height:70px;background:#004D40;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 15px">
+      <span style="font-size:40px;color:#00E676">✓</span>
+    </div>
+    <h2>Withdrawal requested</h2>
+    <p id="successText" style="color:#aaa;margin:15px 0"></p>
+    <button class="btn" style="background:#333;margin-bottom:10px" onclick="closePopup('withdrawSuccessPopup')">Request another</button>
+    <p style="font-size:12px;color:#888">Track its status under Withdrawal history below.</p>
+  </div>
+</div>
+
+<div id="successToast">✅ Withdrawal requested. We'll process it shortly.</div>
 
 <div class="popup" id="chatPopup">
   <span class="close-btn" onclick="closePopup('chatPopup')">×</span>
@@ -208,8 +265,7 @@ let userCity = 'Ruiru';
 let hiTemplates = JSON.parse(localStorage.getItem('hiTemplates')) || ["Hi there! 😊","Hey, how are you?","What's up?"];
 let chats = JSON.parse(localStorage.getItem('patanishaChats')) || {};
 let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || {};
-
-const myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
+let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
 
 let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
   {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:[], following:[], followers:[], level:16, distance:"42.8km", age:20, city:"Nairobi"},
@@ -225,7 +281,6 @@ function addFriend(name){
   let u = users.find(x=>x.name==name);
   if(!u.following.includes(myProfile.name)) u.following.push(myProfile.name);
   if(!myProfile.following.includes(name)) myProfile.following.push(name);
-  // Check if mutual = Friends
   if(u.following.includes(myProfile.name) && myProfile.following.includes(name)){
     if(!u.friends.includes(myProfile.name)) u.friends.push(myProfile.name);
     if(!myProfile.friends.includes(name)) myProfile.friends.push(name);
@@ -306,13 +361,6 @@ function viewProfile(name){
   document.getElementById('profileDetails').innerText = u.distance + ' • ' + u.age + ' years • ' + u.city;
   updateFollowBtn();
   document.getElementById('profilePopup').style.display = 'block';
-
-  // Add visitor
-  if(myProfile && name === myProfile.name){
-    if(!u.visitors) u.visitors = [];
-    u.visitors.push('Visitor ' + Date.now());
-    saveUsers();
-  }
 }
 
 function openMe(){
@@ -325,7 +373,6 @@ function openMe(){
   document.getElementById('meName').innerText = myProfile.name;
   document.getElementById('meID').innerText = 'ID:' + myProfile.id;
   document.getElementById('meVIP').innerText = 'VIP' + getVIPLevel(myProfile.friends?.length || 0);
-  document.getElementById('meVIPCard').innerText = 'VIP' + getVIPLevel(myProfile.friends?.length || 0);
   document.getElementById('meLevel').innerText = 'Lv ' + myProfile.level;
   document.getElementById('meCoins').innerText = myProfile.coins || 20;
   document.getElementById('meFriends').innerText = myProfile.friends?.length || 0;
@@ -335,19 +382,91 @@ function openMe(){
   document.getElementById('mePopup').style.display = 'block';
 }
 
-// INCOME FUNCTIONS
-function addIncome(){
-  myProfile.coins = (myProfile.coins || 20) + 50;
-  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
-  document.getElementById('meCoins').innerText = myProfile.coins;
-  alert('+50 Coins Added!');
+// ACCOUNT SETTINGS
+function openAccountSettings(){
+  document.getElementById('settingMpesa').value = myProfile.mpesa || '';
+  document.getElementById('settingPin').value = myProfile.withdrawPin || '';
+  document.getElementById('accountSettingsPopup').style.display = 'block';
 }
-function withdraw(){
-  if((myProfile.coins || 0) < 100){alert('Minimum 100 coins to withdraw');return;}
-  myProfile.coins -= 100;
+function saveAccountSettings(){
+  let mpesa = document.getElementById('settingMpesa').value;
+  let pin = document.getElementById('settingPin').value;
+  if(mpesa.length < 10){alert("Enter valid M-Pesa");return;}
+  if(pin.length < 4){alert("PIN must be 4-6 digits");return;}
+  myProfile.mpesa = mpesa;
+  myProfile.withdrawPin = pin;
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  alert("Account saved!");
+  closePopup('accountSettingsPopup');
+}
+
+// WITHDRAWAL SYSTEM
+function openWithdrawForm(){
+  document.getElementById('withdrawMpesa').value = myProfile.mpesa || '';
+  document.getElementById('withdrawPin').value = '';
+  document.getElementById('withdrawFormPopup').style.display = 'block';
+}
+
+function submitWithdraw(){
+  if((myProfile.coins || 0) < 100){alert('Minimum 100 coins = KES 100');return;}
+  let mpesa = document.getElementById('withdrawMpesa').value;
+  let pin = document.getElementById('withdrawPin').value;
+  if(mpesa.length < 10){alert("Enter valid M-Pesa");return;}
+  if(pin!== myProfile.withdrawPin){alert("Wrong Withdrawal PIN");return;}
+
+  let requestAmount = 100;
+  let fee = 5;
+  let netAmount = requestAmount - fee;
+  myProfile.coins -= requestAmount;
+
+  if(!myProfile.withdrawals) myProfile.withdrawals = [];
+  myProfile.withdrawals.unshift({
+    requested: requestAmount,
+    net: netAmount,
+    mpesa: mpesa,
+    date: new Date().toLocaleString('en-KE', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}),
+    status: "pending"
+  });
+
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
   document.getElementById('meCoins').innerText = myProfile.coins;
-  alert('Withdrawal request for 100 coins sent!');
+  closePopup('withdrawFormPopup');
+  showWithdrawSuccess(requestAmount, netAmount);
+  renderWithdrawals();
+}
+
+function showWithdrawSuccess(requested, net){
+  document.getElementById('successText').innerText = `KES ${net} (net of fee) from a KES ${requested} request is now pending admin approval. You'll get a notification once it's processed.`;
+  let toast = document.getElementById('successToast');
+  toast.style.display = 'block';
+  setTimeout(()=>toast.style.display='none', 3000);
+  document.getElementById('withdrawSuccessPopup').style.display = 'block';
+}
+
+function openWithdrawHistory(){
+  renderWithdrawals();
+  document.getElementById('withdrawPopup').style.display = 'block';
+}
+
+function renderWithdrawals(){
+  let list = document.getElementById('withdrawList');
+  if(!myProfile.withdrawals || myProfile.withdrawals.length === 0){
+    list.innerHTML = '<div class="empty">No withdrawals yet</div>';
+    return;
+  }
+  let html = '';
+  myProfile.withdrawals.forEach(w=>{
+    html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <b style="color:white">KES ${w.requested}</b> <span style="color:#aaa;font-size:12px">net KES ${w.net}</span>
+          <div style="font-size:12px;color:#888;margin-top:4px">${w.mpesa} • ${w.date}</div>
+        </div>
+        <span style="background:#333;color:#FFA500;padding:4px 10px;border-radius:15px;font-size:12px;text-transform:capitalize">${w.status}</span>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
 }
 
 function startChat(name){currentChatUser = name;document.getElementById('chatWithName').innerText = name;document.getElementById('chatPopup').style.display = 'block';loadChatHistory(name);}
@@ -371,12 +490,4 @@ function updateChatNotif(){let total = Object.keys(chats).length;let notif = doc
 function openHiSetup(){document.getElementById('hi1').value = hiTemplates[0];document.getElementById('hi2').value = hiTemplates[1];document.getElementById('hi3').value = hiTemplates[2];document.getElementById('hiSetupPopup').style.display = 'block';}
 function saveHiTemplates(){hiTemplates = [document.getElementById('hi1').value,document.getElementById('hi2').value,document.getElementById('hi3').value];localStorage.setItem('hiTemplates', JSON.stringify(hiTemplates));alert('Saved!');closePopup('hiSetupPopup');}
 function blockUser(){if(confirm('Block ' + currentChatUser + '?')){blocked.push(currentChatUser);localStorage.setItem('blockedUsers', JSON.stringify(blocked));closePopup('profilePopup');loadUsers();}}
-function openInfo(){alert('Patanisha v1.0\nConnect with people near you\nSwipe left/right to change tabs\nTap Hi to start chatting')}
-function goHome(){switchTab('nearby');window.scrollTo(0,0)}
-function closePopup(id){document.getElementById(id).style.display = 'none';}
-
-loadUsers();
-updateChatNotif();
-</script>
-</body>
-</html>
+function openInfo(){alert('Patanisha v1.0\nConnect with people near you\nSwipe left
