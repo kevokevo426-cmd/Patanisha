@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Patanisha - Male</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
+.wrapper{max-width:1200px;margin:0 auto}
+.banner{background:linear-gradient(135deg,#2196F3,#1976D2);margin:10px;border-radius:15px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
+.banner-text b{font-size:16px;display:block;margin-bottom:5px;color:#fff}
+.banner-text p{font-size:12px;color:#BBDEFB}
+.banner-btn{background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;border:none;padding:10px 25px;border-radius:20px;font-weight:bold;cursor:pointer}
+.tabs-wrapper{position:sticky;top:0;background:#0D1117;z-index:10}
+.tabs{display:flex;gap:25px;padding:15px 10px;border-bottom:2px solid #1E293B;overflow-x:auto;background:#161B22;scroll-behavior:smooth}
+.tab{color:#8B949E;font-weight:500;font-size:16px;padding-bottom:8px;cursor:pointer;white-space:nowrap;position:relative}
+.tab.active{color:#fff;font-weight:bold;font-size:17px}
+.tab.active::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:3px;background:#2196F3;border-radius:2px}
+#userList{display:grid;grid-template-columns:1fr;gap:0;touch-action:pan-y}
+@media(min-width:768px){#userList{grid-template-columns:1fr 1fr;padding:0 10px}.banner{margin:20px}.tabs{border-radius:12px;margin:10px}}
+@media(min-width:1024px){#userList{grid-template-columns:1fr 1fr 1fr}}
+.card{display:flex;background:#161B22;margin:10px;padding:15px;border-radius:12px;align-items:flex-start;box-shadow:0 2px 5px rgba(0,0,0,0.3);color:#C9D1D9}
+.avatar{width:70px;height:70px;border-radius:50%;border:3px solid #2196F3;position:relative;margin-right:12px;cursor:pointer;flex-shrink:0}
+.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.online{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid #161B22}
+.card-info{flex:1;cursor:pointer;min-width:0}
+.card-info h3{font-size:16px;margin-bottom:2px;color:#fff}
+.friends-count{font-size:11px;color:#8B949E;margin-bottom:4px}
+.badges{display:flex;gap:5px;margin:4px 0;flex-wrap:wrap}
+.badge{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;color:white}
+.badge-vip{background:linear-gradient(135deg,#7C3AED,#5B21B6)}
+.badge-level{background:#00C853}
+.btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.hi-btn,.add-btn{background:linear-gradient(135deg,#2196F3,#1976D2);border:none;border-radius:20px;padding:8px 16px;color:white;font-weight:bold;font-size:13px;cursor:pointer}
+.add-btn{background:linear-gradient(135deg,#00C853,#00BFA5)}
+.nav{position:fixed;bottom:0;left:0;width:100%;background:#161B22;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.3);z-index:99}
+@media(min-width:768px){.nav{max-width:600px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0}}
+.nav-item{text-align:center;font-size:11px;color:#8B949E;cursor:pointer;position:relative;flex:1}
+.nav-item.active{color:#2196F3}
+.nav-icon{font-size:26px;display:block}
+.popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:999;overflow-y:auto}
+.popup-content{background:#161B22;margin:5% auto;border-radius:15px;text-align:center;position:relative;max-width:500px;width:90%;color:#C9D1D9}
+.close-btn{position:absolute;top:10px;right:20px;font-size:30px;color:#8B949E;cursor:pointer;z-index:10}
+.empty{text-align:center;padding:40px;color:#999}
+
+/* ME PAGE */
+.me-header{background:linear-gradient(135deg,#2196F3,#1976D2);padding:25px 20px;border-radius:15px 15px 0 0}
+.me-stats{display:flex;justify-content:space-around;padding:15px 10px;background:#161B22}
+.stat-item{text-align:center}
+.stat-num{font-size:20px;font-weight:bold;color:#fff}
+.stat-label{font-size:12px;color:#8B949E}
+.me-cards{display:flex;gap:10px;padding:0 15px 15px}
+.me-card{flex:1;border-radius:12px;padding:15px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.coin-card{background:#F59E0B}
+.btn{width:100%;padding:16px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px}
+.form-group{margin-bottom:16px;text-align:left;padding:0 20px}
+.form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:14px;color:#C9D1D9}
+.form-group input{width:100%;padding:14px;border:1px solid #30363D;border-radius:12px;font-size:15px;background:#21262D;color:#C9D1D9}
+#successToast{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#E8F5E9;color:#2E7D32;padding:12px 20px;border-radius:12px;font-weight:600;z-index:1001}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="banner">
+  <div class="banner-text">
+    <b>Set up 3 Say hi texts</b>
+    <p>Get more replies from ladies</p>
+  </div>
+  <button class="banner-btn" onclick="alert('Hi setup')">Go</button>
+</div>
+
+<div class="tabs-wrapper">
+  <div class="tabs" id="tabs">
+    <span class="tab active" onclick="switchTab('nearby', this)">Nearby</span>
+    <span class="tab" onclick="switchTab('top', this)">🏆 Top</span>
+  </div>
+</div>
+
+<div id="userList"></div>
+
+</div>
+
+<div class="nav">
+  <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
+  <div class="nav-item" onclick="alert('Info')"><span class="nav-icon">ℹ️</span>Info</div>
+  <div class="nav-item" onclick="alert('Chat')"><span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span></div>
+  <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
+</div>
+
+<!-- MALE ME POPUP - RECHARGE INSTEAD OF WITHDRAW -->
+<div class="popup" id="mePopup">
+  <span class="close-btn" onclick="closePopup('mePopup')">×</span>
+  <div class="popup-content" style="text-align:left; padding:0">
+    <div class="me-header">
+      <div style="display:flex;align-items:center;gap:15px">
+        <img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover">
+        <div>
+          <h2 id="meName" style="color:#fff;margin:0">Name</h2>
+          <p id="meID" style="color:#BBDEFB;font-size:12px;margin-top:5px">ID:123456</p>
+        </div>
+      </div>
+    </div>
+    <div class="me-stats">
+      <div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div>
+      <div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div>
+      <div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div>
+      <div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
+    </div>
+    <!-- CHANGED: COINS + RECHARGE -->
+    <div class="me-cards">
+      <div class="me-card coin-card">
+        <span style="background:#000;color:#F59E0B;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span>
+        <div><div style="font-size:11px;color:#000">My Coins</div><b id="meCoins">0</b></div>
+      </div>
+      <div class="me-card" style="background:linear-gradient(135deg,#2196F3,#1976D2);color:white;justify-content:center;cursor:pointer;font-weight:bold" onclick="openRecharge()">
+        Recharge
+      </div>
+    </div>
+    <div style="padding:0 15px 80px">
+      <div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div>
+      <button class="btn" onclick="window.location='../register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECHARGE POPUP -->
+<div class="popup" id="rechargePopup">
+  <span class="close-btn" onclick="closePopup('rechargePopup')">×</span>
+  <div class="popup-content" style="text-align:left;padding:20px">
+    <h3>Recharge Coins</h3>
+    <p style="font-size:12px;color:#8B949E;margin-bottom:10px">Rate: KES 100 = 1000 Coins</p>
+    <div class="form-group"><label>Enter Amount KES</label><input type="number" id="rechargeAmount" placeholder="100" onkeyup="calcCoins()"></div>
+    <div class="form-group"><label>You will get</label><input type="text" id="rechargeCoins" readonly style="background:#21262D"></div>
+    <div class="form-group"><label>M-Pesa Number</label><input type="text" id="rechargeMpesa" placeholder="07XXXXXXXX"></div>
+    <button class="btn" onclick="submitRecharge()">Pay with M-Pesa</button>
+  </div>
+</div>
+
+<!-- RECHARGE HISTORY -->
+<div class="popup" id="rechargeHistoryPopup">
+  <span class="close-btn" onclick="closePopup('rechargeHistoryPopup')">×</span>
+  <div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white">
+    <h3>Recharge History</h3>
+    <div id="rechargeList" style="margin-top:15px"></div>
+  </div>
+</div>
+
+<div id="successToast">✅ Recharge successful! Coins added.</div>
+
+<script>
+let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_male')) || {name:"Male User",id:"M1001",avatar:"https://i.pravatar.cc/100?img=51",coins:0,friends:[],following:[],followers:[],visitors:[],recharges:[]};
+let users = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [
+  {name:"Amina", avatar:"https://i.pravatar.cc/100?img=1", friends:[], level:3, distance:"1.2km", age:22, city:"Ruiru"}
+];
+
+function openMe(){
+  document.getElementById('meAvatar').src = myProfile.avatar;
+  document.getElementById('meName').innerText = myProfile.name;
+  document.getElementById('meID').innerText = 'ID:' + myProfile.id;
+  document.getElementById('meCoins').innerText = myProfile.coins || 0;
+  document.getElementById('meFriends').innerText = myProfile.friends?.length || 0;
+  document.getElementById('meFollowing').innerText = myProfile.following?.length || 0;
+  document.getElementById('meFollowers').innerText = myProfile.followers?.length || 0;
+  document.getElementById('meVisitors').innerText = myProfile.visitors?.length || 0;
+  document.getElementById('mePopup').style.display = 'block';
+}
+
+// RECHARGE SYSTEM: 100 KES = 1000 COINS
+function openRecharge(){
+  document.getElementById('rechargeAmount').value = 100;
+  calcCoins();
+  document.getElementById('rechargePopup').style.display = 'block';
+}
+
+function calcCoins(){
+  let kes = document.getElementById('rechargeAmount').value || 0;
+  let coins = kes * 10; // 100 KES = 1000 coins
+  document.getElementById('rechargeCoins').value = coins + ' Coins';
+}
+
+function submitRecharge(){
+  let kes = parseInt(document.getElementById('rechargeAmount').value);
+  let mpesa = document.getElementById('rechargeMpesa').value;
+  if(kes < 100){alert('Minimum KES 100');return;}
+  if(mpesa.length < 10){alert('Enter valid M-Pesa');return;}
+  
+  let coins = kes * 10;
+  myProfile.coins += coins;
+  
+  if(!myProfile.recharges) myProfile.recharges = [];
+  myProfile.recharges.unshift({
+    amount: kes,
+    coins: coins,
+    mpesa: mpesa,
+    date: new Date().toLocaleString('en-KE', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}),
+    status: "Success"
+  });
+  
+  localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile));
+  document.getElementById('meCoins').innerText = myProfile.coins;
+  closePopup('rechargePopup');
+  
+  let toast = document.getElementById('successToast');
+  toast.innerText = `✅ +${coins} Coins added to your account!`;
+  toast.style.display = 'block';
+  setTimeout(()=>toast.style.display='none', 3000);
+  
+  renderRechargeHistory();
+}
+
+function openRechargeHistory(){
+  renderRechargeHistory();
+  document.getElementById('rechargeHistoryPopup').style.display = 'block';
+}
+
+function renderRechargeHistory(){
+  let list = document.getElementById('rechargeList');
+  if(!myProfile.recharges || myProfile.recharges.length === 0){
+    list.innerHTML = '<div class="empty">No recharges yet</div>';
+    return;
+  }
+  let html = '';
+  myProfile.recharges.forEach(r=>{
+    html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between">
+        <div>
+          <b style="color:#4CAF50">KES ${r.amount}</b> <span style="color:#aaa;font-size:12px">→ ${r.coins} Coins</span>
+          <div style="font-size:12px;color:#888">${r.mpesa} • ${r.date}</div>
+        </div>
+        <span style="background:#004D40;color:#00E676;padding:4px 10px;border-radius:15px;font-size:12px">${r.status}</span>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function loadUsers(){
+  let html = '';
+  users.forEach(u=>{
+    html += `<div class="card"><div class="avatar"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info"><h3>${u.name}</h3><div class="friends-count">${u.friends.length} friends</div><div class="btn-row"><button class="hi-btn" onclick="alert('Say Hi - Costs 10 coins')">💬 Hi 10s</button></div></div></div>`
+  });
+  document.getElementById('userList').innerHTML = html;
+}
+
+function switchTab(tab, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+function goHome(){window.scrollTo(0,0)}
+function closePopup(id){document.getElementById(id).style.display = 'none';}
+
+loadUsers();
+</script>
+</body>
+</html>
