@@ -36,8 +36,10 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .badge-age{background:#BBDEFB;color:#1565C0}
 .desc{font-size:12px;color:#666;margin-top:4px}
 .btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.hi-btn,.add-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 16px;color:white;font-weight:bold;font-size:13px;cursor:pointer}
+.hi-btn,.add-btn,.follow-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 16px;color:white;font-weight:bold;font-size:13px;cursor:pointer}
 .add-btn{background:linear-gradient(135deg,#00C853,#00BFA5)}
+.follow-btn{background:#666}
+.follow-btn.following{background:#00C853}
 .nav{position:fixed;bottom:0;left:0;width:100%;background:white;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:99}
 @media(min-width:768px){.nav{max-width:600px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0}}
 .nav-item{text-align:center;font-size:11px;color:#999;cursor:pointer;position:relative;flex:1}
@@ -56,15 +58,20 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 /* ME PAGE NEW DESIGN */
 .me-header{background:linear-gradient(135deg,#FFD700,#FFA500);padding:25px 20px;border-radius:15px 15px 0 0}
 .me-stats{display:flex;justify-content:space-around;padding:15px 10px;background:white}
-.stat-item{text-align:center}
+.stat-item{text-align:center;cursor:pointer}
 .stat-num{font-size:20px;font-weight:bold}
 .stat-label{font-size:12px;color:#888}
 .me-cards{display:flex;gap:10px;padding:0 15px 15px}
-.me-card{flex:1;border-radius:12px;padding:15px;display:flex;align-items:center;gap:8px}
+.me-card{flex:1;border-radius:12px;padding:15px;display:flex;align-items:center;gap:8px;cursor:pointer}
 .coin-card{background:#FFD700}
 .vip-card{background:linear-gradient(135deg,#C0A060,#8B7355);color:white;justify-content:center}
 .relation-card{background:#E3F2FD;margin:0 15px 15px;padding:15px;border-radius:12px;text-align:left}
-.menu-item{padding:12px 0;border-bottom:1px solid #eee;text-align:left}
+.menu-item{padding:12px 0;border-bottom:1px solid #eee;text-align:left;display:flex;align-items:center;gap:10px;cursor:pointer}
+.menu-item:hover{background:#f9f9f9}
+.income-btns{display:flex;gap:10px;margin-top:10px}
+.income-btn{flex:1;padding:10px;border:none;border-radius:10px;font-weight:bold;cursor:pointer}
+.income-btn.in{background:#00C853;color:white}
+.income-btn.out{background:#FF5252;color:white}
 </style>
 </head>
 <body>
@@ -111,10 +118,12 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
     <p id="profileVIP"></p>
     <p id="profileDetails"></p>
     <button class="hi-btn" onclick="startChatFromProfile()">💬 Say Hi</button>
+    <button class="follow-btn" id="followBtn" onclick="toggleFollow()">+ Follow</button>
     <button class="hi-btn" style="background:#ff5252" onclick="blockUser()">🚫 Block</button>
   </div>
 </div>
 
+<!-- UPDATED ME POPUP -->
 <div class="popup" id="mePopup">
   <span class="close-btn" onclick="closePopup('mePopup')">×</span>
   <div class="popup-content" style="text-align:left; padding:0">
@@ -124,7 +133,7 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
         <div>
           <h2 id="meName" style="color:#000;margin:0">Name</h2>
           <div style="display:flex;gap:8px;margin-top:5px">
-            <span id="meVIP" style="background:#8B5CF6;color:white;padding:3px 8px;border-radius:12px;font-size:12px">VIP1</span>
+            <span id="meVIP" style="background:#8B5CF6;color:white;padding:3px 8px;border-radius:12px;font-size:12px">VIP0</span>
             <span id="meLevel" style="background:#4CAF50;color:white;padding:3px 8px;border-radius:12px;font-size:12px">Lv 1</span>
           </div>
           <p id="meID" style="color:#333;font-size:12px;margin-top:5px">ID:123456</p>
@@ -132,18 +141,23 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
       </div>
     </div>
     <div class="me-stats">
-      <div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div>
-      <div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div>
-      <div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div>
-      <div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
+      <div class="stat-item" onclick="alert('Friends: People who accepted each other')"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div>
+      <div class="stat-item" onclick="alert('Following: People you follow')"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div>
+      <div class="stat-item" onclick="alert('Followers: People following you')"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div>
+      <div class="stat-item" onclick="alert('Visitors: People who viewed your profile')"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
     </div>
     <div class="me-cards">
       <div class="me-card coin-card"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><b id="meCoins">20</b></div>
-      <div class="me-card vip-card"><b id="meVIPCard">VIP1</b></div>
+      <div class="me-card vip-card"><b id="meVIPCard">VIP0</b></div>
     </div>
     <div class="relation-card"><b>Friend</b> <span style="color:#666">No Relation</span><button style="background:#000;color:white;border:none;padding:8px 20px;border-radius:15px;margin-top:8px;display:block">Invite</button></div>
     <div style="padding:0 15px 80px">
-      <div class="menu-item">💰 Income</div>
+      <div class="menu-item">💰 Income
+        <div class="income-btns">
+          <button class="income-btn in" onclick="addIncome()">+ Add Coins</button>
+          <button class="income-btn out" onclick="withdraw()">Withdraw</button>
+        </div>
+      </div>
       <div class="menu-item">🎒 Bag</div>
       <div class="menu-item">🏆 Level</div>
       <button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button>
@@ -181,7 +195,7 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 </div>
 
 <script>
-// 1. REDIRECT TO REGISTER IF NO PROFILE
+// REDIRECT TO REGISTER IF NO PROFILE
 const myProfileCheck = JSON.parse(localStorage.getItem('patanisha_myProfile'));
 if(!myProfileCheck &&!window.location.pathname.includes('register')){
   window.location.href = 'register/index.html';
@@ -198,14 +212,49 @@ let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || {};
 const myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
 
 let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
-  {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:57, svip:"SVIP4", level:16, distance:"42.8km", age:20, city:"Nairobi"},
-  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:6, svip:"SVIP1", level:6, distance:"5.8km", age:20, zodiac:"Taurus", desc:"I'm as open as much as you're willing to flip my pages", city:"Ruiru"}
+  {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:[], following:[], followers:[], level:16, distance:"42.8km", age:20, city:"Nairobi"},
+  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:[], following:[], followers:[], level:6, distance:"5.8km", age:20, zodiac:"Taurus", desc:"I'm as open as much as you're willing to flip my pages", city:"Ruiru"}
 ];
 
 function getVIPLevel(friends){if(friends >= 50) return 5;if(friends >= 40) return 4;if(friends >= 30) return 3;if(friends >= 20) return 2;if(friends >= 10) return 1;return 0;}
 function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
 function saveChats(){localStorage.setItem('patanishaChats', JSON.stringify(chats))}
-function addFriend(name){let u = users.find(x=>x.name==name);u.friends += 5;saveUsers();loadUsers();alert(name + " +5 Friends! Now " + u.friends + " friends");}
+
+function addFriend(name){
+  if(!myProfile) return;
+  let u = users.find(x=>x.name==name);
+  if(!u.following.includes(myProfile.name)) u.following.push(myProfile.name);
+  if(!myProfile.following.includes(name)) myProfile.following.push(name);
+  // Check if mutual = Friends
+  if(u.following.includes(myProfile.name) && myProfile.following.includes(name)){
+    if(!u.friends.includes(myProfile.name)) u.friends.push(myProfile.name);
+    if(!myProfile.friends.includes(name)) myProfile.friends.push(name);
+  }
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  saveUsers();loadUsers();alert(name + " followed!");
+}
+
+function toggleFollow(){
+  if(!myProfile) return;
+  let u = users.find(x=>x.name==currentChatUser);
+  if(u.followers.includes(myProfile.name)){
+    u.followers = u.followers.filter(n=>n!==myProfile.name);
+    myProfile.following = myProfile.following.filter(n=>n!==currentChatUser);
+  }else{
+    u.followers.push(myProfile.name);
+    myProfile.following.push(currentChatUser);
+  }
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  saveUsers();updateFollowBtn();
+}
+
+function updateFollowBtn(){
+  let u = users.find(x=>x.name==currentChatUser);
+  let btn = document.getElementById('followBtn');
+  if(u.followers.includes(myProfile.name)){
+    btn.innerText = 'Following';btn.classList.add('following');
+  }else{btn.innerText = '+ Follow';btn.classList.remove('following');}
+}
 
 function switchTab(tab, el){
   currentTab = tab;
@@ -220,10 +269,10 @@ function switchTab(tab, el){
 function filterUsers(){
   let filtered = users.filter(u =>!blocked.includes(u.name));
   if(myProfile) filtered = filtered.filter(u => u.name!== myProfile.name);
-  if(currentTab === 'recommend') return filtered.filter(u => u.friends > 30);
-  if(currentTab === 'newcomer') return filtered.filter(u => u.friends < 10);
+  if(currentTab === 'recommend') return filtered.filter(u => u.friends.length > 5);
+  if(currentTab === 'newcomer') return filtered.filter(u => u.friends.length < 2);
   if(currentTab === 'nearby') return filtered.filter(u => u.city === userCity);
-  if(currentTab === 'top') return filtered.sort((a,b)=>b.friends-a.friends).slice(0,10);
+  if(currentTab === 'top') return filtered.sort((a,b)=>b.friends.length-a.friends.length).slice(0,10);
   return filtered;
 }
 
@@ -234,9 +283,9 @@ function renderUsers(filtered){
   if(filtered.length === 0){document.getElementById('userList').innerHTML = '<div class="empty" style="grid-column:1/-1">No users found</div>';return;}
   let html = '';
   filtered.forEach(u=>{
-    let vipLevel = getVIPLevel(u.friends);
+    let vipLevel = getVIPLevel(u.friends.length);
     let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';
-    html += '<div class="card"><div class="avatar" onclick="viewProfile(\'' + u.name + '\')"><img src="' + u.avatar + '"><div class="online"></div>' + (vipBadge?'<div class="avatar-badge">'+vipBadge+'</div>':'') + '</div><div class="card-info" onclick="viewProfile(\'' + u.name + '\')"><h3>' + u.name + '</h3><div class="friends-count">' + u.friends + ' friends</div><div class="badges">' + (u.svip?'<span class="badge badge-svip">'+u.svip+'</span>':'') + (vipBadge?'<span class="badge badge-vip">'+vipBadge+'</span>':'') + (u.level?'<span class="badge badge-level">Lv'+u.level+'</span>':'') + '</div><div class="badges"><span class="badge badge-distance">' + u.distance + '</span><span class="badge badge-age">♂ ' + u.age + '</span></div>' + (u.desc?'<p class="desc">'+u.desc+'</p>':'') + '<div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();startChat(\'' + u.name + '\')">💬 Hi</button><button class="add-btn" onclick="event.stopPropagation();addFriend(\'' + u.name + '\')">+ Add</button></div></div></div>'
+    html += '<div class="card"><div class="avatar" onclick="viewProfile(\'' + u.name + '\')"><img src="' + u.avatar + '"><div class="online"></div>' + (vipBadge?'<div class="avatar-badge">'+vipBadge+'</div>':'') + '</div><div class="card-info" onclick="viewProfile(\'' + u.name + '\')"><h3>' + u.name + '</h3><div class="friends-count">' + u.friends.length + ' friends</div><div class="badges">' + (vipBadge?'<span class="badge badge-vip">'+vipBadge+'</span>':'') + (u.level?'<span class="badge badge-level">Lv'+u.level+'</span>':'') + '</div><div class="badges"><span class="badge badge-distance">' + u.distance + '</span><span class="badge badge-age">♂ ' + u.age + '</span></div>' + (u.desc?'<p class="desc">'+u.desc+'</p>':'') + '<div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();startChat(\'' + u.name + '\')">💬 Hi</button><button class="add-btn" onclick="event.stopPropagation();addFriend(\'' + u.name + '\')">+ Add</button></div></div></div>'
   });
   document.getElementById('userList').innerHTML = html;
 }
@@ -247,7 +296,24 @@ document.getElementById('userList').addEventListener('touchstart', e => {touchst
 document.getElementById('userList').addEventListener('touchend', e => {touchendX = e.changedTouches[0].screenX;handleSwipe();});
 function handleSwipe(){let currentIndex = tabsOrder.indexOf(currentTab);if(touchendX < touchstartX - 50){if(currentIndex < tabsOrder.length - 1) switchTab(tabsOrder[currentIndex + 1]);}if(touchendX > touchstartX + 50){if(currentIndex > 0) switchTab(tabsOrder[currentIndex - 1]);}}
 
-function viewProfile(name){let u = users.find(x=>x.name==name);let vipLevel = getVIPLevel(u.friends);document.getElementById('profileImg').src = u.avatar;document.getElementById('profileName').innerText = u.name;document.getElementById('profileVIP').innerText = vipLevel > 0? 'VIP' + vipLevel + ' • ' + u.friends + ' friends' : u.friends + ' friends';document.getElementById('profileDetails').innerText = u.distance + ' • ' + u.age + ' years • ' + u.city;currentChatUser = name;document.getElementById('profilePopup').style.display = 'block';}
+function viewProfile(name){
+  currentChatUser = name;
+  let u = users.find(x=>x.name==name);
+  let vipLevel = getVIPLevel(u.friends.length);
+  document.getElementById('profileImg').src = u.avatar;
+  document.getElementById('profileName').innerText = u.name;
+  document.getElementById('profileVIP').innerText = vipLevel > 0? 'VIP' + vipLevel + ' • ' + u.friends.length + ' friends' : u.friends.length + ' friends';
+  document.getElementById('profileDetails').innerText = u.distance + ' • ' + u.age + ' years • ' + u.city;
+  updateFollowBtn();
+  document.getElementById('profilePopup').style.display = 'block';
+
+  // Add visitor
+  if(myProfile && name === myProfile.name){
+    if(!u.visitors) u.visitors = [];
+    u.visitors.push('Visitor ' + Date.now());
+    saveUsers();
+  }
+}
 
 function openMe(){
   if(!myProfile){
@@ -267,6 +333,21 @@ function openMe(){
   document.getElementById('meFollowers').innerText = myProfile.followers?.length || 0;
   document.getElementById('meVisitors').innerText = myProfile.visitors?.length || 0;
   document.getElementById('mePopup').style.display = 'block';
+}
+
+// INCOME FUNCTIONS
+function addIncome(){
+  myProfile.coins = (myProfile.coins || 20) + 50;
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  document.getElementById('meCoins').innerText = myProfile.coins;
+  alert('+50 Coins Added!');
+}
+function withdraw(){
+  if((myProfile.coins || 0) < 100){alert('Minimum 100 coins to withdraw');return;}
+  myProfile.coins -= 100;
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  document.getElementById('meCoins').innerText = myProfile.coins;
+  alert('Withdrawal request for 100 coins sent!');
 }
 
 function startChat(name){currentChatUser = name;document.getElementById('chatWithName').innerText = name;document.getElementById('chatPopup').style.display = 'block';loadChatHistory(name);}
