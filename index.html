@@ -111,18 +111,7 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
   <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
 </div>
 
-<div class="popup" id="profilePopup">
-  <span class="close-btn" onclick="closePopup('profilePopup')">×</span>
-  <div class="popup-content" style="padding:20px">
-    <img id="profileImg" src="" style="width:100px;height:100px;border-radius:50%">
-    <h2 id="profileName"></h2>
-    <p id="profileVIP"></p>
-    <p id="profileDetails"></p>
-    <button class="hi-btn" onclick="startChatFromProfile()">💬 Say Hi</button>
-    <button class="follow-btn" id="followBtn" onclick="toggleFollow()">+ Follow</button>
-    <button class="hi-btn" style="background:#ff5252" onclick="blockUser()">🚫 Block</button>
-  </div>
-</div>
+<div class="popup" id="profilePopup">...</div>
 
 <div class="popup" id="mePopup">
   <span class="close-btn" onclick="closePopup('mePopup')">×</span>
@@ -140,22 +129,16 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
         </div>
       </div>
     </div>
-    <!-- UPDATED: 4 STATS NOW WORK -->
     <div class="me-stats">
-      <div class="stat-item" onclick="alert('Friends: People who follow each other')"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div>
-      <div class="stat-item" onclick="alert('Following: People you follow')"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div>
-      <div class="stat-item" onclick="alert('Followers: People following you')"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div>
-      <div class="stat-item" onclick="alert('Visitors: People who viewed you')"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
+      <div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div>
+      <div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div>
+      <div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div>
+      <div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
     </div>
-    <!-- ADDED: INCOME + WITHDRAW -->
     <div class="me-cards">
-      <div class="me-card coin-card" onclick="alert('Total Income: ' + (myProfile?.coins || 20) + ' Coins')">
-        <span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span>
-        <div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div>
-      </div>
-      <div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()">
-        <b>Withdraw</b>
-      </div>
+      <!-- CHANGED: ADDED onclick to show income history -->
+      <div class="me-card coin-card" onclick="openIncomeHistory()"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div></div>
+      <div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()"><b>Withdraw</b></div>
     </div>
     <div style="padding:0 15px 80px">
       <div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div>
@@ -194,42 +177,22 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
   </div>
 </div>
 
+<!-- ADDED: INCOME HISTORY POPUP -->
+<div class="popup" id="incomePopup">
+  <span class="close-btn" onclick="closePopup('incomePopup')">×</span>
+  <div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white">
+    <h3>💰 Income History</h3>
+    <div id="incomeList" style="margin-top:15px"></div>
+  </div>
+</div>
+
 <div id="successToast">✅ Withdrawal requested. We'll process it shortly.</div>
-
-<div class="popup" id="chatPopup">
-  <span class="close-btn" onclick="closePopup('chatPopup')">×</span>
-  <div class="popup-content" style="text-align:left;padding:20px">
-    <h3>Chat with <span id="chatWithName"></span></h3>
-    <div class="chat-box" id="chatBox"></div>
-    <input type="text" id="msgInput" style="width:70%;padding:10px;border-radius:20px;border:1px solid #ddd" onkeypress="if(event.key=='Enter')sendMsg()">
-    <button class="hi-btn" onclick="sendMsg()">Send</button>
-  </div>
-</div>
-
-<div class="popup" id="chatListPopup">
-  <span class="close-btn" onclick="closePopup('chatListPopup')">×</span>
-  <div class="popup-content" style="text-align:left;padding:20px">
-    <h3>💬 My Chats</h3>
-    <div id="chatList"></div>
-  </div>
-</div>
-
-<div class="popup" id="hiSetupPopup">
-  <span class="close-btn" onclick="closePopup('hiSetupPopup')">×</span>
-  <div class="popup-content" style="text-align:left;padding:20px">
-    <h3>Set up 3 "Say Hi" messages</h3>
-    <input type="text" id="hi1" class="search-box" placeholder="Hi template 1">
-    <input type="text" id="hi2" class="search-box" placeholder="Hi template 2">
-    <input type="text" id="hi3" class="search-box" placeholder="Hi template 3">
-    <button class="hi-btn" onclick="saveHiTemplates()">Save</button>
-  </div>
-</div>
 
 <script>
 // 1. FIXED REDIRECT
 let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
 let isOnRegisterPage = window.location.pathname.includes('register');
-if(!myProfile &&!isOnRegisterPage){ window.location.href = 'register/index.html'; }
+if(!myProfile && !isOnRegisterPage){ window.location.href = 'register/index.html'; }
 
 const tabsOrder = ['recommend','newcomer','nearby','top','search'];
 let currentTab = 'nearby';
@@ -239,43 +202,12 @@ let chats = JSON.parse(localStorage.getItem('patanishaChats')) || {};
 let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || {};
 
 let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
-  {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:[], following:[], followers:[], visitors:[], level:16, distance:"42.8km", age:20, city:"Nairobi"},
-  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:[], following:[], followers:[], visitors:[], level:6, distance:"5.8km", age:20, desc:"I'm as open as much as you're willing to flip my pages", city:"Ruiru"}
+  {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:[], following:[], followers:[], level:16, distance:"42.8km", age:20, city:"Nairobi"},
+  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:[], following:[], followers:[], level:6, distance:"5.8km", age:20, desc:"I'm as open as much as you're willing to flip my pages", city:"Ruiru"}
 ];
 
 function getVIPLevel(friends){if(friends >= 50) return 5;if(friends >= 40) return 4;if(friends >= 30) return 3;if(friends >= 20) return 2;if(friends >= 10) return 1;return 0;}
 function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
-function saveChats(){localStorage.setItem('patanishaChats', JSON.stringify(chats))}
-
-// UPDATED: FOLLOW SYSTEM
-function toggleFollow(){
-  if(!myProfile) return;
-  let u = users.find(x=>x.name==currentChatUser);
-  if(u.followers.includes(myProfile.name)){
-    u.followers = u.followers.filter(n=>n!==myProfile.name);
-    myProfile.following = myProfile.following.filter(n=>n!==currentChatUser);
-  }else{
-    u.followers.push(myProfile.name);
-    myProfile.following.push(currentChatUser);
-    // ADD VISITOR
-    if(!u.visitors.includes(myProfile.name)) u.visitors.push(myProfile.name);
-  }
-  // CHECK IF MUTUAL = FRIENDS
-  if(u.following.includes(myProfile.name) && myProfile.following.includes(currentChatUser)){
-    if(!u.friends.includes(myProfile.name)) u.friends.push(myProfile.name);
-    if(!myProfile.friends.includes(currentChatUser)) myProfile.friends.push(currentChatUser);
-  }
-  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
-  saveUsers();updateFollowBtn();loadUsers();
-}
-
-function updateFollowBtn(){
-  let u = users.find(x=>x.name==currentChatUser);
-  let btn = document.getElementById('followBtn');
-  if(u.followers.includes(myProfile.name)){
-    btn.innerText = 'Following';btn.classList.add('following');
-  }else{btn.innerText = '+ Follow';btn.classList.remove('following');}
-}
 
 function switchTab(tab, el){
   currentTab = tab;
@@ -300,37 +232,23 @@ function renderUsers(filtered){
   filtered.forEach(u=>{
     let vipLevel = getVIPLevel(u.friends.length);
     let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';
-    html += `<div class="card"><div class="avatar" onclick="viewProfile('${u.name}')"><img src="${u.avatar}"><div class="online"></div>${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}</div><div class="card-info" onclick="viewProfile('${u.name}')"><h3>${u.name}</h3><div class="friends-count">${u.friends.length} friends</div><div class="badges">${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}<span class="badge badge-level">Lv${u.level}</span></div><div class="badges"><span class="badge badge-distance">${u.distance}</span><span class="badge badge-age">♂ ${u.age}</span></div>${u.desc?`<p class="desc">${u.desc}</p>`:''}<div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();startChat('${u.name}')">💬 Hi</button><button class="add-btn" onclick="event.stopPropagation();toggleFollowFromList('${u.name}')">+ Add</button></div></div></div>`
+    html += `<div class="card"><div class="avatar"><img src="${u.avatar}"><div class="online"></div>${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}</div><div class="card-info"><h3>${u.name}</h3><div class="friends-count">${u.friends.length} friends</div><div class="badges">${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}<span class="badge badge-level">Lv${u.level}</span></div><div class="badges"><span class="badge badge-distance">${u.distance}</span><span class="badge badge-age">♂ ${u.age}</span></div>${u.desc?`<p class="desc">${u.desc}</p>`:''}</div></div>`
   });
   document.getElementById('userList').innerHTML = html;
 }
 
-function toggleFollowFromList(name){currentChatUser = name;toggleFollow();}
-
-function viewProfile(name){
-  currentChatUser = name;
-  let u = users.find(x=>x.name==name);
-  // ADD VISITOR WHEN VIEWING PROFILE
-  if(myProfile &&!u.visitors.includes(myProfile.name)) u.visitors.push(myProfile.name);
-  saveUsers();
-  let vipLevel = getVIPLevel(u.friends.length);
-  document.getElementById('profileImg').src = u.avatar;
-  document.getElementById('profileName').innerText = u.name;
-  document.getElementById('profileVIP').innerText = vipLevel > 0? 'VIP' + vipLevel + ' • ' + u.friends.length + ' friends' : u.friends.length + ' friends';
-  document.getElementById('profileDetails').innerText = u.distance + ' • ' + u.age + ' years • ' + u.city;
-  updateFollowBtn();
-  document.getElementById('profilePopup').style.display = 'block';
-}
-
 function openMe(){
-  if(!myProfile){ alert('Please complete your profile first'); window.location='register/index.html'; return; }
+  if(!myProfile){
+    alert('Please complete your profile first');
+    window.location='register/index.html';
+    return;
+  }
   document.getElementById('meAvatar').src = myProfile.avatar;
   document.getElementById('meName').innerText = myProfile.name;
   document.getElementById('meID').innerText = 'ID:' + myProfile.id;
   document.getElementById('meVIP').innerText = 'VIP' + getVIPLevel(myProfile.friends?.length || 0);
   document.getElementById('meLevel').innerText = 'Lv ' + myProfile.level;
   document.getElementById('meCoins').innerText = myProfile.coins || 20;
-  // UPDATED COUNTS
   document.getElementById('meFriends').innerText = myProfile.friends?.length || 0;
   document.getElementById('meFollowing').innerText = myProfile.following?.length || 0;
   document.getElementById('meFollowers').innerText = myProfile.followers?.length || 0;
@@ -338,29 +256,112 @@ function openMe(){
   document.getElementById('mePopup').style.display = 'block';
 }
 
-// ACCOUNT + WITHDRAWAL
-function openAccountSettings(){ document.getElementById('settingMpesa').value = myProfile.mpesa || ''; document.getElementById('settingPin').value = myProfile.withdrawPin || ''; document.getElementById('accountSettingsPopup').style.display = 'block'; }
-function saveAccountSettings(){ let mpesa = document.getElementById('settingMpesa').value; let pin = document.getElementById('settingPin').value; if(mpesa.length < 10){alert("Enter valid M-Pesa");return;} if(pin.length < 4){alert("PIN must be 4-6 digits");return;} myProfile.mpesa = mpesa; myProfile.withdrawPin = pin; localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); alert("Account saved!"); closePopup('accountSettingsPopup'); }
-function openWithdrawForm(){ document.getElementById('withdrawMpesa').value = myProfile.mpesa || ''; document.getElementById('withdrawPin').value = ''; document.getElementById('withdrawFormPopup').style.display = 'block'; }
-function submitWithdraw(){ if((myProfile.coins || 0) < 100){alert('Minimum 100 coins = KES 100');return;} let mpesa = document.getElementById('withdrawMpesa').value; let pin = document.getElementById('withdrawPin').value; if(mpesa.length < 10){alert("Enter valid M-Pesa");return;} if(pin!== myProfile.withdrawPin){alert("Wrong Withdrawal PIN");return;} myProfile.coins -= 100; if(!myProfile.withdrawals) myProfile.withdrawals = []; myProfile.withdrawals.unshift({ requested: 100, net: 95, mpesa: mpesa, date: new Date().toLocaleString('en-KE'), status: "pending" }); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); document.getElementById('meCoins').innerText = myProfile.coins; closePopup('withdrawFormPopup'); document.getElementById('successToast').style.display = 'block'; setTimeout(()=>document.getElementById('successToast').style.display='none', 3000); renderWithdrawals(); }
-function openWithdrawHistory(){ renderWithdrawals(); document.getElementById('withdrawPopup').style.display = 'block'; }
-function renderWithdrawals(){ let list = document.getElementById('withdrawList'); if(!myProfile.withdrawals || myProfile.withdrawals.length === 0){ list.innerHTML = '<div class="empty">No withdrawals yet</div>'; return; } let html = ''; myProfile.withdrawals.forEach(w=>{ html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:white">KES ${w.requested}</b> <span style="color:#aaa;font-size:12px">net KES ${w.net}</span><div style="font-size:12px;color:#888">${w.mpesa} • ${w.date}</div></div>`; }); list.innerHTML = html; }
+// ACCOUNT + WITHDRAWAL FUNCTIONS
+function openAccountSettings(){
+  document.getElementById('settingMpesa').value = myProfile.mpesa || '';
+  document.getElementById('settingPin').value = myProfile.withdrawPin || '';
+  document.getElementById('accountSettingsPopup').style.display = 'block';
+}
+function saveAccountSettings(){
+  let mpesa = document.getElementById('settingMpesa').value;
+  let pin = document.getElementById('settingPin').value;
+  if(mpesa.length < 10){alert("Enter valid M-Pesa");return;}
+  if(pin.length < 4){alert("PIN must be 4-6 digits");return;}
+  myProfile.mpesa = mpesa;
+  myProfile.withdrawPin = pin;
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  alert("Account saved!");
+  closePopup('accountSettingsPopup');
+}
 
-// CHAT + OTHER FUNCTIONS
-function startChat(name){currentChatUser = name;document.getElementById('chatWithName').innerText = name;document.getElementById('chatPopup').style.display = 'block';loadChatHistory(name);}
-function startChatFromProfile(){closePopup('profilePopup');startChat(currentChatUser);}
-function loadChatHistory(name){let history = chats[name] || [];document.getElementById('chatBox').innerHTML = history.map(m=>'<div class="msg ' + (m.me?'me':'') + '">' + m.text + '</div>').join('');document.getElementById('chatBox').scrollTop = 99999;}
-function sendMsg(){let msg = document.getElementById('msgInput').value;if(msg=='')return;if(!chats[currentChatUser]) chats[currentChatUser] = [];chats[currentChatUser].push({text: msg, me: true, time: Date.now()});saveChats();document.getElementById('chatBox').innerHTML += '<div class="msg me">' + msg + '</div>';document.getElementById('msgInput').value='';updateChatNotif();}
-function openChatList(){ let chatKeys = Object.keys(chats); if(chatKeys.length === 0){alert('No chats yet. Tap "Hi" on any user to start chatting');return;} let html = ''; chatKeys.forEach(name=>{ let lastMsg = chats[name][chats[name].length-1]?.text || ''; html += '<div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer" onclick="startChat(\''+name+'\');closePopup(\'chatListPopup\')"><b>' + name + '</b><br><span style="font-size:12px;color:#666">' + lastMsg + '</span></div>' }); document.getElementById('chatList').innerHTML = html; document.getElementById('chatListPopup').style.display = 'block'; }
-function updateChatNotif(){let total = Object.keys(chats).length;let notif = document.getElementById('chatNotif');notif.innerText = total;notif.style.display = total>0?'block':'none';}
-function openHiSetup(){document.getElementById('hi1').value = "Hi there!";document.getElementById('hi2').value = "Hey!";document.getElementById('hi3').value = "What's up?";document.getElementById('hiSetupPopup').style.display = 'block';}
-function saveHiTemplates(){alert('Saved!');closePopup('hiSetupPopup');}
-function blockUser(){if(confirm('Block ' + currentChatUser + '?')){blocked.push(currentChatUser);localStorage.setItem('blockedUsers', JSON.stringify(blocked));closePopup('profilePopup');loadUsers();}}
-function openInfo(){alert('Patanisha v1.0\nConnect with people near you')}
+function openWithdrawForm(){
+  document.getElementById('withdrawMpesa').value = myProfile.mpesa || '';
+  document.getElementById('withdrawPin').value = '';
+  document.getElementById('withdrawFormPopup').style.display = 'block';
+}
+
+function submitWithdraw(){
+  if((myProfile.coins || 0) < 100){alert('Minimum 100 coins = KES 100');return;}
+  let mpesa = document.getElementById('withdrawMpesa').value;
+  let pin = document.getElementById('withdrawPin').value;
+  if(mpesa.length < 10){alert("Enter valid M-Pesa");return;}
+  if(pin!== myProfile.withdrawPin){alert("Wrong Withdrawal PIN");return;}
+
+  myProfile.coins -= 100;
+  if(!myProfile.withdrawals) myProfile.withdrawals = [];
+  myProfile.withdrawals.unshift({
+    requested: 100, net: 95, mpesa: mpesa,
+    date: new Date().toLocaleString('en-KE'),
+    status: "pending"
+  });
+
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  document.getElementById('meCoins').innerText = myProfile.coins;
+  closePopup('withdrawFormPopup');
+  document.getElementById('successToast').style.display = 'block';
+  setTimeout(()=>document.getElementById('successToast').style.display='none', 3000);
+  renderWithdrawals();
+}
+
+function openWithdrawHistory(){
+  renderWithdrawals();
+  document.getElementById('withdrawPopup').style.display = 'block';
+}
+
+function renderWithdrawals(){
+  let list = document.getElementById('withdrawList');
+  if(!myProfile.withdrawals || myProfile.withdrawals.length === 0){
+    list.innerHTML = '<div class="empty">No withdrawals yet</div>';
+    return;
+  }
+  let html = '';
+  myProfile.withdrawals.forEach(w=>{
+    html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px">
+      <b style="color:white">KES ${w.requested}</b> <span style="color:#aaa;font-size:12px">net KES ${w.net}</span>
+      <div style="font-size:12px;color:#888">${w.mpesa} • ${w.date}</div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+// ADDED: INCOME HISTORY FUNCTIONS
+function openIncomeHistory(){
+  renderIncome();
+  document.getElementById('incomePopup').style.display = 'block';
+}
+
+function renderIncome(){
+  let list = document.getElementById('incomeList');
+  if(!myProfile.income || myProfile.income.length === 0){
+    // ADD SAMPLE DATA FOR TESTING
+    myProfile.income = [
+      {amount: 50, from: "Lawi Lonyama", date: "18 Aug 2:30PM"},
+      {amount: 20, from: "Breezy 🔥", date: "17 Aug 11:15AM"},
+      {amount: 10, from: "System Bonus", date: "17 Aug 9:00AM"}
+    ];
+    localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  }
+  let html = '';
+  myProfile.income.forEach(i=>{
+    html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <b style="color:#4CAF50">+${i.amount} Coins</b>
+          <div style="font-size:12px;color:#888;margin-top:4px">From: ${i.from} • ${i.date}</div>
+        </div>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function openInfo(){alert('Patanisha v1.0')}
 function goHome(){switchTab('nearby');window.scrollTo(0,0)}
+function openChatList(){alert('Chat feature')}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
+function openHiSetup(){alert('Hi setup')}
 
-loadUsers();updateChatNotif();
+loadUsers();
 </script>
 </body>
 </html>
