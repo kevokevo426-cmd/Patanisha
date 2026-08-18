@@ -125,3 +125,110 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 <div class="confirm-popup" id="genderConfirm">
   <div class="confirm-box">
     <p id="confirmText"></p>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-ok" onclick="confirmGender()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="photoInput" accept="image/*" style="display:none">
+
+<script>
+let userData = {};let selectedGender = '';let tempGender = '';let selectedHobbies = [];let uploadedPhotos = [];
+const MAX_HOBBIES = 3;const MAX_PHOTOS = 5;
+const hobbiesData = {"Creativity":["Painting","Drawing","Crafts"],"Sports":["Ping pong","Volleyball","Swimming"],"Outdoor":["Hiking","Camping"],"At home":["Cooking","Reading"]};
+
+function askGenderConfirm(gender){
+  tempGender = gender;
+  document.getElementById('confirmText').innerText = `Are you sure you want to select ${gender}?`;
+  document.getElementById('genderConfirm').style.display = 'flex';
+}
+function closeConfirm(){document.getElementById('genderConfirm').style.display = 'none';}
+function confirmGender(){
+  selectedGender = tempGender;
+  document.querySelectorAll('.gender-card').forEach(b=>b.classList.remove('selected'));
+  if(tempGender === 'Male') document.querySelectorAll('.gender-card')[0].classList.add('selected');
+  if(tempGender === 'Female') document.querySelectorAll('.gender-card')[1].classList.add('selected');
+  document.getElementById('genderError').style.display = 'none';
+  closeConfirm();
+}
+
+function goToStep2(){
+  let valid = true;
+  const email = document.getElementById('email').value;
+  const pass = document.getElementById('password').value;
+  document.getElementById('emailError').style.display = 'none';
+  document.getElementById('passError').style.display = 'none';
+  document.getElementById('genderError').style.display = 'none';
+  if(!email.includes('@')) {document.getElementById('emailError').style.display = 'block';valid = false;}
+  if(pass.length < 6) {document.getElementById('passError').style.display = 'block';valid = false;}
+  if(!selectedGender) {document.getElementById('genderError').style.display = 'block';valid = false;}
+  if(!valid) return;
+  userData.email = email;userData.password = pass;userData.gender = selectedGender;userData.inviteCode = document.getElementById('inviteCode').value;
+  document.getElementById('step1').classList.remove('active');document.getElementById('step2').classList.add('active');
+}
+
+function goToStep3(){
+  userData.name = document.getElementById('name').value;
+  userData.dob = document.getElementById('dob').value;
+  userData.city = document.getElementById('city').value;
+  userData.bio = document.getElementById('bio').value;
+  if(!userData.name ||!userData.dob ||!userData.city){alert('Please fill Name, DOB and City');return;}
+  let age = new Date().getFullYear() - new Date(userData.dob).getFullYear();
+  userData.age = age;
+  renderHobbies();
+  document.getElementById('step2').classList.remove('active');document.getElementById('step3').classList.add('active');
+}
+
+function renderHobbies(){
+  let html = '';
+  Object.keys(hobbiesData).forEach(cat=>{
+    html += `<div class="hobby-category"><div class="category-title">${cat}</div><div class="hobby-tags">`;
+    hobbiesData[cat].forEach(hobby=>{
+      html += `<div class="hobby-tag" onclick="toggleHobby(this,'${hobby}')">${hobby}</div>`;
+    });
+    html += `</div></div>`;
+  });
+  document.getElementById('hobbiesList').innerHTML = html;
+}
+function toggleHobby(el,hobby){
+  if(el.classList.contains('selected')){el.classList.remove('selected');selectedHobbies = selectedHobbies.filter(h=>h!==hobby);}
+  else{if(selectedHobbies.length >= MAX_HOBBIES) return;el.classList.add('selected');selectedHobbies.push(hobby);}
+  document.getElementById('hobbyCounter').innerText = `${selectedHobbies.length}/${MAX_HOBBIES}`;
+  document.querySelectorAll('.hobby-tag').forEach(tag=>{if(selectedHobbies.length >= MAX_HOBBIES &&!tag.classList.contains('selected')) tag.classList.add('disabled');else tag.classList.remove('disabled');});
+}
+
+function goToStep4(){userData.hobbies = selectedHobbies;document.getElementById('step3').classList.remove('active');document.getElementById('step4').classList.add('active');}
+function goBack(step){document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.getElementById(`step${step}`).classList.add('active');}
+
+document.getElementById('avatar').onchange = function(e){let file = e.target.files[0];if(file){let reader = new FileReader();reader.onload = function(ev){document.getElementById('avatarPrev').src = ev.target.result;userData.avatar = ev.target.result;};reader.readAsDataURL(file);}}
+document.getElementById('avatarPrev').onclick = ()=>document.getElementById('avatar').click();
+
+document.getElementById('photoInput').onchange = function(e){let file = e.target.files[0];if(file && uploadedPhotos.length < MAX_PHOTOS){let reader = new FileReader();reader.onload = function(ev){uploadedPhotos.push(ev.target.result);renderPhotos();};reader.readAsDataURL(file);}}
+function addPhoto(){if(uploadedPhotos.length >= MAX_PHOTOS) return;document.getElementById('photoInput').click();}
+function renderPhotos(){let grid = document.getElementById('photoGrid');grid.innerHTML = '';uploadedPhotos.forEach((src,idx)=>{grid.innerHTML += `<div class="photo-box"><img src="${src}"><div class="photo-box remove" onclick="removePhoto(${idx})">×</div></div>`;});if(uploadedPhotos.length < MAX_PHOTOS) grid.innerHTML += `<div class="photo-box" onclick="addPhoto()">+</div>`;document.getElementById('photoCount').innerText = `${uploadedPhotos.length}/${MAX_PHOTOS}`;}
+function removePhoto(idx){uploadedPhotos.splice(idx,1);renderPhotos();}
+
+function saveProfile(){
+  userData.photos = uploadedPhotos;
+  userData.id = 'PT' + Math.floor(Math.random()*900000+100000);
+  userData.level = 1;
+  userData.friends = [];
+  userData.following = [];
+  userData.followers = [];
+  userData.visitors = [];
+  userData.coins = 20;
+  userData.distance = Math.floor(Math.random()*50)+1 + 'km';
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(userData));
+  
+  let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [];
+  users.push({name:userData.name,avatar:userData.avatar,friends:0,level:1,distance:userData.distance,age:userData.age,city:userData.city,gender:userData.gender,desc:userData.bio});
+  localStorage.setItem('patanishaUsers', JSON.stringify(users));
+  
+  alert('Profile Created Successfully!');
+  window.location.href = '../index.html';
+}
+</script>
+</body>
+</html>
