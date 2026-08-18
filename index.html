@@ -1,31 +1,296 @@
-async function saveProfile(){
-  const btn = document.getElementById('finishBtn'); btn.disabled = true; btn.innerText = 'Saving...';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Patanisha</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
+.wrapper{max-width:1200px;margin:0 auto}
+.banner{background:linear-gradient(135deg,#FFD700,#FFA500);margin:10px;border-radius:15px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
+.banner-text b{font-size:16px;display:block;margin-bottom:5px;color:#000}
+.banner-text p{font-size:12px;color:#333}
+.banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:10px 25px;border-radius:20px;font-weight:bold;cursor:pointer}
+.tabs-wrapper{position:sticky;top:0;background:#f5f5f5;z-index:10}
+.tabs{display:flex;gap:25px;padding:15px 10px;border-bottom:2px solid #eee;overflow-x:auto;background:white;scroll-behavior:smooth}
+.tab{color:#666;font-weight:500;font-size:16px;padding-bottom:8px;cursor:pointer;white-space:nowrap;position:relative}
+.tab.active{color:#000;font-weight:bold;font-size:17px}
+.tab.active::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:3px;background:#FFD700;border-radius:2px}
+#userList{display:grid;grid-template-columns:1fr;gap:0;touch-action:pan-y}
+@media(min-width:768px){#userList{grid-template-columns:1fr 1fr;padding:0 10px}.banner{margin:20px}.tabs{border-radius:12px;margin:10px}}
+@media(min-width:1024px){#userList{grid-template-columns:1fr 1fr 1fr}}
+.card{display:flex;background:white;margin:10px;padding:15px;border-radius:12px;align-items:flex-start;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
+.avatar{width:70px;height:70px;border-radius:50%;border:3px solid #FFD700;position:relative;margin-right:12px;cursor:pointer;flex-shrink:0}
+.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.online{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid white}
+.avatar-badge{position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);background:#8B5CF6;color:white;font-size:10px;padding:2px 6px;border-radius:8px}
+.card-info{flex:1;cursor:pointer;min-width:0}
+.card-info h3{font-size:16px;margin-bottom:2px}
+.friends-count{font-size:11px;color:#888;margin-bottom:4px}
+.badges{display:flex;gap:5px;margin:4px 0;flex-wrap:wrap}
+.badge{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;color:white}
+.badge-svip{background:linear-gradient(135deg,#00BFFF,#1E90FF)}
+.badge-vip{background:linear-gradient(135deg,#BA55D3,#9370DB)}
+.badge-level{background:#00C853}
+.badge-distance{background:#C8E6C9;color:#2E7D32}
+.badge-age{background:#BBDEFB;color:#1565C0}
+.desc{font-size:12px;color:#666;margin-top:4px}
+.btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.hi-btn,.add-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 16px;color:white;font-weight:bold;font-size:13px;cursor:pointer}
+.add-btn{background:linear-gradient(135deg,#00C853,#00BFA5)}
+.nav{position:fixed;bottom:0;left:0;width:100%;background:white;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:99}
+@media(min-width:768px){.nav{max-width:600px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0}}
+.nav-item{text-align:center;font-size:11px;color:#999;cursor:pointer;position:relative;flex:1}
+.nav-item.active{color:#FF8C00}
+.nav-icon{font-size:26px;display:block}
+.notif{position:absolute;background:red;color:white;border-radius:10px;font-size:10px;padding:1px 5px;top:-2px;right:calc(50% - 20px);display:none}
+.popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;overflow-y:auto}
+.popup-content{background:white;margin:5% auto;border-radius:15px;text-align:center;position:relative;max-width:500px;width:90%}
+.close-btn{position:absolute;top:10px;right:20px;font-size:30px;color:#666;cursor:pointer;z-index:10}
+.chat-box{height:300px;overflow-y:auto;background:#f5f5f5;border-radius:10px;padding:10px;margin:10px 0;text-align:left}
+.msg{background:#FFA500;color:white;padding:8px 12px;border-radius:15px;margin:5px 0;max-width:70%;display:inline-block;clear:both;float:left}
+.msg.me{background:#FFD700;color:#000;float:right}
+.empty{text-align:center;padding:40px;color:#999}
+.search-box{width:90%;max-width:500px;margin:10px auto;display:block;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:16px}
 
-  let avatar = document.getElementById('avatarPrev').src;
-  const avatarFile = document.getElementById('avatar').files[0];
-  if(avatarFile) avatar = await compressImage(avatarFile);
+/* ME PAGE NEW DESIGN */
+.me-header{background:linear-gradient(135deg,#FFD700,#FFA500);padding:25px 20px;border-radius:15px 15px 0 0}
+.me-stats{display:flex;justify-content:space-around;padding:15px 10px;background:white}
+.stat-item{text-align:center}
+.stat-num{font-size:20px;font-weight:bold}
+.stat-label{font-size:12px;color:#888}
+.me-cards{display:flex;gap:10px;padding:0 15px 15px}
+.me-card{flex:1;border-radius:12px;padding:15px;display:flex;align-items:center;gap:8px}
+.coin-card{background:#FFD700}
+.vip-card{background:linear-gradient(135deg,#C0A060,#8B7355);color:white;justify-content:center}
+.relation-card{background:#E3F2FD;margin:0 15px 15px;padding:15px;border-radius:12px;text-align:left}
+.menu-item{padding:12px 0;border-bottom:1px solid #eee;text-align:left}
+</style>
+</head>
+<body>
+<div class="wrapper">
 
-  const profile = {
-    id: Date.now(),
-   ...userData,
-    age: new Date().getFullYear() - new Date(userData.dob).getFullYear(),
-    hobbies: selectedHobbies,
-    avatar: avatar,
-    photos: uploadedPhotos, // UP TO 5 PHOTOS
-    level: 1,
-    distance: '1km',
-    coins: 20,
-    // FIXED: STATS MUST BE ARRAYS
-    friends: [], // people you are mutual with
-    following: [], // people YOU follow
-    followers: [], // people following YOU
-    visitors: [] // people who viewed your profile
-  };
-  localStorage.setItem('patanisha_myProfile', JSON.stringify(profile));
+<div class="banner">
+  <div class="banner-text">
+    <b>Set up 3 Say hi texts</b>
+    <p>The other user is more likely to reply to you</p>
+  </div>
+  <button class="banner-btn" onclick="openHiSetup()">Go</button>
+</div>
 
-  let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [];
-  if(!users.find(u=>u.email===profile.email)){users.push(profile);localStorage.setItem('patanishaUsers', JSON.stringify(users));}
+<div class="tabs-wrapper">
+  <div class="tabs" id="tabs">
+    <span class="tab" onclick="switchTab('recommend', this)">Recommend</span>
+    <span class="tab" onclick="switchTab('newcomer', this)">Newcomer</span>
+    <span class="tab active" onclick="switchTab('nearby', this)">Nearby</span>
+    <span class="tab" onclick="switchTab('top', this)">🏆 Top</span>
+    <span class="tab" onclick="switchTab('search', this)">🔍 Search</span>
+  </div>
+</div>
 
-  alert('Account Created & Verified!');
-  window.location.href = '../index.html';
+<div id="searchBox" style="display:none;text-align:center">
+  <input type="text" class="search-box" id="searchInput" placeholder="Search name..." onkeyup="searchUsers()">
+</div>
+
+<div id="userList"></div>
+
+</div>
+
+<div class="nav">
+  <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
+  <div class="nav-item" onclick="openInfo()"><span class="nav-icon">ℹ️</span>Info</div>
+  <div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span></div>
+  <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
+</div>
+
+<div class="popup" id="profilePopup">
+  <span class="close-btn" onclick="closePopup('profilePopup')">×</span>
+  <div class="popup-content" style="padding:20px">
+    <img id="profileImg" src="" style="width:100px;height:100px;border-radius:50%">
+    <h2 id="profileName"></h2>
+    <p id="profileVIP"></p>
+    <p id="profileDetails"></p>
+    <button class="hi-btn" onclick="startChatFromProfile()">💬 Say Hi</button>
+    <button class="hi-btn" style="background:#ff5252" onclick="blockUser()">🚫 Block</button>
+  </div>
+</div>
+
+<!-- NEW ME POPUP -->
+<div class="popup" id="mePopup">
+  <span class="close-btn" onclick="closePopup('mePopup')">×</span>
+  <div class="popup-content" style="text-align:left; padding:0">
+    <div class="me-header">
+      <div style="display:flex;align-items:center;gap:15px">
+        <img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover">
+        <div>
+          <h2 id="meName" style="color:#000;margin:0">Name</h2>
+          <div style="display:flex;gap:8px;margin-top:5px">
+            <span id="meVIP" style="background:#8B5CF6;color:white;padding:3px 8px;border-radius:12px;font-size:12px">VIP1</span>
+            <span id="meLevel" style="background:#4CAF50;color:white;padding:3px 8px;border-radius:12px;font-size:12px">Lv 1</span>
+          </div>
+          <p id="meID" style="color:#333;font-size:12px;margin-top:5px">ID:123456</p>
+        </div>
+      </div>
+    </div>
+    <div class="me-stats">
+      <div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div>
+      <div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div>
+      <div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div>
+      <div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
+    </div>
+    <div class="me-cards">
+      <div class="me-card coin-card"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><b id="meCoins">20</b></div>
+      <div class="me-card vip-card"><b id="meVIPCard">VIP1</b></div>
+    </div>
+    <div class="relation-card"><b>Friend</b> <span style="color:#666">No Relation</span><button style="background:#000;color:white;border:none;padding:8px 20px;border-radius:15px;margin-top:8px;display:block">Invite</button></div>
+    <div style="padding:0 15px 80px">
+      <div class="menu-item">💰 Income</div>
+      <div class="menu-item">🎒 Bag</div>
+      <div class="menu-item">🏆 Level</div>
+      <button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button>
+    </div>
+  </div>
+</div>
+
+<div class="popup" id="chatPopup">
+  <span class="close-btn" onclick="closePopup('chatPopup')">×</span>
+  <div class="popup-content" style="text-align:left;padding:20px">
+    <h3>Chat with <span id="chatWithName"></span></h3>
+    <div class="chat-box" id="chatBox"></div>
+    <input type="text" id="msgInput" style="width:70%;padding:10px;border-radius:20px;border:1px solid #ddd" onkeypress="if(event.key=='Enter')sendMsg()">
+    <button class="hi-btn" onclick="sendMsg()">Send</button>
+  </div>
+</div>
+
+<div class="popup" id="chatListPopup">
+  <span class="close-btn" onclick="closePopup('chatListPopup')">×</span>
+  <div class="popup-content" style="text-align:left;padding:20px">
+    <h3>💬 My Chats</h3>
+    <div id="chatList"></div>
+  </div>
+</div>
+
+<div class="popup" id="hiSetupPopup">
+  <span class="close-btn" onclick="closePopup('hiSetupPopup')">×</span>
+  <div class="popup-content" style="text-align:left;padding:20px">
+    <h3>Set up 3 "Say Hi" messages</h3>
+    <input type="text" id="hi1" class="search-box" placeholder="Hi template 1">
+    <input type="text" id="hi2" class="search-box" placeholder="Hi template 2">
+    <input type="text" id="hi3" class="search-box" placeholder="Hi template 3">
+    <button class="hi-btn" onclick="saveHiTemplates()">Save</button>
+  </div>
+</div>
+
+<script>
+const tabsOrder = ['recommend','newcomer','nearby','top','search'];
+let currentTab = 'nearby';
+let currentChatUser = '';
+let userCity = 'Ruiru';
+let hiTemplates = JSON.parse(localStorage.getItem('hiTemplates')) || ["Hi there! 😊","Hey, how are you?","What's up?"];
+let chats = JSON.parse(localStorage.getItem('patanishaChats')) || {};
+let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || {};
+
+const myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
+
+let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
+  {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:57, svip:"SVIP4", level:16, distance:"42.8km", age:20, city:"Nairobi"},
+  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:6, svip:"SVIP1", level:6, distance:"5.8km", age:20, zodiac:"Taurus", desc:"I'm as open as much as you're willing to flip my pages", city:"Ruiru"}
+];
+
+function getVIPLevel(friends){if(friends >= 50) return 5;if(friends >= 40) return 4;if(friends >= 30) return 3;if(friends >= 20) return 2;if(friends >= 10) return 1;return 0;}
+function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
+function saveChats(){localStorage.setItem('patanishaChats', JSON.stringify(chats))}
+function addFriend(name){let u = users.find(x=>x.name==name);u.friends += 5;saveUsers();loadUsers();alert(name + " +5 Friends! Now " + u.friends + " friends");}
+
+function switchTab(tab, el){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  else document.querySelectorAll('.tab')[tabsOrder.indexOf(tab)].classList.add('active');
+  document.getElementById('searchBox').style.display = tab==='search'? 'block' : 'none';
+  document.getElementById('tabs').scrollLeft = tabsOrder.indexOf(tab) * 120;
+  loadUsers();
 }
+
+function filterUsers(){
+  let filtered = users.filter(u =>!blocked.includes(u.name));
+  if(myProfile) filtered = filtered.filter(u => u.name!== myProfile.name);
+  if(currentTab === 'recommend') return filtered.filter(u => u.friends > 30);
+  if(currentTab === 'newcomer') return filtered.filter(u => u.friends < 10);
+  if(currentTab === 'nearby') return filtered.filter(u => u.city === userCity);
+  if(currentTab === 'top') return filtered.sort((a,b)=>b.friends-a.friends).slice(0,10);
+  return filtered;
+}
+
+function searchUsers(){let q = document.getElementById('searchInput').value.toLowerCase();let filtered = users.filter(u => u.name.toLowerCase().includes(q) &&!blocked.includes(u.name));if(myProfile) filtered = filtered.filter(u => u.name!== myProfile.name);renderUsers(filtered);}
+function loadUsers(){let filtered = filterUsers();renderUsers(filtered);}
+
+function renderUsers(filtered){
+  if(filtered.length === 0){document.getElementById('userList').innerHTML = '<div class="empty" style="grid-column:1/-1">No users found</div>';return;}
+  let html = '';
+  filtered.forEach(u=>{
+    let vipLevel = getVIPLevel(u.friends);
+    let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';
+    html += '<div class="card"><div class="avatar" onclick="viewProfile(\'' + u.name + '\')"><img src="' + u.avatar + '"><div class="online"></div>' + (vipBadge?'<div class="avatar-badge">'+vipBadge+'</div>':'') + '</div><div class="card-info" onclick="viewProfile(\'' + u.name + '\')"><h3>' + u.name + '</h3><div class="friends-count">' + u.friends + ' friends</div><div class="badges">' + (u.svip?'<span class="badge badge-svip">'+u.svip+'</span>':'') + (vipBadge?'<span class="badge badge-vip">'+vipBadge+'</span>':'') + (u.level?'<span class="badge badge-level">Lv'+u.level+'</span>':'') + '</div><div class="badges"><span class="badge badge-distance">' + u.distance + '</span><span class="badge badge-age">♂ ' + u.age + '</span></div>' + (u.desc?'<p class="desc">'+u.desc+'</p>':'') + '<div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();startChat(\'' + u.name + '\')">💬 Hi</button><button class="add-btn" onclick="event.stopPropagation();addFriend(\'' + u.name + '\')">+ Add</button></div></div></div>'
+  });
+  document.getElementById('userList').innerHTML = html;
+}
+
+let touchstartX = 0;
+let touchendX = 0;
+document.getElementById('userList').addEventListener('touchstart', e => {touchstartX = e.changedTouches[0].screenX});
+document.getElementById('userList').addEventListener('touchend', e => {touchendX = e.changedTouches[0].screenX;handleSwipe();});
+function handleSwipe(){let currentIndex = tabsOrder.indexOf(currentTab);if(touchendX < touchstartX - 50){if(currentIndex < tabsOrder.length - 1) switchTab(tabsOrder[currentIndex + 1]);}if(touchendX > touchstartX + 50){if(currentIndex > 0) switchTab(tabsOrder[currentIndex - 1]);}}
+
+function viewProfile(name){let u = users.find(x=>x.name==name);let vipLevel = getVIPLevel(u.friends);document.getElementById('profileImg').src = u.avatar;document.getElementById('profileName').innerText = u.name;document.getElementById('profileVIP').innerText = vipLevel > 0? 'VIP' + vipLevel + ' • ' + u.friends + ' friends' : u.friends + ' friends';document.getElementById('profileDetails').innerText = u.distance + ' • ' + u.age + ' years • ' + u.city;currentChatUser = name;document.getElementById('profilePopup').style.display = 'block';}
+
+function openMe(){
+  if(!myProfile){
+    alert('Please complete your profile first in Register');
+    window.location='register/index.html';
+    return;
+  }
+  document.getElementById('meAvatar').src = myProfile.avatar;
+  document.getElementById('meName').innerText = myProfile.name;
+  document.getElementById('meID').innerText = 'ID:' + myProfile.id;
+  document.getElementById('meVIP').innerText = 'VIP' + getVIPLevel(myProfile.friends?.length || 0);
+  document.getElementById('meVIPCard').innerText = 'VIP' + getVIPLevel(myProfile.friends?.length || 0);
+  document.getElementById('meLevel').innerText = 'Lv ' + myProfile.level;
+  document.getElementById('meCoins').innerText = myProfile.coins || 20;
+  document.getElementById('meFriends').innerText = myProfile.friends?.length || 0;
+  document.getElementById('meFollowing').innerText = myProfile.following?.length || 0;
+  document.getElementById('meFollowers').innerText = myProfile.followers?.length || 0;
+  document.getElementById('meVisitors').innerText = myProfile.visitors?.length || 0;
+  document.getElementById('mePopup').style.display = 'block';
+}
+
+function startChat(name){currentChatUser = name;document.getElementById('chatWithName').innerText = name;document.getElementById('chatPopup').style.display = 'block';loadChatHistory(name);}
+function startChatFromProfile(){closePopup('profilePopup');startChat(currentChatUser);}
+function loadChatHistory(name){let history = chats[name] || [];document.getElementById('chatBox').innerHTML = history.map(m=>'<div class="msg ' + (m.me?'me':'') + '">' + m.text + '</div>').join('');document.getElementById('chatBox').scrollTop = 99999;}
+function sendMsg(){let msg = document.getElementById('msgInput').value;if(msg=='')return;if(!chats[currentChatUser]) chats[currentChatUser] = [];chats[currentChatUser].push({text: msg, me: true, time: Date.now()});saveChats();document.getElementById('chatBox').innerHTML += '<div class="msg me">' + msg + '</div>';document.getElementById('msgInput').value='';updateChatNotif();}
+
+function openChatList(){
+  let chatKeys = Object.keys(chats);
+  if(chatKeys.length === 0){alert('No chats yet. Tap "Hi" on any user to start chatting');return;}
+  let html = '';
+  chatKeys.forEach(name=>{
+    let lastMsg = chats[name][chats[name].length-1]?.text || '';
+    html += '<div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer" onclick="startChat(\''+name+'\');closePopup(\'chatListPopup\')"><b>' + name + '</b><br><span style="font-size:12px;color:#666">' + lastMsg + '</span></div>'
+  });
+  document.getElementById('chatList').innerHTML = html;
+  document.getElementById('chatListPopup').style.display = 'block';
+}
+
+function updateChatNotif(){let total = Object.keys(chats).length;let notif = document.getElementById('chatNotif');notif.innerText = total;notif.style.display = total>0?'block':'none';}
+function openHiSetup(){document.getElementById('hi1').value = hiTemplates[0];document.getElementById('hi2').value = hiTemplates[1];document.getElementById('hi3').value = hiTemplates[2];document.getElementById('hiSetupPopup').style.display = 'block';}
+function saveHiTemplates(){hiTemplates = [document.getElementById('hi1').value,document.getElementById('hi2').value,document.getElementById('hi3').value];localStorage.setItem('hiTemplates', JSON.stringify(hiTemplates));alert('Saved!');closePopup('hiSetupPopup');}
+function blockUser(){if(confirm('Block ' + currentChatUser + '?')){blocked.push(currentChatUser);localStorage.setItem('blockedUsers', JSON.stringify(blocked));closePopup('profilePopup');loadUsers();}}
+function openInfo(){alert('Patanisha v1.0\nConnect with people near you\nSwipe left/right to change tabs\nTap Hi to start chatting')}
+function goHome(){switchTab('nearby');window.scrollTo(0,0)}
+function closePopup(id){document.getElementById(id).style.display = 'none';}
+
+loadUsers();
+updateChatNotif();
+</script>
+</body>
+</html>
