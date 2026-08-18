@@ -48,6 +48,7 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 .confirm-btns{display:flex;gap:10px;margin-top:15px}
 .confirm-cancel{flex:1;padding:14px;background:#AEEA00;color:#333;border:none;border-radius:15px;font-weight:700}
 .confirm-ok{flex:1;padding:14px;background:linear-gradient(135deg,#FF9800,#FF5722);color:#fff;border:none;border-radius:15px;font-weight:700}
+.error{color:red;font-size:12px;margin-top:5px;display:none}
 </style>
 </head>
 <body>
@@ -67,12 +68,21 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
   <div class="step active" id="step1">
     <h2>Create Account</h2>
     <p class="subtitle">Cannot be modified after submission</p>
-    <div class="form-group"><label>Email</label><input type="email" id="email" placeholder="you@gmail.com"></div>
-    <div class="form-group"><label>Password</label><input type="password" id="password" placeholder="Min 6 characters"></div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@gmail.com">
+      <div class="error" id="emailError">Please enter a valid email</div>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Min 6 characters">
+      <div class="error" id="passError">Password must be 6+ characters</div>
+    </div>
     <div class="gender-box">
       <div class="gender-card" onclick="askGenderConfirm('Male')"><div class="peacock male">👑🦚</div><div>♂ Male</div></div>
       <div class="gender-card" onclick="askGenderConfirm('Female')"><div class="peacock female">🎀🦚</div><div>♀ Female</div></div>
     </div>
+    <div class="error" id="genderError">Please select gender</div>
     <div class="form-group"><label>Invitation Code <small>(Optional)</small></label><input type="text" id="inviteCode"></div>
     <button class="btn" onclick="goToStep2()">Next</button>
   </div>
@@ -115,16 +125,3 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 <div class="confirm-popup" id="genderConfirm">
   <div class="confirm-box">
     <p id="confirmText"></p>
-    <div class="confirm-btns">
-      <button class="confirm-cancel" onclick="closeConfirm()">Cancel</button>
-      <button class="confirm-ok" onclick="confirmGender()">Confirm</button>
-    </div>
-  </div>
-</div>
-
-<input type="file" id="photoInput" accept="image/*" style="display:none">
-
-<script>
-let userData = {};let selectedGender = '';let tempGender = '';let selectedHobbies = [];let uploadedPhotos = [];
-const MAX_HOBBIES = 3;const MAX_PHOTOS = 5;
-const hobbiesData = {"Creativity":["Painting","Drawing","Crafts"],"Sports":["Ping pong","Volleyball","Swimming"],"Outdoor":["Hiking","Camping"],"At home":["Cooking
