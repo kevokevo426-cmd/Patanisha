@@ -115,7 +115,6 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
   </div>
 </div>
 
-<!-- NEW ME POPUP -->
 <div class="popup" id="mePopup">
   <span class="close-btn" onclick="closePopup('mePopup')">×</span>
   <div class="popup-content" style="text-align:left; padding:0">
@@ -182,6 +181,12 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 </div>
 
 <script>
+// 1. REDIRECT TO REGISTER IF NO PROFILE
+const myProfileCheck = JSON.parse(localStorage.getItem('patanisha_myProfile'));
+if(!myProfileCheck &&!window.location.pathname.includes('register')){
+  window.location.href = 'register/index.html';
+}
+
 const tabsOrder = ['recommend','newcomer','nearby','top','search'];
 let currentTab = 'nearby';
 let currentChatUser = '';
