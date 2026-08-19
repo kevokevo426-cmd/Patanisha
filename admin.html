@@ -13,12 +13,14 @@ body{background:#f5f5f5;padding:20px}
 .header p{font-size:14px;opacity:0.9}
 .box{background:white;padding:20px;border-radius:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
 .box h3{margin-bottom:15px;color:#333;border-bottom:2px solid #FFD700;padding-bottom:8px}
-input,select{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:10px;font-size:14px}
+input,select,textarea{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:10px;font-size:14px;font-family:inherit}
+textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px;line-height:1.5}
 .btn{background:linear-gradient(135deg,#FFA500,#FF8C00);color:white;border:none;padding:12px 25px;border-radius:10px;font-weight:bold;cursor:pointer;margin:5px 5px 5px 0;font-size:14px}
 .btn:hover{transform:scale(1.02)}
 .btn-danger{background:linear-gradient(135deg,#FF5252,#FF1744)}
 .btn-success{background:linear-gradient(135deg,#00C853,#00BFA5)}
 .btn-info{background:linear-gradient(135deg,#00BFFF,#1E90FF)}
+.btn-warning{background:linear-gradient(135deg,#F59E0B,#D97706);color:#000}
 .user-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eee;border-radius:10px;margin:8px 0}
 .user-info{flex:1}
 .user-info b{display:block;font-size:15px}
@@ -32,6 +34,9 @@ input,select{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-r
 .alert{padding:12px;border-radius:8px;margin:10px 0;display:none}
 .alert.success{background:#C8E6C9;color:#2E7D32}
 .alert.error{background:#FFCDD2;color:#C62828}
+.tab-btns{display:flex;gap:10px;margin-bottom:10px}
+.tab-btn{flex:1;padding:10px;border:2px solid #FFD700;background:white;color:#333;border-radius:8px;cursor:pointer;font-weight:600}
+.tab-btn.active{background:#FFD700}
 </style>
 </head>
 <body>
@@ -59,6 +64,26 @@ input,select{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-r
       <b id="blockedUsers">0</b>
       <span>Blocked</span>
     </div>
+  </div>
+</div>
+
+<!-- ADDED: TERMS & PRIVACY EDITOR -->
+<div class="box">
+  <h3>📄 Terms & Privacy Editor</h3>
+  <p style="font-size:12px;color:#666;margin-bottom:10px">Edit what users see in About page. Saves to all devices.</p>
+  <div class="tab-btns">
+    <button class="tab-btn active" onclick="switchEditTab('terms', this)">Terms & Conditions</button>
+    <button class="tab-btn" onclick="switchEditTab('privacy', this)">Privacy Policy</button>
+  </div>
+  <div id="editTerms">
+    <textarea id="termsEditor"></textarea>
+    <button class="btn btn-warning" onclick="saveTerms()">💾 Save Terms</button>
+    <button class="btn" onclick="resetTerms()">↩️ Reset to Default</button>
+  </div>
+  <div id="editPrivacy" style="display:none">
+    <textarea id="privacyEditor"></textarea>
+    <button class="btn btn-warning" onclick="savePrivacy()">💾 Save Privacy</button>
+    <button class="btn" onclick="resetPrivacy()">↩️ Reset to Default</button>
   </div>
 </div>
 
@@ -101,6 +126,38 @@ input,select{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-r
 </div>
 
 <script>
+// DEFAULT TEXT
+const DEFAULT_TERMS = `KEKE Terms and Conditions
+
+Welcome to KEKE. These Terms and Conditions (“Terms”) explain the rules that apply when you access or use the KEKE application, website, and related services.
+
+By downloading, registering for, accessing, or using KEKE, you agree to these Terms. If you do not agree with these Terms, please do not use KEKE.
+
+1. About KEKE
+KEKE is a social platform that may provide services including:
+· Social networking
+· Text and voice chatting
+· Live broadcasting
+· User profiles
+· Virtual coins and other virtual items
+· Other social and entertainment features introduced by KEKE
+
+KE may add, change, suspend, or remove features from time to time.
+
+2. Age Requirement
+KEKE is intended for users who are 18 years or older.
+
+[PASTE YOUR FULL TERMS HERE]`;
+
+const DEFAULT_PRIVACY = `KE Privacy Policy
+
+Welcome to KEKE (“KEKE”, the “Platform”, or the “Services”).
+The Platform is owned and operated by KEKE Agency (“we”, “us”, or “our”).
+
+We respect your privacy and are committed to protecting your personal information. This Privacy Policy explains what information we may collect, how we use it, when we may share it, and the choices you may have regarding your information.
+
+[PASTE YOUR FULL PRIVACY HERE]`;
+
 let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [];
 let chats = JSON.parse(localStorage.getItem('patanishaChats')) || {};
 let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || [];
@@ -133,9 +190,9 @@ function addUser(){
   let age = document.getElementById('age').value;
   let friends = document.getElementById('friends').value;
   let level = document.getElementById('level').value;
-  
+
   if(!name ||!city ||!age) return showAlert('Please fill all required fields', 'error');
-  
+
   users.push({
     name: name,
     avatar: "https://i.pravatar.cc/100?u=" + name.replace(/\s/g,''),
@@ -146,7 +203,7 @@ function addUser(){
     city: city,
     svip: parseInt(level) > 10? "SVIP2" : ""
   });
-  
+
   saveAll();
   showAlert('User added successfully!', 'success');
   document.getElementById('name').value = '';
@@ -240,8 +297,48 @@ function clearAll(){
   }
 }
 
+// ADDED: TERMS FUNCTIONS
+function switchEditTab(tab, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('editTerms').style.display = tab==='terms'? 'block' : 'none';
+  document.getElementById('editPrivacy').style.display = tab==='privacy'? 'block' : 'none';
+}
+
+function loadTerms(){
+  document.getElementById('termsEditor').value = localStorage.getItem('keke_terms') || DEFAULT_TERMS;
+  document.getElementById('privacyEditor').value = localStorage.getItem('keke_privacy') || DEFAULT_PRIVACY;
+}
+
+function saveTerms(){
+  localStorage.setItem('keke_terms', document.getElementById('termsEditor').value);
+  showAlert('Terms saved successfully!', 'success');
+}
+
+function savePrivacy(){
+  localStorage.setItem('keke_privacy', document.getElementById('privacyEditor').value);
+  showAlert('Privacy saved successfully!', 'success');
+}
+
+function resetTerms(){
+  if(confirm('Reset Terms to default?')){
+    localStorage.setItem('keke_terms', DEFAULT_TERMS);
+    loadTerms();
+    showAlert('Terms reset', 'success');
+  }
+}
+
+function resetPrivacy(){
+  if(confirm('Reset Privacy to default?')){
+    localStorage.setItem('keke_privacy', DEFAULT_PRIVACY);
+    loadTerms();
+    showAlert('Privacy reset', 'success');
+  }
+}
+
 updateStats();
 loadUsers();
+loadTerms();
 </script>
 </body>
 </html>
