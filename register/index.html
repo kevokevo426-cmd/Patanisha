@@ -6,7 +6,7 @@
 <title>Patanisha - Login</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
-body{background:linear-gradient(135deg,#FFD600 0%,#FFA000 50%,#FF6F00 100%);min-height:100vh;padding:0} /* CHANGED TO YELLOW */
+body{background:linear-gradient(135deg,#FFD600 0%,#FFA000 50%,#FF6F00 100%);min-height:100vh;padding:0}
 .top-bg{height:180px;position:relative;overflow:hidden}
 .float-avatars{position:absolute;top:20px;width:100%;display:flex;justify-content:space-around}
 .float-avatars img{width:60px;height:60px;border-radius:50%;border:3px solid #fff;object-fit:cover}
@@ -16,7 +16,7 @@ h2{font-size:20px;color:#333;margin-bottom:10px}
 .subtitle{font-size:12px;color:#999;margin-bottom:20px}
 .tabs-auth{display:flex;background:#f0f0f0;border-radius:15px;padding:5px;margin-bottom:20px}
 .tab-auth{flex:1;text-align:center;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;color:#666}
-.tab-auth.active{background:#fff;color:#FF8F00;box-shadow:0 2px 5px rgba(0,0,0,0.1)} /* YELLOW */
+.tab-auth.active{background:#fff;color:#FF8F00;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
 .step{display:none}
 .step.active{display:block}
 .form-group{margin-bottom:16px;position:relative}
@@ -28,7 +28,7 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 .peacock{width:70px;height:70px;margin:0 auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px}
 .peacock.male{background:#FFF3E0}
 .peacock.female{background:#FFF3E0}
-.btn{width:100%;padding:16px;background:linear-gradient(135deg,#FFD600,#FF8F00);color:#000;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px} /* YELLOW BTN */
+.btn{width:100%;padding:16px;background:linear-gradient(135deg,#FFD600,#FF8F00);color:#000;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px}
 .btn-outline{background:#fff;color:#FF8F00;border:2px solid #FF8F00}
 .btn-yellow{background:#FFD600;color:#000}
 .btn-row{display:flex;gap:10px}
@@ -53,10 +53,10 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 .confirm-cancel{flex:1;padding:14px;background:#AEEA00;color:#333;border:none;border-radius:15px;font-weight:700}
 .confirm-ok{flex:1;padding:14px;background:linear-gradient(135deg,#FF9800,#FF5722);color:#fff;border:none;border-radius:15px;font-weight:700}
 .error{color:red;font-size:12px;margin-top:5px;display:none}
-.link-text{text-align:center;margin-top:15px;color:#FF8F00;font-weight:600;cursor:pointer} /* YELLOW LINK */
+.link-text{text-align:center;margin-top:15px;color:#FF8F00;font-weight:600;cursor:pointer}
 .terms-box{display:flex;align-items:flex-start;gap:10px;margin-top:10px;font-size:13px;color:#555}
 .terms-box input{width:18px;height:18px;margin-top:2px}
-.terms-box a{color:#FF8F00;text-decoration:underline} /* YELLOW LINK */
+.terms-box a{color:#FF8F00;text-decoration:underline}
 .password-wrapper{position:relative}
 .eye-icon{position:absolute;right:14px;top:42px;cursor:pointer;font-size:18px;color:#999;user-select:none}
 .terms-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px}
@@ -71,7 +71,7 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 
 <div class="top-bg">
   <div class="float-avatars" id="randomAvatars">
-    <!-- JS will fill 4 random photos here -->
+    <!-- 4 random photos will load here -->
   </div>
 </div>
 
@@ -192,43 +192,18 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 <input type="file" id="photoInput" accept="image/*" style="display:none">
 
 <script>
-const KEKE_TERMS = `KEKE Terms and Conditions
+const KEKE_TERMS = `KE Terms and Conditions... Contact: kevokevo426@gmail.com`;
 
-Welcome to KEKE. These Terms and Conditions (“Terms”) explain the rules that apply when you access or use the KEKE application, website, and related services.
-
-By downloading, registering for, accessing, or using KEKE, you agree to these Terms. If you do not agree with these Terms, please do not use KEKE.
-
-1. About KEKE
-KE is a social platform that may provide services including:
-· Social networking
-· Text and voice chatting
-· Live broadcasting
-· User profiles
-· Virtual coins and other virtual items
-· Other social and entertainment features introduced by KEKE
-
-KEKE may add, change, suspend, or remove features from time to time.
-
-2. Age Requirement
-KE is intended for users who are 18 years or older, or who meet the applicable legal age requirement in their jurisdiction, whichever is higher.
-You must not use KEKE if you do not meet the applicable age requirement.
-If we discover that an account belongs to a person who is below the required age, we may suspend or terminate that account.
-
-... Full Terms Continue...
-
-Contact: kevokevo426@gmail.com
-Thank you for using KEKE.`;
-
-// ADDED: YOUR 5 PHOTO POOL - WILL SHUFFLE ON REFRESH
+// OPTION 1: ONLINE AVATAR POOL - WORKS ON PHONE
 const avatarPool = [
-  "/mnt/data/wa_image_8858440037053421244_0",
-  "/mnt/data/wa_image_8858440037053421244_1",
-  "/mnt/data/wa_image_8858440037053421244_2",
-  "/mnt/data/wa_image_8858440037053421244_3",
-  "/mnt/data/wa_image_8858440037053421244_4"
+  "https://i.pravatar.cc/60?img=11",
+  "https://i.pravatar.cc/60?img=12",
+  "https://i.pravatar.cc/60?img=13",
+  "https://i.pravatar.cc/60?img=14",
+  "https://i.pravatar.cc/60?img=15"
 ];
 
-// ADDED: SHUFFLE FUNCTION
+// SHUFFLE AND SHOW 4 RANDOM ON EVERY LOAD
 function shuffleAvatars(){
   let shuffled = [...avatarPool].sort(() => 0.5 - Math.random());
   let selected = shuffled.slice(0, 4);
@@ -239,7 +214,7 @@ function shuffleAvatars(){
   document.getElementById('randomAvatars').innerHTML = html;
 }
 
-// ADDED: RUN ON PAGE LOAD
+// RUN ON PAGE LOAD
 window.addEventListener('load', shuffleAvatars);
 
 let userData = {};let selectedGender = '';let tempGender = '';let selectedHobbies = [];let uploadedPhotos = [];
