@@ -1,8 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Patanisha</title>
+
+<!-- KE APP ICON - PWA -->
+<link rel="icon" href="/logo-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="/logo-180.png">
+<meta name="theme-color" content="#FFA4C7">
+<link rel="manifest" href="/manifest.json">
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
@@ -136,14 +144,12 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
       <div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
     </div>
     <div class="me-cards">
-      <!-- CHANGED: ADDED onclick to show income history -->
       <div class="me-card coin-card" onclick="openIncomeHistory()"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div></div>
       <div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()"><b>Withdraw</b></div>
     </div>
     <div style="padding:0 15px 80px">
       <div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div>
       <div class="menu-item" onclick="openAccountSettings()">🏦 Receiving Account</div>
-      <!-- ADDED TERMS -->
       <div class="menu-item" onclick="window.location='about.html'">📄 Terms & Conditions</div>
       <div class="menu-item" onclick="window.location='about.html'">🔒 Privacy Policy</div>
       <button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button>
@@ -180,7 +186,6 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
   </div>
 </div>
 
-<!-- ADDED: INCOME HISTORY POPUP -->
 <div class="popup" id="incomePopup">
   <span class="close-btn" onclick="closePopup('incomePopup')">×</span>
   <div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white">
@@ -259,7 +264,6 @@ function openMe(){
   document.getElementById('mePopup').style.display = 'block';
 }
 
-// ACCOUNT + WITHDRAWAL FUNCTIONS
 function openAccountSettings(){
   document.getElementById('settingMpesa').value = myProfile.mpesa || '';
   document.getElementById('settingPin').value = myProfile.withdrawPin || '';
@@ -327,7 +331,6 @@ function renderWithdrawals(){
   list.innerHTML = html;
 }
 
-// ADDED: INCOME HISTORY FUNCTIONS
 function openIncomeHistory(){
   renderIncome();
   document.getElementById('incomePopup').style.display = 'block';
@@ -336,7 +339,6 @@ function openIncomeHistory(){
 function renderIncome(){
   let list = document.getElementById('incomeList');
   if(!myProfile.income || myProfile.income.length === 0){
-    // ADD SAMPLE DATA FOR TESTING
     myProfile.income = [
       {amount: 50, from: "Lawi Lonyama", date: "18 Aug 2:30PM"},
       {amount: 20, from: "Breezy 🔥", date: "17 Aug 11:15AM"},
