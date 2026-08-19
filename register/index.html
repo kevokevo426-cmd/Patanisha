@@ -118,7 +118,6 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
       <div class="error" id="confirmPassError">Passwords do not match</div>
     </div>
 
-    <!-- GENDER JOINED TO REGISTRATION -->
     <label>Select Gender</label>
     <div class="gender-box">
       <div class="gender-card" onclick="askGenderConfirm('Male')"><div class="peacock male">👑🦚</div><div>♂ Male</div></div>
@@ -250,7 +249,7 @@ We may update these Terms. Continued use means you accept the changes.
 Contact: kevokevo426@gmail.com
 Thank you for using KEKE.`;
 
-// OPTION 1: ONLINE AVATAR POOL - WORKS ON PHONE
+// ONLINE AVATAR POOL
 const avatarPool = [
   "https://i.pravatar.cc/60?img=11",
   "https://i.pravatar.cc/60?img=12",
@@ -333,7 +332,6 @@ function doSignIn(){
   const savedProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
   if(savedProfile && savedProfile.email === email && savedProfile.password === pass){
     alert('Welcome back ' + savedProfile.name + '!');
-    // REDIRECT BASED ON GENDER ON LOGIN TOO
     if(savedProfile.gender === 'Male') window.location.href = 'male.html';
     else window.location.href = 'female.html';
   }else{
@@ -440,7 +438,6 @@ function saveProfile(){
 
   alert('Profile Created Successfully!');
 
-  // REDIRECT BASED ON GENDER
   if(userData.gender === 'Male'){
     window.location.href = 'male.html';
   } else {
