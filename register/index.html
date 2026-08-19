@@ -70,11 +70,8 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 <body>
 
 <div class="top-bg">
-  <div class="float-avatars">
-    <img src="https://i.pravatar.cc/60?img=11">
-    <img src="https://i.pravatar.cc/60?img=12">
-    <img src="https://i.pravatar.cc/60?img=13">
-    <img src="https://i.pravatar.cc/60?img=14">
+  <div class="float-avatars" id="randomAvatars">
+    <!-- JS will fill 4 random photos here -->
   </div>
 </div>
 
@@ -202,7 +199,7 @@ Welcome to KEKE. These Terms and Conditions (“Terms”) explain the rules that
 By downloading, registering for, accessing, or using KEKE, you agree to these Terms. If you do not agree with these Terms, please do not use KEKE.
 
 1. About KEKE
-KEKE is a social platform that may provide services including:
+KE is a social platform that may provide services including:
 · Social networking
 · Text and voice chatting
 · Live broadcasting
@@ -213,7 +210,7 @@ KEKE is a social platform that may provide services including:
 KEKE may add, change, suspend, or remove features from time to time.
 
 2. Age Requirement
-KEKE is intended for users who are 18 years or older, or who meet the applicable legal age requirement in their jurisdiction, whichever is higher.
+KE is intended for users who are 18 years or older, or who meet the applicable legal age requirement in their jurisdiction, whichever is higher.
 You must not use KEKE if you do not meet the applicable age requirement.
 If we discover that an account belongs to a person who is below the required age, we may suspend or terminate that account.
 
@@ -221,6 +218,29 @@ If we discover that an account belongs to a person who is below the required age
 
 Contact: kevokevo426@gmail.com
 Thank you for using KEKE.`;
+
+// ADDED: YOUR 5 PHOTO POOL - WILL SHUFFLE ON REFRESH
+const avatarPool = [
+  "/mnt/data/wa_image_8858440037053421244_0",
+  "/mnt/data/wa_image_8858440037053421244_1",
+  "/mnt/data/wa_image_8858440037053421244_2",
+  "/mnt/data/wa_image_8858440037053421244_3",
+  "/mnt/data/wa_image_8858440037053421244_4"
+];
+
+// ADDED: SHUFFLE FUNCTION
+function shuffleAvatars(){
+  let shuffled = [...avatarPool].sort(() => 0.5 - Math.random());
+  let selected = shuffled.slice(0, 4);
+  let html = '';
+  selected.forEach(src => {
+    html += `<img src="${src}">`;
+  });
+  document.getElementById('randomAvatars').innerHTML = html;
+}
+
+// ADDED: RUN ON PAGE LOAD
+window.addEventListener('load', shuffleAvatars);
 
 let userData = {};let selectedGender = '';let tempGender = '';let selectedHobbies = [];let uploadedPhotos = [];
 const MAX_HOBBIES = 5;const MAX_PHOTOS = 5;
@@ -246,7 +266,7 @@ function togglePassword(id, el){
 
 function openTerms(e){
   e.preventDefault();
-  document.getElementById('termsBody').innerText=KEKE_TERMS;
+  document.getElementById('termsBody').innerText=KE_TERMS;
   document.getElementById('termsModal').style.display='flex';
   document.getElementById('acceptTermsBtn').disabled = true;
 }
