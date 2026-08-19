@@ -13,6 +13,7 @@ body{background:#f5f5f5;padding:20px}
 .box h3{margin-bottom:15px;color:#333;border-bottom:2px solid #FFD700;padding-bottom:8px}
 input,select,textarea{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:10px;font-size:14px}
 textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
+textarea:disabled{background:#f5f5f5;color:#666} /* ADDED: locked style */
 .btn{background:linear-gradient(135deg,#FFA500,#FF8C00);color:white;border:none;padding:10px 16px;border-radius:10px;font-weight:bold;cursor:pointer;margin:4px;font-size:12px}
 .btn-success{background:linear-gradient(135deg,#00C853,#00BFA5)}
 .btn-danger{background:linear-gradient(135deg,#FF5252,#FF1744)}
@@ -42,10 +43,10 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
 .withdraw-card{background:#FFF3E0;border:1px solid #FFB74D;padding:15px;border-radius:12px;margin:10px 0}
 .withdraw-info{display:flex;justify-content:space-between;margin:5px 0}
 
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.stat-card{background:#FFF7E6;padding:15px;border-radius:10px;text-align:center;cursor:pointer} /* ADDED cursor:pointer */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} /* CHANGED: 4 to 3 */
+.stat-card{background:#FFF7E6;padding:15px;border-radius:10px;text-align:center;cursor:pointer}
 .stat-card b{font-size:24px;color:#FF8C00;display:block}
-.stat-breakdown{font-size:12px;color:#666;margin-top:5px} /* ADDED */
+.stat-breakdown{font-size:12px;color:#666;margin-top:5px}
 .alert{padding:12px;border-radius:8px;margin:10px 0;display:none}
 .alert.success{background:#C8E6C9;color:#2E7D32}
 </style>
@@ -63,13 +64,13 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
 <div class="box">
   <h3>📊 Statistics</h3>
   <div class="stats">
-    <div class="stat-card" onclick="showUserBreakdown()"> <!-- ADDED onclick -->
+    <div class="stat-card" onclick="showUserBreakdown()">
       <b id="totalUsers">0</b>
       <span>Total Users</span>
-      <div id="userBreakdown" class="stat-breakdown"></div> <!-- ADDED -->
+      <div id="userBreakdown" class="stat-breakdown"></div>
     </div>
     <div class="stat-card"><b id="bannedUsers">0</b><span>Banned</span></div>
-    <div class="stat-card"><b id="pendingWithdrawals">0</b><span>Pending Withdrawals</span></div>
+    <!-- REMOVED: Pending Withdrawals -->
     <div class="stat-card"><b id="totalIncome">0</b><span>Total Income</span></div>
   </div>
 </div>
@@ -109,15 +110,13 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
     <button class="btn" onclick="switchEditTab('terms')">Terms</button>
     <button class="btn" onclick="switchEditTab('privacy')">Privacy</button>
   </div>
-  <textarea id="termsEditor"></textarea>
-  <textarea id="privacyEditor" style="display:none"></textarea>
-  <button class="btn btn-warning" onclick="saveContent()">💾 Save</button>
+  <textarea id="termsEditor" disabled></textarea> <!-- ADDED: disabled -->
+  <textarea id="privacyEditor" style="display:none" disabled></textarea> <!-- ADDED: disabled -->
+  <button class="btn" id="editBtn" onclick="enableEdit()">✏️ Edit</button> <!-- ADDED -->
+  <button class="btn btn-warning" id="saveBtn" onclick="saveContent()" style="display:none">💾 Save</button> <!-- CHANGED -->
 </div>
 
-<div class="box">
-  <h3>⚠️ Danger Zone</h3>
-  <button class="btn btn-danger" onclick="clearAll()">RESET EVERYTHING</button>
-</div>
+<!-- REMOVED: Danger Zone Box -->
 
 </div>
 
@@ -130,7 +129,7 @@ Welcome to KEKE. These Terms and Conditions (“Terms”) explain the rules that
 By downloading, registering for, accessing, or using KEKE, you agree to these Terms. If you do not agree with these Terms, please do not use KEKE.
 
 1. About KEKE
-KEKE is a social platform that may provide services including:
+KE is a social platform that may provide services including:
 · Social networking
 · Text and voice chatting
 · Live broadcasting
@@ -140,13 +139,13 @@ KEKE is a social platform that may provide services including:
 KE may add, change, suspend, or remove features from time to time.
 
 2. Age Requirement
-KEKE is intended for users who are 18 years or older.
+KE is intended for users who are 18 years or older.
 
 30. Contact Us
 KE Agency
 Email: kevokevo426@gmail.com`;
 
-const DEFAULT_PRIVACY = `KE Privacy Policy
+const DEFAULT_PRIVACY = `KEKE Privacy Policy
 
 Welcome to KEKE (“KE”, the “Platform”, or the “Services”).
 The Platform is owned and operated by KEKE Agency (“we”, “us”, or “our”).
@@ -177,12 +176,28 @@ function showAlert(msg, type){
   setTimeout(()=>{alert.style.display='none'}, 3000);
 }
 
-// ADDED: SHOW FEMALE/MALE BREAKDOWN
+// ADDED: LOCK/UNLOCK TERMS
+function enableEdit(){
+  document.getElementById('termsEditor').disabled = false;
+  document.getElementById('privacyEditor').disabled = false;
+  document.getElementById('editBtn').style.display = 'none';
+  document.getElementById('saveBtn').style.display = 'inline-block';
+  showAlert('Editing enabled', 'success');
+}
+
+function disableEdit(){
+  document.getElementById('termsEditor').disabled = true;
+  document.getElementById('privacyEditor').disabled = true;
+  document.getElementById('editBtn').style.display = 'inline-block';
+  document.getElementById('saveBtn').style.display = 'none';
+}
+
+// SHOW FEMALE/MALE BREAKDOWN
 function showUserBreakdown(){
   let femaleCount = users.length;
   let maleCount = maleUsers.length;
   document.getElementById('userBreakdown').innerHTML = `👩 ${femaleCount} Female<br>👨 ${maleCount} Male`;
-  setTimeout(()=>{document.getElementById('userBreakdown').innerHTML = ''}, 4000); // auto hide after 4s
+  setTimeout(()=>{document.getElementById('userBreakdown').innerHTML = ''}, 4000);
 }
 
 // SEND COINS TO MALE FUNCTION
@@ -211,7 +226,7 @@ function sendCoinsToMale(){
 function loadWithdrawals(){
   let list = document.getElementById('withdrawList');
   let pending = withdrawals.filter(w=>w.status==='pending');
-  document.getElementById('pendingWithdrawals').innerText = pending.length;
+  // REMOVED: document.getElementById('pendingWithdrawals').innerText = pending.length;
 
   if(pending.length === 0){
     list.innerHTML = '<p style="color:#999;text-align:center">No pending withdrawals</p>';
@@ -259,8 +274,8 @@ function switchAnchorTab(tab, btn){
 function loadAnchors(){
   let search = document.getElementById('anchorSearch').value.toLowerCase();
   let allAnchors = [
- ...users.map(u=>({...u, gender:'female'})),
- ...maleUsers.map(u=>({...u, gender:'male'}))
+...users.map(u=>({...u, gender:'female'})),
+...maleUsers.map(u=>({...u, gender:'male'}))
   ];
 
   let filtered = allAnchors;
@@ -395,15 +410,11 @@ function switchEditTab(tab){
 function saveContent(){
   localStorage.setItem('keke_terms', document.getElementById('termsEditor').value);
   localStorage.setItem('keke_privacy', document.getElementById('privacyEditor').value);
-  showAlert('Saved', 'success');
+  disableEdit(); // ADDED: lock again after save
+  showAlert('Saved & Locked', 'success');
 }
 
-function clearAll(){
-  if(confirm('RESET EVERYTHING?')){
-    localStorage.clear();
-    location.reload();
-  }
-}
+// REMOVED: clearAll function
 
 // INIT
 document.getElementById('termsEditor').value = localStorage.getItem('keke_terms') || DEFAULT_TERMS;
