@@ -43,8 +43,9 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
 .withdraw-info{display:flex;justify-content:space-between;margin:5px 0}
 
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.stat-card{background:#FFF7E6;padding:15px;border-radius:10px;text-align:center}
+.stat-card{background:#FFF7E6;padding:15px;border-radius:10px;text-align:center;cursor:pointer} /* ADDED cursor:pointer */
 .stat-card b{font-size:24px;color:#FF8C00;display:block}
+.stat-breakdown{font-size:12px;color:#666;margin-top:5px} /* ADDED */
 .alert{padding:12px;border-radius:8px;margin:10px 0;display:none}
 .alert.success{background:#C8E6C9;color:#2E7D32}
 </style>
@@ -62,7 +63,11 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
 <div class="box">
   <h3>📊 Statistics</h3>
   <div class="stats">
-    <div class="stat-card"><b id="totalUsers">0</b><span>Total Users</span></div>
+    <div class="stat-card" onclick="showUserBreakdown()"> <!-- ADDED onclick -->
+      <b id="totalUsers">0</b>
+      <span>Total Users</span>
+      <div id="userBreakdown" class="stat-breakdown"></div> <!-- ADDED -->
+    </div>
     <div class="stat-card"><b id="bannedUsers">0</b><span>Banned</span></div>
     <div class="stat-card"><b id="pendingWithdrawals">0</b><span>Pending Withdrawals</span></div>
     <div class="stat-card"><b id="totalIncome">0</b><span>Total Income</span></div>
@@ -75,9 +80,18 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
 </div>
 
 <div class="box">
+  <h3>💎 Credit Male Accounts</h3>
+  <p style="font-size:12px;color:#666;margin-bottom:10px">Manually add coins to any male user</p>
+  <input id="creditMaleName" placeholder="Name">
+  <input id="creditMaleId" placeholder="ID Number" type="number">
+  <input id="creditMaleCoins" placeholder="Amount of Coins" type="number">
+  <button class="btn btn-purple" onclick="sendCoinsToMale()">📤 Send</button>
+</div>
+
+<div class="box">
   <h3>👑 Anchor Management</h3>
   <input id="anchorSearch" placeholder="Search by Name or ID" onkeyup="loadAnchors()">
-  
+
   <div class="anchor-tabs">
     <button class="anchor-tab active" onclick="switchAnchorTab('all', this)">All Anchors</button>
     <button class="anchor-tab" onclick="switchAnchorTab('male', this)">Male</button>
@@ -85,7 +99,7 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
     <button class="anchor-tab" onclick="switchAnchorTab('pending', this)">Pending Approval</button>
     <button class="anchor-tab" onclick="switchAnchorTab('banned', this)">Banned</button>
   </div>
-  
+
   <div id="anchorList">Loading...</div>
 </div>
 
@@ -132,9 +146,9 @@ KEKE is intended for users who are 18 years or older.
 KE Agency
 Email: kevokevo426@gmail.com`;
 
-const DEFAULT_PRIVACY = `KEKE Privacy Policy
+const DEFAULT_PRIVACY = `KE Privacy Policy
 
-Welcome to KEKE (“KEKE”, the “Platform”, or the “Services”).
+Welcome to KEKE (“KE”, the “Platform”, or the “Services”).
 The Platform is owned and operated by KEKE Agency (“we”, “us”, or “our”).
 
 We respect your privacy and are committed to protecting your personal information.
@@ -152,7 +166,7 @@ Thank you for using KEKE.`;
 let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [];
 let maleUsers = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [];
 let withdrawals = JSON.parse(localStorage.getItem('patanishaWithdrawals')) || [];
-let banned = JSON.parse(localStorage.getItem('patanishaBanned')) || []; // NEW
+let banned = JSON.parse(localStorage.getItem('patanishaBanned')) || [];
 let currentAnchorTab = 'all';
 
 function showAlert(msg, type){
@@ -163,17 +177,47 @@ function showAlert(msg, type){
   setTimeout(()=>{alert.style.display='none'}, 3000);
 }
 
+// ADDED: SHOW FEMALE/MALE BREAKDOWN
+function showUserBreakdown(){
+  let femaleCount = users.length;
+  let maleCount = maleUsers.length;
+  document.getElementById('userBreakdown').innerHTML = `👩 ${femaleCount} Female<br>👨 ${maleCount} Male`;
+  setTimeout(()=>{document.getElementById('userBreakdown').innerHTML = ''}, 4000); // auto hide after 4s
+}
+
+// SEND COINS TO MALE FUNCTION
+function sendCoinsToMale(){
+  let name = document.getElementById('creditMaleName').value.trim();
+  let id = document.getElementById('creditMaleId').value.trim();
+  let coins = document.getElementById('creditMaleCoins').value.trim();
+
+  if(!name ||!id ||!coins) return showAlert('Please fill all fields', 'error');
+  if(isNaN(coins) || coins <= 0) return showAlert('Enter valid coin amount', 'error');
+
+  let u = maleUsers.find(x=>x.id==id && x.name.toLowerCase()==name.toLowerCase());
+  if(!u) return showAlert('Male user not found with that Name + ID', 'error');
+
+  u.coins = (u.coins || 0) + parseInt(coins);
+  localStorage.setItem('patanishaUsers_male', JSON.stringify(maleUsers));
+
+  showAlert(`${coins} coins sent to ${name}`, 'success');
+  document.getElementById('creditMaleName').value = '';
+  document.getElementById('creditMaleId').value = '';
+  document.getElementById('creditMaleCoins').value = '';
+  loadAnchors();
+}
+
 // WITHDRAWAL FUNCTIONS
 function loadWithdrawals(){
   let list = document.getElementById('withdrawList');
   let pending = withdrawals.filter(w=>w.status==='pending');
   document.getElementById('pendingWithdrawals').innerText = pending.length;
-  
+
   if(pending.length === 0){
     list.innerHTML = '<p style="color:#999;text-align:center">No pending withdrawals</p>';
     return;
   }
-  
+
   let html = '';
   pending.forEach((w, index)=>{
     let u = users.find(x=>x.id==w.userId);
@@ -215,30 +259,30 @@ function switchAnchorTab(tab, btn){
 function loadAnchors(){
   let search = document.getElementById('anchorSearch').value.toLowerCase();
   let allAnchors = [
-  ...users.map(u=>({...u, gender:'female'})),
-  ...maleUsers.map(u=>({...u, gender:'male'}))
+ ...users.map(u=>({...u, gender:'female'})),
+ ...maleUsers.map(u=>({...u, gender:'male'}))
   ];
-  
+
   let filtered = allAnchors;
   if(currentAnchorTab === 'male') filtered = allAnchors.filter(u=>u.gender==='male');
   if(currentAnchorTab === 'female') filtered = allAnchors.filter(u=>u.gender==='female');
   if(currentAnchorTab === 'pending') filtered = allAnchors.filter(u=>u.gender==='female' && u.approved===false);
   if(currentAnchorTab === 'banned') filtered = allAnchors.filter(u=>banned.includes(u.id));
-  
+
   if(search){
-    filtered = filtered.filter(u=> 
-      u.name.toLowerCase().includes(search) || 
+    filtered = filtered.filter(u=>
+      u.name.toLowerCase().includes(search) ||
       (u.id && u.id.toString().includes(search))
     );
   }
-  
+
   updateStats(allAnchors);
-  
+
   if(filtered.length === 0){
     document.getElementById('anchorList').innerHTML = '<p style="color:#999;text-align:center">No anchors found</p>';
     return;
   }
-  
+
   let html = '';
   filtered.forEach(u=>{
     let isBanned = banned.includes(u.id);
@@ -249,7 +293,7 @@ function loadAnchors(){
     let bio = u.bio || u.desc || 'No bio';
     let id = u.id || 'N/A';
     let status = u.approved === true? 'approved' : u.approved === false? 'pending' : 'approved';
-    
+
     html += `<div class="anchor-card ${isBanned?'banned':''}">
       <div class="anchor-avatar">
         <img src="${u.avatar}">
@@ -284,7 +328,7 @@ function loadAnchors(){
   document.getElementById('anchorList').innerHTML = html;
 }
 
-// ADDED: BAN / UNBAN
+// BAN / UNBAN
 function banUser(id){
   if(!banned.includes(id)){
     banned.push(id);
@@ -320,7 +364,7 @@ function creditMale(id){
   let amount = prompt('Enter coins to credit to this male user:');
   if(!amount || isNaN(amount)) return;
   let u = maleUsers.find(x=>x.id==id);
-  if(u){ 
+  if(u){
     u.coins = (u.coins || 0) + parseInt(amount);
     localStorage.setItem('patanishaUsers_male', JSON.stringify(maleUsers));
     showAlert(`${amount} coins credited to ${u.name}`, 'success');
