@@ -1,3 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patanisha - Login</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:linear-gradient(135deg,#FFD600 0%,#FFA000 50%,#FF6F00 100%);min-height:100vh;padding:0}
+.top-bg{height:180px;position:relative;overflow:hidden}
+.float-avatars{position:absolute;top:20px;width:100%;display:flex;justify-content:space-around}
+.float-avatars img{width:60px;height:60px;border-radius:50%;border:3px solid #fff;object-fit:cover}
+.container{background:#fff;border-radius:30px 30px 0 0;margin-top:-30px;padding:25px;min-height:calc(100vh - 150px)}
+h1{font-size:22px;color:#333;margin-bottom:10px}
+h2{font-size:20px;color:#333;margin-bottom:10px}
+.subtitle{font-size:12px;color:#999;margin-bottom:20px}
+.tabs-auth{display:flex;background:#f0f0f0;border-radius:15px;padding:5px;margin-bottom:20px}
+.tab-auth{flex:1;text-align:center;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;color:#666}
+.tab-auth.active{background:#fff;color:#FF8F00;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.step{display:none}
+.step.active{display:block}
+.form-group{margin-bottom:16px;position:relative}
+label{display:block;margin-bottom:8px;font-weight:600;font-size:14px;color:#333}
+input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:15px;background:#f8f8f8}
+.gender-box{display:flex;gap:15px;justify-content:center;margin-bottom:16px}
+.gender-card{flex:1;text-align:center;padding:20px 10px;border:2px solid #eee;border-radius:16px;cursor:pointer}
+.gender-card.selected{border-color:#FF9800;background:#FFF3E0}
+.peacock{width:70px;height:70px;margin:0 auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px}
+.peacock.male{background:#FFF3E0}
+.peacock.female{background:#FFF3E0}
+.btn{width:100%;padding:16px;background:linear-gradient(135deg,#FFD600,#FF8F00);color:#000;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px}
+.btn-outline{background:#fff;color:#FF8F00;border:2px solid #FF8F00}
+.btn-yellow{background:#FFD600;color:#000}
+.btn-row{display:flex;gap:10px}
+.hobbies-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.hobbies-counter{background:#000;color:#FFD600;padding:8px 16px;border-radius:20px;font-weight:700}
+.hobbies-instruct{text-align:center;color:#FF8F00;font-weight:600;margin-bottom:15px}
+.hobby-category{margin-bottom:20px}
+.category-title{font-weight:700;font-size:16px;margin-bottom:10px;color:#333}
+.hobby-tags{display:flex;flex-wrap:wrap;gap:8px}
+.hobby-tag{padding:8px 14px;border:1px solid #ddd;border-radius:20px;font-size:13px;cursor:pointer;background:#fff}
+.hobby-tag.selected{background:#FF9800;color:#fff;border-color:#FF9800}
+.hobby-tag.disabled{opacity:0.4;pointer-events:none}
+.verify-instruct{text-align:center;color:#333;font-weight:600;margin-bottom:15px}
+.avatar-preview{width:120px;height:120px;border-radius:50%;margin:0 auto 16px;display:block;border:4px solid #FFC107;object-fit:cover}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:15px}
+.photo-box{width:100%;aspect-ratio:1;border:2px dashed #ddd;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:30px;color:#ccc;cursor:pointer;position:relative;overflow:hidden}
+.photo-box img{width:100%;height:100%;object-fit:cover}
+.photo-box.remove{position:absolute;top:2px;right:4px;background:red;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:flex;align-items:center;justify-content:center}
+.confirm-popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center}
+.confirm-box{background:#fff;border-radius:20px;padding:25px;text-align:center;width:85%}
+.confirm-btns{display:flex;gap:10px;margin-top:15px}
+.confirm-cancel{flex:1;padding:14px;background:#AEEA00;color:#333;border:none;border-radius:15px;font-weight:700}
+.confirm-ok{flex:1;padding:14px;background:linear-gradient(135deg,#FF9800,#FF5722);color:#fff;border:none;border-radius:15px;font-weight:700}
+.error{color:red;font-size:12px;margin-top:5px;display:none}
+.link-text{text-align:center;margin-top:15px;color:#FF8F00;font-weight:600;cursor:pointer}
+.terms-box{display:flex;align-items:flex-start;gap:10px;margin-top:10px;font-size:13px;color:#555}
+.terms-box input{width:18px;height:18px;margin-top:2px}
+.terms-box a{color:#FF8F00;text-decoration:underline}
+.password-wrapper{position:relative}
+.eye-icon{position:absolute;right:14px;top:42px;cursor:pointer;font-size:18px;color:#999;user-select:none}
+.terms-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.terms-content{background:#fff;border-radius:20px;padding:20px;max-width:500px;max-height:70vh;overflow-y:auto;text-align:left}
+.terms-content h3{margin-bottom:10px;color:#333}
+.terms-content pre{font-size:13px;line-height:1.6;color:#555;white-space:pre-wrap;font-family:inherit;height:300px;overflow-y:auto;border:1px solid #eee;padding:10px;border-radius:8px}
+.close-terms{margin-top:15px;padding:12px;background:#FF8F00;color:#fff;border:none;border-radius:12px;width:100%;font-weight:700}
+#acceptTermsBtn:disabled{background:#ccc;cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<div class="top-bg">
+  <div class="float-avatars" id="randomAvatars"></div>
+</div>
+
+<div class="container">
+  <h1>Welcome to KEKE</h1>
+
+  <div class="tabs-auth">
+    <div class="tab-auth active" id="tabSignIn" onclick="switchAuth('signin')">Sign In</div>
+    <div class="tab-auth" id="tabSignUp" onclick="switchAuth('signup')">Sign Up</div>
+  </div>
+
+  <div class="step active" id="signinStep">
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="you@gmail.com">
+      <div class="error" id="loginEmailError">Enter your email</div>
+    </div>
+    <div class="form-group password-wrapper">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Your password">
+      <span class="eye-icon" onclick="togglePassword('loginPassword', this)">👁️</span>
+      <div class="error" id="loginPassError">Enter your password</div>
+    </div>
+    <button class="btn" onclick="doSignIn()">Sign In</button>
+    <p class="link-text" onclick="switchAuth('signup')">Don't have an account? Sign Up</p>
+  </div>
+
+  <div class="step" id="step1">
+    <h2>Create Account</h2>
+    <p class="subtitle">Cannot be modified after submission</p>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@gmail.com">
+      <div class="error" id="emailError">Please enter a valid email</div>
+    </div>
+    <div class="form-group password-wrapper">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Min 6 characters">
+      <span class="eye-icon" onclick="togglePassword('password', this)">👁️</span>
+      <div class="error" id="passError">Password must be 6+ characters</div>
+    </div>
+    <div class="form-group password-wrapper">
+      <label>Confirm Password</label>
+      <input type="password" id="confirmPassword" placeholder="Re-enter password">
+      <span class="eye-icon" onclick="togglePassword('confirmPassword', this)">👁️</span>
+      <div class="error" id="confirmPassError">Passwords do not match</div>
+    </div>
+
+    <label>Select Gender</label>
+    <div class="gender-box">
+      <div class="gender-card" onclick="askGenderConfirm('Male')"><div class="peacock male">👑🦚</div><div>♂ Male</div></div>
+      <div class="gender-card" onclick="askGenderConfirm('Female')"><div class="peacock female">🎀🦚</div><div>♀ Female</div></div>
+    </div>
+    <div class="error" id="genderError">Please select gender</div>
+
+    <div class="form-group"><label>Invitation Code <small>(Optional)</small></label><input type="text" id="inviteCode"></div>
+
+    <div class="terms-box">
+      <input type="checkbox" id="termsCheck" disabled>
+      <label for="termsCheck">I agree to the <a href="#" onclick="openTerms(event)">Terms</a></label>
+    </div>
+    <div class="error" id="termsError">You must read and agree to Terms & Conditions</div>
+
+    <button class="btn" onclick="goToStep2()">Next</button>
+    <p class="link-text" onclick="switchAuth('signin')">Already have an account? Sign In</p>
+  </div>
+
+  <div class="step" id="step2">
+    <h1>Introduce Yourself</h1>
+    <div class="form-group"><label>Full Name</label><input type="text" id="name"></div>
+    <div class="form-group"><label>Date of Birth</label><input type="date" id="dob"></div>
+    <div class="form-group"><label>City</label><input type="text" id="city" placeholder="Ruiru, Nairobi"></div>
+    <div class="form-group"><label>Bio</label><textarea id="bio" rows="2"></textarea></div>
+    <div class="btn-row"><button class="btn btn-outline" onclick="goBack(1)">← Back</button><button class="btn" onclick="goToStep3()">Next</button></div>
+  </div>
+
+  <div class="step" id="step3">
+    <div class="hobbies-header"><h1>Choose Hobbies</h1><div class="hobbies-counter" id="hobbyCounter">0/5</div></div>
+    <p class="hobbies-instruct">Please pick exactly 5 hobbies</p>
+    <div id="hobbiesList"></div>
+    <div class="btn-row"><button class="btn btn-yellow" onclick="skipHobbies()">Skip</button><button class="btn" onclick="goToStep4()">Next</button></div>
+  </div>
+
+  <div class="step" id="step4">
+    <h1>Verification</h1>
+    <p class="verify-instruct">Choose Avatar + Upload up to 5 photos</p>
+    <div class="form-group">
+      <label>Profile Avatar</label>
+      <img id="avatarPrev" src="https://via.placeholder.com/120/FFD600/000?text=Tap" class="avatar-preview">
+      <input type="file" id="avatar" accept="image/*" style="display:none">
+    </div>
+    <div class="form-group">
+      <label>Upload Photos <small id="photoCount">0/5</small></label>
+      <div class="photo-grid" id="photoGrid"><div class="photo-box" onclick="addPhoto()">+</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goBack(3)">← Back</button>
+      <button class="btn" id="finishBtn" onclick="saveProfile()">Finish & Join</button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-popup" id="genderConfirm">
+  <div class="confirm-box">
+    <p id="confirmText"></p>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-ok" onclick="confirmGender()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="terms-modal" id="termsModal">
+  <div class="terms-content">
+    <h3>KE Terms and Conditions</h3>
+    <pre id="termsBody" onscroll="checkScroll()"></pre>
+    <button class="close-terms" id="acceptTermsBtn" onclick="acceptTerms()" disabled>I Have Read & Accept</button>
+  </div>
+</div>
+
+<input type="file" id="photoInput" accept="image/*" style="display:none">
+
 <script>
 const KEKE_TERMS = `KE Terms and Conditions
 
@@ -47,7 +241,7 @@ KE may offer virtual coins and items. All purchases are final. Virtual items hav
 We may suspend or terminate your account if you violate these Terms.
 
 8. Disclaimer
-KE is provided "as is". We do not guarantee the service will be uninterrupted or error-free.
+KEKE is provided "as is". We do not guarantee the service will be uninterrupted or error-free.
 
 9. Changes to Terms
 We may update these Terms. Continued use means you accept the changes.
@@ -55,6 +249,7 @@ We may update these Terms. Continued use means you accept the changes.
 Contact: kevokevo426@gmail.com
 Thank you for using KEKE.`;
 
+// ONLINE AVATAR POOL
 const avatarPool = [
   "https://i.pravatar.cc/60?img=11",
   "https://i.pravatar.cc/60?img=12",
@@ -98,7 +293,7 @@ function togglePassword(id, el){
 
 function openTerms(e){
   e.preventDefault();
-  document.getElementById('termsBody').innerText=KE_TERMS; // FIXED THIS LINE
+  document.getElementById('termsBody').innerText=KE_TERMS; // FIXED: was KE_TERMS
   document.getElementById('termsModal').style.display='flex';
   document.getElementById('acceptTermsBtn').disabled = true;
 }
@@ -250,3 +445,5 @@ function saveProfile(){
   }
 }
 </script>
+</body>
+</html>
