@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KE - Login</title>
+<title>Patanisha - Login</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
-body{background:linear-gradient(135deg,#00C8FF 0%,#00FFC8 50%,#FF00FF 100%);min-height:100vh;padding:0}
+body{background:linear-gradient(135deg,#FFD600 0%,#FFA000 50%,#FF6F00 100%);min-height:100vh;padding:0} /* CHANGED TO YELLOW */
 .top-bg{height:180px;position:relative;overflow:hidden}
 .float-avatars{position:absolute;top:20px;width:100%;display:flex;justify-content:space-around}
-.float-avatars img{width:60px;height:60px;border-radius:50%;border:3px solid #fff}
+.float-avatars img{width:60px;height:60px;border-radius:50%;border:3px solid #fff;object-fit:cover}
 .container{background:#fff;border-radius:30px 30px 0 0;margin-top:-30px;padding:25px;min-height:calc(100vh - 150px)}
 h1{font-size:22px;color:#333;margin-bottom:10px}
 h2{font-size:20px;color:#333;margin-bottom:10px}
 .subtitle{font-size:12px;color:#999;margin-bottom:20px}
 .tabs-auth{display:flex;background:#f0f0f0;border-radius:15px;padding:5px;margin-bottom:20px}
 .tab-auth{flex:1;text-align:center;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;color:#666}
-.tab-auth.active{background:#fff;color:#9370DB;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.tab-auth.active{background:#fff;color:#FF8F00;box-shadow:0 2px 5px rgba(0,0,0,0.1)} /* YELLOW */
 .step{display:none}
 .step.active{display:block}
 .form-group{margin-bottom:16px;position:relative}
@@ -26,15 +26,15 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 .gender-card{flex:1;text-align:center;padding:20px 10px;border:2px solid #eee;border-radius:16px;cursor:pointer}
 .gender-card.selected{border-color:#FF9800;background:#FFF3E0}
 .peacock{width:70px;height:70px;margin:0 auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px}
-.peacock.male{background:#D0E8FF}
-.peacock.female{background:#FFD0E8}
-.btn{width:100%;padding:16px;background:linear-gradient(135deg,#BA55D3,#9370DB);color:#fff;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px}
-.btn-outline{background:#fff;color:#9370DB;border:2px solid #9370DB}
+.peacock.male{background:#FFF3E0}
+.peacock.female{background:#FFF3E0}
+.btn{width:100%;padding:16px;background:linear-gradient(135deg,#FFD600,#FF8F00);color:#000;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px} /* YELLOW BTN */
+.btn-outline{background:#fff;color:#FF8F00;border:2px solid #FF8F00}
 .btn-yellow{background:#FFD600;color:#000}
 .btn-row{display:flex;gap:10px}
 .hobbies-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
 .hobbies-counter{background:#000;color:#FFD600;padding:8px 16px;border-radius:20px;font-weight:700}
-.hobbies-instruct{text-align:center;color:#FF5722;font-weight:600;margin-bottom:15px}
+.hobbies-instruct{text-align:center;color:#FF8F00;font-weight:600;margin-bottom:15px}
 .hobby-category{margin-bottom:20px}
 .category-title{font-weight:700;font-size:16px;margin-bottom:10px;color:#333}
 .hobby-tags{display:flex;flex-wrap:wrap;gap:8px}
@@ -53,27 +53,28 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 .confirm-cancel{flex:1;padding:14px;background:#AEEA00;color:#333;border:none;border-radius:15px;font-weight:700}
 .confirm-ok{flex:1;padding:14px;background:linear-gradient(135deg,#FF9800,#FF5722);color:#fff;border:none;border-radius:15px;font-weight:700}
 .error{color:red;font-size:12px;margin-top:5px;display:none}
-.link-text{text-align:center;margin-top:15px;color:#9370DB;font-weight:600;cursor:pointer}
+.link-text{text-align:center;margin-top:15px;color:#FF8F00;font-weight:600;cursor:pointer} /* YELLOW LINK */
 .terms-box{display:flex;align-items:flex-start;gap:10px;margin-top:10px;font-size:13px;color:#555}
 .terms-box input{width:18px;height:18px;margin-top:2px}
-.terms-box a{color:#9370DB;text-decoration:underline}
+.terms-box a{color:#FF8F00;text-decoration:underline} /* YELLOW LINK */
 .password-wrapper{position:relative}
 .eye-icon{position:absolute;right:14px;top:42px;cursor:pointer;font-size:18px;color:#999;user-select:none}
 .terms-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px}
 .terms-content{background:#fff;border-radius:20px;padding:20px;max-width:500px;max-height:70vh;overflow-y:auto;text-align:left}
 .terms-content h3{margin-bottom:10px;color:#333}
-.terms-content pre{font-size:13px;line-height:1.6;color:#555;white-space:pre-wrap;font-family:inherit}
-.close-terms{margin-top:15px;padding:12px;background:#9370DB;color:#fff;border:none;border-radius:12px;width:100%;font-weight:700}
+.terms-content pre{font-size:13px;line-height:1.6;color:#555;white-space:pre-wrap;font-family:inherit;height:300px;overflow-y:auto;border:1px solid #eee;padding:10px;border-radius:8px}
+.close-terms{margin-top:15px;padding:12px;background:#FF8F00;color:#fff;border:none;border-radius:12px;width:100%;font-weight:700}
+#acceptTermsBtn:disabled{background:#ccc;cursor:not-allowed}
 </style>
 </head>
 <body>
 
 <div class="top-bg">
   <div class="float-avatars">
-    <img src="https://i.pravatar.cc/60?img=1">
-    <img src="https://i.pravatar.cc/60?img=2">
-    <img src="https://i.pravatar.cc/60?img=3">
-    <img src="https://i.pravatar.cc/60?img=4">
+    <img src="https://i.pravatar.cc/60?img=11">
+    <img src="https://i.pravatar.cc/60?img=12">
+    <img src="https://i.pravatar.cc/60?img=13">
+    <img src="https://i.pravatar.cc/60?img=14">
   </div>
 </div>
 
@@ -129,10 +130,10 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
     <div class="form-group"><label>Invitation Code <small>(Optional)</small></label><input type="text" id="inviteCode"></div>
 
     <div class="terms-box">
-      <input type="checkbox" id="termsCheck">
+      <input type="checkbox" id="termsCheck" disabled>
       <label for="termsCheck">I agree to the <a href="#" onclick="openTerms(event)">Terms</a></label>
     </div>
-    <div class="error" id="termsError">You must agree to Terms & Conditions</div>
+    <div class="error" id="termsError">You must read and agree to Terms & Conditions</div>
 
     <button class="btn" onclick="goToStep2()">Next</button>
     <p class="link-text" onclick="switchAuth('signin')">Already have an account? Sign In</p>
@@ -159,7 +160,7 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
     <p class="verify-instruct">Choose Avatar + Upload up to 5 photos</p>
     <div class="form-group">
       <label>Profile Avatar</label>
-      <img id="avatarPrev" src="https://via.placeholder.com/120/ff9800/fff?text=Tap" class="avatar-preview">
+      <img id="avatarPrev" src="https://via.placeholder.com/120/FFD600/000?text=Tap" class="avatar-preview">
       <input type="file" id="avatar" accept="image/*" style="display:none">
     </div>
     <div class="form-group">
@@ -186,47 +187,38 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 <div class="terms-modal" id="termsModal">
   <div class="terms-content">
     <h3>KE Terms and Conditions</h3>
-    <pre id="termsBody"></pre>
-    <button class="close-terms" onclick="closeTerms()">Close</button>
+    <pre id="termsBody" onscroll="checkScroll()"></pre>
+    <button class="close-terms" id="acceptTermsBtn" onclick="acceptTerms()" disabled>I Have Read & Accept</button>
   </div>
 </div>
 
 <input type="file" id="photoInput" accept="image/*" style="display:none">
 
 <script>
-const KEKE_TERMS = `KE Terms and Conditions
+const KEKE_TERMS = `KEKE Terms and Conditions
 
 Welcome to KEKE. These Terms and Conditions (“Terms”) explain the rules that apply when you access or use the KEKE application, website, and related services.
 
 By downloading, registering for, accessing, or using KEKE, you agree to these Terms. If you do not agree with these Terms, please do not use KEKE.
 
 1. About KEKE
-KE is a social platform that may provide services including:
+KEKE is a social platform that may provide services including:
 · Social networking
 · Text and voice chatting
 · Live broadcasting
 · User profiles
 · Virtual coins and other virtual items
 · Other social and entertainment features introduced by KEKE
-KE may add, change, suspend, or remove features from time to time.
+
+KEKE may add, change, suspend, or remove features from time to time.
 
 2. Age Requirement
-KE is intended for users who are 18 years or older, or who meet the applicable legal age requirement in their jurisdiction, whichever is higher.
+KEKE is intended for users who are 18 years or older, or who meet the applicable legal age requirement in their jurisdiction, whichever is higher.
 You must not use KEKE if you do not meet the applicable age requirement.
 If we discover that an account belongs to a person who is below the required age, we may suspend or terminate that account.
 
-3. Creating an Account
-When creating a KEKE account, you agree to:
-1. Provide accurate information.
-2. Use only your own account.
-3. Keep your login information secure.
-4. Not sell, transfer, or give your account to another person without authorization.
-5. Not create accounts for other people without permission.
-6. Update information when necessary to keep it accurate.
-You are responsible for activity carried out through your account.
-KE may suspend or terminate accounts that violate these Terms or create risks for KEKE or other users.
-
 ... Full Terms Continue...
+
 Contact: kevokevo426@gmail.com
 Thank you for using KEKE.`;
 
@@ -252,7 +244,23 @@ function togglePassword(id, el){
   else{input.type = "password";el.innerText = "👁️";}
 }
 
-function openTerms(e){e.preventDefault();document.getElementById('termsBody').innerText=KE_TERMS;document.getElementById('termsModal').style.display='flex';}
+function openTerms(e){
+  e.preventDefault();
+  document.getElementById('termsBody').innerText=KEKE_TERMS;
+  document.getElementById('termsModal').style.display='flex';
+  document.getElementById('acceptTermsBtn').disabled = true;
+}
+function checkScroll(){
+  const el = document.getElementById('termsBody');
+  if(el.scrollTop + el.clientHeight >= el.scrollHeight - 5){
+    document.getElementById('acceptTermsBtn').disabled = false;
+  }
+}
+function acceptTerms(){
+  document.getElementById('termsCheck').disabled = false;
+  document.getElementById('termsCheck').checked = true;
+  closeTerms();
+}
 function closeTerms(){document.getElementById('termsModal').style.display='none';}
 
 function switchAuth(type){
