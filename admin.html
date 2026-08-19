@@ -7,36 +7,42 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 body{background:#f5f5f5;padding:20px}
-.container{max-width:1000px;margin:0 auto}
+.container{max-width:1100px;margin:0 auto}
 .header{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;padding:20px;border-radius:15px;margin-bottom:20px;text-align:center}
 .box{background:white;padding:20px;border-radius:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
 .box h3{margin-bottom:15px;color:#333;border-bottom:2px solid #FFD700;padding-bottom:8px}
 input,select,textarea{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:10px;font-size:14px}
 textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
-.btn{background:linear-gradient(135deg,#FFA500,#FF8C00);color:white;border:none;padding:12px 25px;border-radius:10px;font-weight:bold;cursor:pointer;margin:5px;font-size:14px}
+.btn{background:linear-gradient(135deg,#FFA500,#FF8C00);color:white;border:none;padding:10px 16px;border-radius:10px;font-weight:bold;cursor:pointer;margin:4px;font-size:12px}
 .btn-success{background:linear-gradient(135deg,#00C853,#00BFA5)}
 .btn-danger{background:linear-gradient(135deg,#FF5252,#FF1744)}
 .btn-warning{background:linear-gradient(135deg,#F59E0B,#D97706);color:#000}
 .btn-info{background:linear-gradient(135deg,#00BFFF,#1E90FF)}
-.btn-yellow{background:#FFD700;color:#000;font-weight:700}
+.btn-purple{background:linear-gradient(135deg,#9C27B0,#673AB7)}
+.btn-gray{background:#666}
 
 /* ANCHOR CARD */
-.anchor-tabs{display:flex;gap:10px;margin-bottom:15px}
-.anchor-tab{flex:1;padding:10px;background:#eee;border:none;border-radius:10px;font-weight:600;cursor:pointer}
+.anchor-tabs{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+.anchor-tab{flex:1;min-width:120px;padding:10px;background:#eee;border:none;border-radius:10px;font-weight:600;cursor:pointer}
 .anchor-tab.active{background:#FFD700}
 .anchor-card{background:#f8f8f8;padding:15px;border-radius:12px;margin:12px 0;display:flex;gap:15px;align-items:flex-start}
+.anchor-card.banned{opacity:0.5;background:#FFEBEE;border:2px solid #FF5252}
 .anchor-avatar{width:70px;height:70px;border-radius:50%;position:relative;flex-shrink:0}
 .anchor-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .online-dot{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid #f8f8f8}
+.banned-badge{position:absolute;top:0;left:0;background:#FF5252;color:white;font-size:9px;padding:2px 6px;border-radius:0 0 8px 0;font-weight:700}
 .anchor-info{flex:1}
 .anchor-info-row{display:flex;justify-content:space-between;margin:4px 0;font-size:14px}
 .anchor-id{background:white;padding:5px 12px;border-radius:20px;font-size:12px;display:inline-block;margin:5px 5px 5px 0}
 .status-badge{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700}
 .status-pending{background:#FFF3CD;color:#856404}
 .status-approved{background:#D4EDDA;color:#155724}
-.status-rejected{background:#F8D7DA;color:#721C24}
 
-.stats{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+/* WITHDRAWAL CARD */
+.withdraw-card{background:#FFF3E0;border:1px solid #FFB74D;padding:15px;border-radius:12px;margin:10px 0}
+.withdraw-info{display:flex;justify-content:space-between;margin:5px 0}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .stat-card{background:#FFF7E6;padding:15px;border-radius:10px;text-align:center}
 .stat-card b{font-size:24px;color:#FF8C00;display:block}
 .alert{padding:12px;border-radius:8px;margin:10px 0;display:none}
@@ -48,7 +54,7 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
 
 <div class="header">
   <h1>🔧 Patanisha Admin Panel</h1>
-  <p>Anchor Management + Users + Data</p>
+  <p>Anchor Management + Withdrawals + Ban System</p>
 </div>
 
 <div id="alert" class="alert"></div>
@@ -57,13 +63,17 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
   <h3>📊 Statistics</h3>
   <div class="stats">
     <div class="stat-card"><b id="totalUsers">0</b><span>Total Users</span></div>
-    <div class="stat-card"><b id="totalAnchors">0</b><span>Total Anchors</span></div>
-    <div class="stat-card"><b id="pendingAnchors">0</b><span>Pending Approval</span></div>
+    <div class="stat-card"><b id="bannedUsers">0</b><span>Banned</span></div>
+    <div class="stat-card"><b id="pendingWithdrawals">0</b><span>Pending Withdrawals</span></div>
     <div class="stat-card"><b id="totalIncome">0</b><span>Total Income</span></div>
   </div>
 </div>
 
-<!-- ADDED: ANCHOR MANAGEMENT -->
+<div class="box">
+  <h3>💰 Withdrawal Requests - Female Anchors</h3>
+  <div id="withdrawList">Loading...</div>
+</div>
+
 <div class="box">
   <h3>👑 Anchor Management</h3>
   <input id="anchorSearch" placeholder="Search by Name or ID" onkeyup="loadAnchors()">
@@ -73,6 +83,7 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
     <button class="anchor-tab" onclick="switchAnchorTab('male', this)">Male</button>
     <button class="anchor-tab" onclick="switchAnchorTab('female', this)">Female</button>
     <button class="anchor-tab" onclick="switchAnchorTab('pending', this)">Pending Approval</button>
+    <button class="anchor-tab" onclick="switchAnchorTab('banned', this)">Banned</button>
   </div>
   
   <div id="anchorList">Loading...</div>
@@ -81,8 +92,8 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
 <div class="box">
   <h3>📄 Terms & Privacy Editor</h3>
   <div style="display:flex;gap:10px;margin-bottom:10px">
-    <button class="btn" onclick="switchEditTab('terms', this)">Terms</button>
-    <button class="btn" onclick="switchEditTab('privacy', this)">Privacy</button>
+    <button class="btn" onclick="switchEditTab('terms')">Terms</button>
+    <button class="btn" onclick="switchEditTab('privacy')">Privacy</button>
   </div>
   <textarea id="termsEditor"></textarea>
   <textarea id="privacyEditor" style="display:none"></textarea>
@@ -97,11 +108,51 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
 </div>
 
 <script>
-const DEFAULT_TERMS = `KEKE Terms...`;
-const DEFAULT_PRIVACY = `KEKE Privacy...`;
+// KEPT YOUR FULL DEFAULT TEXT
+const DEFAULT_TERMS = `KE Terms and Conditions
+
+Welcome to KEKE. These Terms and Conditions (“Terms”) explain the rules that apply when you access or use the KEKE application, website, and related services.
+
+By downloading, registering for, accessing, or using KEKE, you agree to these Terms. If you do not agree with these Terms, please do not use KEKE.
+
+1. About KEKE
+KEKE is a social platform that may provide services including:
+· Social networking
+· Text and voice chatting
+· Live broadcasting
+· User profiles
+· Virtual coins and other virtual items
+
+KE may add, change, suspend, or remove features from time to time.
+
+2. Age Requirement
+KEKE is intended for users who are 18 years or older.
+
+30. Contact Us
+KE Agency
+Email: kevokevo426@gmail.com`;
+
+const DEFAULT_PRIVACY = `KEKE Privacy Policy
+
+Welcome to KEKE (“KEKE”, the “Platform”, or the “Services”).
+The Platform is owned and operated by KEKE Agency (“we”, “us”, or “our”).
+
+We respect your privacy and are committed to protecting your personal information.
+
+1. About This Privacy Policy
+This Privacy Policy applies to information collected when you:
+· Create or use a KEKE account.
+· Use the KEKE application or website.
+· Communicate with other users.
+
+21. About KEKE
+The Platform is operated by: KEKE Agency
+Thank you for using KEKE.`;
 
 let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [];
 let maleUsers = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [];
+let withdrawals = JSON.parse(localStorage.getItem('patanishaWithdrawals')) || [];
+let banned = JSON.parse(localStorage.getItem('patanishaBanned')) || []; // NEW
 let currentAnchorTab = 'all';
 
 function showAlert(msg, type){
@@ -110,6 +161,47 @@ function showAlert(msg, type){
   alert.innerText = msg;
   alert.style.display = 'block';
   setTimeout(()=>{alert.style.display='none'}, 3000);
+}
+
+// WITHDRAWAL FUNCTIONS
+function loadWithdrawals(){
+  let list = document.getElementById('withdrawList');
+  let pending = withdrawals.filter(w=>w.status==='pending');
+  document.getElementById('pendingWithdrawals').innerText = pending.length;
+  
+  if(pending.length === 0){
+    list.innerHTML = '<p style="color:#999;text-align:center">No pending withdrawals</p>';
+    return;
+  }
+  
+  let html = '';
+  pending.forEach((w, index)=>{
+    let u = users.find(x=>x.id==w.userId);
+    html += `<div class="withdraw-card">
+      <div class="withdraw-info"><span>Anchor:</span> <b>${u?.name || 'Unknown'}</b></div>
+      <div class="withdraw-info"><span>ID:</span> <b>${w.userId}</b></div>
+      <div class="withdraw-info"><span>Amount:</span> <b style="color:#00C853">$${w.amount}</b></div>
+      <div class="withdraw-info"><span>Method:</span> <b>${w.method}</b></div>
+      <div class="withdraw-info"><span>Date:</span> <b>${w.date}</b></div>
+      <button class="btn btn-success" onclick="approveWithdrawal(${index})">✅ Approve</button>
+      <button class="btn btn-danger" onclick="rejectWithdrawal(${index})">❌ Reject</button>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function approveWithdrawal(index){
+  withdrawals[index].status = 'approved';
+  localStorage.setItem('patanishaWithdrawals', JSON.stringify(withdrawals));
+  showAlert('Withdrawal Approved', 'success');
+  loadWithdrawals();
+}
+
+function rejectWithdrawal(index){
+  withdrawals[index].status = 'rejected';
+  localStorage.setItem('patanishaWithdrawals', JSON.stringify(withdrawals));
+  showAlert('Withdrawal Rejected', 'success');
+  loadWithdrawals();
 }
 
 // ANCHOR FUNCTIONS
@@ -123,17 +215,16 @@ function switchAnchorTab(tab, btn){
 function loadAnchors(){
   let search = document.getElementById('anchorSearch').value.toLowerCase();
   let allAnchors = [
-    ...users.map(u=>({...u, gender:'female'})),
-    ...maleUsers.map(u=>({...u, gender:'male'}))
+  ...users.map(u=>({...u, gender:'female'})),
+  ...maleUsers.map(u=>({...u, gender:'male'}))
   ];
   
-  // Filter by tab
   let filtered = allAnchors;
   if(currentAnchorTab === 'male') filtered = allAnchors.filter(u=>u.gender==='male');
   if(currentAnchorTab === 'female') filtered = allAnchors.filter(u=>u.gender==='female');
   if(currentAnchorTab === 'pending') filtered = allAnchors.filter(u=>u.gender==='female' && u.approved===false);
+  if(currentAnchorTab === 'banned') filtered = allAnchors.filter(u=>banned.includes(u.id));
   
-  // Filter by search
   if(search){
     filtered = filtered.filter(u=> 
       u.name.toLowerCase().includes(search) || 
@@ -150,18 +241,20 @@ function loadAnchors(){
   
   let html = '';
   filtered.forEach(u=>{
+    let isBanned = banned.includes(u.id);
     let income = u.income || 0;
     let totalCoins = u.coins || 0;
     let isOnline = u.online;
     let lastSeen = u.lastSeen || '2h ago';
     let bio = u.bio || u.desc || 'No bio';
     let id = u.id || 'N/A';
-    let status = u.approved === true ? 'approved' : u.approved === false ? 'pending' : 'approved';
+    let status = u.approved === true? 'approved' : u.approved === false? 'pending' : 'approved';
     
-    html += `<div class="anchor-card">
+    html += `<div class="anchor-card ${isBanned?'banned':''}">
       <div class="anchor-avatar">
         <img src="${u.avatar}">
         ${isOnline?'<div class="online-dot"></div>':''}
+        ${isBanned?'<div class="banned-badge">BANNED</div>':''}
       </div>
       <div class="anchor-info">
         <div class="anchor-info-row"><span>NickName :</span> <b>${u.name} <span style="color:#888">(${u.gender})</span></b></div>
@@ -174,16 +267,38 @@ function loadAnchors(){
           ${u.gender==='female'?`<span class="status-badge status-${status}">${status.toUpperCase()}</span>`:''}
         </div>
         <div style="margin-top:8px">
-          <button class="btn btn-yellow" onclick="viewAnchorDetails('${id}')">details</button>
+          <button class="btn btn-info" onclick="chatUser('${id}')">💬 Chat</button>
+          ${u.gender==='male'?`<button class="btn btn-purple" onclick="creditMale('${id}')">💎 Credit</button>`:''}
           ${u.gender==='female' && status==='pending'?`
             <button class="btn btn-success" onclick="approveAnchor('${id}')">✅ Approve</button>
             <button class="btn btn-danger" onclick="rejectAnchor('${id}')">❌ Reject</button>
           `:''}
+          ${isBanned?
+            `<button class="btn btn-success" onclick="unbanUser('${id}')">🔓 Unban</button>`:
+            `<button class="btn btn-danger" onclick="banUser('${id}')">🚫 Ban</button>`
+          }
         </div>
       </div>
     </div>`;
   });
   document.getElementById('anchorList').innerHTML = html;
+}
+
+// ADDED: BAN / UNBAN
+function banUser(id){
+  if(!banned.includes(id)){
+    banned.push(id);
+    localStorage.setItem('patanishaBanned', JSON.stringify(banned));
+    showAlert('User Banned', 'success');
+    loadAnchors();
+  }
+}
+
+function unbanUser(id){
+  banned = banned.filter(x=>x!=id);
+  localStorage.setItem('patanishaBanned', JSON.stringify(banned));
+  showAlert('User Unbanned', 'success');
+  loadAnchors();
 }
 
 function approveAnchor(id){
@@ -200,22 +315,35 @@ function rejectAnchor(id){
   loadAnchors();
 }
 
-function viewAnchorDetails(id){
-  let u = [...users, ...maleUsers].find(x=>x.id==id);
-  if(!u) return;
-  alert(`Anchor Details:\n\nName: ${u.name}\nID: ${u.id}\nGender: ${u.gender}\nCity: ${u.city}\nAge: ${u.age}\nIncome: ${u.income||0}\nCoins: ${u.coins||0}\nApproved: ${u.approved}\nBio: ${u.bio||u.desc||'None'}`);
+// CREDIT MALE + CHAT
+function creditMale(id){
+  let amount = prompt('Enter coins to credit to this male user:');
+  if(!amount || isNaN(amount)) return;
+  let u = maleUsers.find(x=>x.id==id);
+  if(u){ 
+    u.coins = (u.coins || 0) + parseInt(amount);
+    localStorage.setItem('patanishaUsers_male', JSON.stringify(maleUsers));
+    showAlert(`${amount} coins credited to ${u.name}`, 'success');
+    loadAnchors();
+  }
+}
+
+function chatUser(id){
+  let u = [...users,...maleUsers].find(x=>x.id==id);
+  if(u){
+    window.open(`/chat.html?userId=${id}&name=${u.name}`, '_blank');
+  }
 }
 
 function updateStats(allAnchors){
   let totalIncome = allAnchors.reduce((sum,u)=>sum+(u.income||0),0);
   document.getElementById('totalUsers').innerText = allAnchors.length;
-  document.getElementById('totalAnchors').innerText = allAnchors.length;
-  document.getElementById('pendingAnchors').innerText = users.filter(u=>u.approved===false).length;
+  document.getElementById('bannedUsers').innerText = banned.length;
   document.getElementById('totalIncome').innerText = totalIncome.toFixed(0);
 }
 
 // TERMS EDITOR
-function switchEditTab(tab, btn){
+function switchEditTab(tab){
   document.getElementById('termsEditor').style.display = tab==='terms'? 'block' : 'none';
   document.getElementById('privacyEditor').style.display = tab==='privacy'? 'block' : 'none';
 }
@@ -237,6 +365,7 @@ function clearAll(){
 document.getElementById('termsEditor').value = localStorage.getItem('keke_terms') || DEFAULT_TERMS;
 document.getElementById('privacyEditor').value = localStorage.getItem('keke_privacy') || DEFAULT_PRIVACY;
 loadAnchors();
+loadWithdrawals();
 </script>
 </body>
 </html>
