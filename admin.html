@@ -7,36 +7,40 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 body{background:#f5f5f5;padding:20px}
-.container{max-width:800px;margin:0 auto}
+.container{max-width:1000px;margin:0 auto}
 .header{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;padding:20px;border-radius:15px;margin-bottom:20px;text-align:center}
-.header h1{font-size:24px;margin-bottom:5px}
-.header p{font-size:14px;opacity:0.9}
 .box{background:white;padding:20px;border-radius:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
 .box h3{margin-bottom:15px;color:#333;border-bottom:2px solid #FFD700;padding-bottom:8px}
-input,select,textarea{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:10px;font-size:14px;font-family:inherit}
-textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px;line-height:1.5}
-.btn{background:linear-gradient(135deg,#FFA500,#FF8C00);color:white;border:none;padding:12px 25px;border-radius:10px;font-weight:bold;cursor:pointer;margin:5px 5px 5px 0;font-size:14px}
-.btn:hover{transform:scale(1.02)}
-.btn-danger{background:linear-gradient(135deg,#FF5252,#FF1744)}
+input,select,textarea{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:10px;font-size:14px}
+textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
+.btn{background:linear-gradient(135deg,#FFA500,#FF8C00);color:white;border:none;padding:12px 25px;border-radius:10px;font-weight:bold;cursor:pointer;margin:5px;font-size:14px}
 .btn-success{background:linear-gradient(135deg,#00C853,#00BFA5)}
-.btn-info{background:linear-gradient(135deg,#00BFFF,#1E90FF)}
+.btn-danger{background:linear-gradient(135deg,#FF5252,#FF1744)}
 .btn-warning{background:linear-gradient(135deg,#F59E0B,#D97706);color:#000}
-.user-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eee;border-radius:10px;margin:8px 0}
-.user-info{flex:1}
-.user-info b{display:block;font-size:15px}
-.user-info span{font-size:12px;color:#666}
-.del-btn{background:#ff5252;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px}
-.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.btn-info{background:linear-gradient(135deg,#00BFFF,#1E90FF)}
+.btn-yellow{background:#FFD700;color:#000;font-weight:700}
+
+/* ANCHOR CARD */
+.anchor-tabs{display:flex;gap:10px;margin-bottom:15px}
+.anchor-tab{flex:1;padding:10px;background:#eee;border:none;border-radius:10px;font-weight:600;cursor:pointer}
+.anchor-tab.active{background:#FFD700}
+.anchor-card{background:#f8f8f8;padding:15px;border-radius:12px;margin:12px 0;display:flex;gap:15px;align-items:flex-start}
+.anchor-avatar{width:70px;height:70px;border-radius:50%;position:relative;flex-shrink:0}
+.anchor-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.online-dot{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid #f8f8f8}
+.anchor-info{flex:1}
+.anchor-info-row{display:flex;justify-content:space-between;margin:4px 0;font-size:14px}
+.anchor-id{background:white;padding:5px 12px;border-radius:20px;font-size:12px;display:inline-block;margin:5px 5px 5px 0}
+.status-badge{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700}
+.status-pending{background:#FFF3CD;color:#856404}
+.status-approved{background:#D4EDDA;color:#155724}
+.status-rejected{background:#F8D7DA;color:#721C24}
+
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
 .stat-card{background:#FFF7E6;padding:15px;border-radius:10px;text-align:center}
 .stat-card b{font-size:24px;color:#FF8C00;display:block}
-.stat-card span{font-size:12px;color:#666}
-.back-link{display:inline-block;margin-top:15px;color:#FF8C00;text-decoration:none;font-weight:bold}
 .alert{padding:12px;border-radius:8px;margin:10px 0;display:none}
 .alert.success{background:#C8E6C9;color:#2E7D32}
-.alert.error{background:#FFCDD2;color:#C62828}
-.tab-btns{display:flex;gap:10px;margin-bottom:10px}
-.tab-btn{flex:1;padding:10px;border:2px solid #FFD700;background:white;color:#333;border-radius:8px;cursor:pointer;font-weight:600}
-.tab-btn.active{background:#FFD700}
 </style>
 </head>
 <body>
@@ -44,7 +48,7 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px;l
 
 <div class="header">
   <h1>🔧 Patanisha Admin Panel</h1>
-  <p>Manage users, chats, and app data</p>
+  <p>Anchor Management + Users + Data</p>
 </div>
 
 <div id="alert" class="alert"></div>
@@ -52,115 +56,53 @@ textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px;l
 <div class="box">
   <h3>📊 Statistics</h3>
   <div class="stats">
-    <div class="stat-card">
-      <b id="totalUsers">0</b>
-      <span>Total Users</span>
-    </div>
-    <div class="stat-card">
-      <b id="totalChats">0</b>
-      <span>Active Chats</span>
-    </div>
-    <div class="stat-card">
-      <b id="blockedUsers">0</b>
-      <span>Blocked</span>
-    </div>
+    <div class="stat-card"><b id="totalUsers">0</b><span>Total Users</span></div>
+    <div class="stat-card"><b id="totalAnchors">0</b><span>Total Anchors</span></div>
+    <div class="stat-card"><b id="pendingAnchors">0</b><span>Pending Approval</span></div>
+    <div class="stat-card"><b id="totalIncome">0</b><span>Total Income</span></div>
   </div>
 </div>
 
-<!-- ADDED: TERMS & PRIVACY EDITOR -->
+<!-- ADDED: ANCHOR MANAGEMENT -->
+<div class="box">
+  <h3>👑 Anchor Management</h3>
+  <input id="anchorSearch" placeholder="Search by Name or ID" onkeyup="loadAnchors()">
+  
+  <div class="anchor-tabs">
+    <button class="anchor-tab active" onclick="switchAnchorTab('all', this)">All Anchors</button>
+    <button class="anchor-tab" onclick="switchAnchorTab('male', this)">Male</button>
+    <button class="anchor-tab" onclick="switchAnchorTab('female', this)">Female</button>
+    <button class="anchor-tab" onclick="switchAnchorTab('pending', this)">Pending Approval</button>
+  </div>
+  
+  <div id="anchorList">Loading...</div>
+</div>
+
 <div class="box">
   <h3>📄 Terms & Privacy Editor</h3>
-  <p style="font-size:12px;color:#666;margin-bottom:10px">Edit what users see in About page. Saves to all devices.</p>
-  <div class="tab-btns">
-    <button class="tab-btn active" onclick="switchEditTab('terms', this)">Terms & Conditions</button>
-    <button class="tab-btn" onclick="switchEditTab('privacy', this)">Privacy Policy</button>
+  <div style="display:flex;gap:10px;margin-bottom:10px">
+    <button class="btn" onclick="switchEditTab('terms', this)">Terms</button>
+    <button class="btn" onclick="switchEditTab('privacy', this)">Privacy</button>
   </div>
-  <div id="editTerms">
-    <textarea id="termsEditor"></textarea>
-    <button class="btn btn-warning" onclick="saveTerms()">💾 Save Terms</button>
-    <button class="btn" onclick="resetTerms()">↩️ Reset to Default</button>
-  </div>
-  <div id="editPrivacy" style="display:none">
-    <textarea id="privacyEditor"></textarea>
-    <button class="btn btn-warning" onclick="savePrivacy()">💾 Save Privacy</button>
-    <button class="btn" onclick="resetPrivacy()">↩️ Reset to Default</button>
-  </div>
-</div>
-
-<div class="box">
-  <h3>➕ Add New User</h3>
-  <input id="name" placeholder="Full Name">
-  <input id="city" placeholder="City e.g. Ruiru, Nairobi">
-  <input id="age" placeholder="Age" type="number">
-  <input id="friends" placeholder="Friends Count" type="number" value="0">
-  <select id="level">
-    <option value="1">Level 1</option>
-    <option value="5">Level 5</option>
-    <option value="10">Level 10</option>
-    <option value="16">Level 16</option>
-  </select>
-  <button class="btn btn-success" onclick="addUser()">Add User</button>
-</div>
-
-<div class="box">
-  <h3>👥 Manage Users</h3>
-  <div id="userList">Loading...</div>
-</div>
-
-<div class="box">
-  <h3>💬 Chat Management</h3>
-  <button class="btn btn-info" onclick="viewChats()">View All Chats</button>
-  <button class="btn btn-danger" onclick="clearChats()">Clear All Chats</button>
-  <div id="chatList" style="margin-top:15px"></div>
+  <textarea id="termsEditor"></textarea>
+  <textarea id="privacyEditor" style="display:none"></textarea>
+  <button class="btn btn-warning" onclick="saveContent()">💾 Save</button>
 </div>
 
 <div class="box">
   <h3>⚠️ Danger Zone</h3>
-  <button class="btn btn-danger" onclick="clearUsers()">Reset All Users</button>
-  <button class="btn btn-danger" onclick="clearBlocked()">Clear Blocked List</button>
   <button class="btn btn-danger" onclick="clearAll()">RESET EVERYTHING</button>
 </div>
-
-<a href="/" class="back-link">← Back to App</a>
 
 </div>
 
 <script>
-// DEFAULT TEXT
-const DEFAULT_TERMS = `KEKE Terms and Conditions
-
-Welcome to KEKE. These Terms and Conditions (“Terms”) explain the rules that apply when you access or use the KEKE application, website, and related services.
-
-By downloading, registering for, accessing, or using KEKE, you agree to these Terms. If you do not agree with these Terms, please do not use KEKE.
-
-1. About KEKE
-KEKE is a social platform that may provide services including:
-· Social networking
-· Text and voice chatting
-· Live broadcasting
-· User profiles
-· Virtual coins and other virtual items
-· Other social and entertainment features introduced by KEKE
-
-KE may add, change, suspend, or remove features from time to time.
-
-2. Age Requirement
-KEKE is intended for users who are 18 years or older.
-
-[PASTE YOUR FULL TERMS HERE]`;
-
-const DEFAULT_PRIVACY = `KE Privacy Policy
-
-Welcome to KEKE (“KEKE”, the “Platform”, or the “Services”).
-The Platform is owned and operated by KEKE Agency (“we”, “us”, or “our”).
-
-We respect your privacy and are committed to protecting your personal information. This Privacy Policy explains what information we may collect, how we use it, when we may share it, and the choices you may have regarding your information.
-
-[PASTE YOUR FULL PRIVACY HERE]`;
+const DEFAULT_TERMS = `KEKE Terms...`;
+const DEFAULT_PRIVACY = `KEKE Privacy...`;
 
 let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [];
-let chats = JSON.parse(localStorage.getItem('patanishaChats')) || {};
-let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || [];
+let maleUsers = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [];
+let currentAnchorTab = 'all';
 
 function showAlert(msg, type){
   let alert = document.getElementById('alert');
@@ -170,175 +112,131 @@ function showAlert(msg, type){
   setTimeout(()=>{alert.style.display='none'}, 3000);
 }
 
-function saveAll(){
-  localStorage.setItem('patanishaUsers', JSON.stringify(users));
-  localStorage.setItem('patanishaChats', JSON.stringify(chats));
-  localStorage.setItem('blockedUsers', JSON.stringify(blocked));
-  updateStats();
-  loadUsers();
+// ANCHOR FUNCTIONS
+function switchAnchorTab(tab, btn){
+  currentAnchorTab = tab;
+  document.querySelectorAll('.anchor-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAnchors();
 }
 
-function updateStats(){
-  document.getElementById('totalUsers').innerText = users.length;
-  document.getElementById('totalChats').innerText = Object.keys(chats).length;
-  document.getElementById('blockedUsers').innerText = blocked.length;
-}
-
-function addUser(){
-  let name = document.getElementById('name').value.trim();
-  let city = document.getElementById('city').value.trim();
-  let age = document.getElementById('age').value;
-  let friends = document.getElementById('friends').value;
-  let level = document.getElementById('level').value;
-
-  if(!name ||!city ||!age) return showAlert('Please fill all required fields', 'error');
-
-  users.push({
-    name: name,
-    avatar: "https://i.pravatar.cc/100?u=" + name.replace(/\s/g,''),
-    friends: parseInt(friends),
-    level: parseInt(level),
-    distance: "1km",
-    age: parseInt(age),
-    city: city,
-    svip: parseInt(level) > 10? "SVIP2" : ""
-  });
-
-  saveAll();
-  showAlert('User added successfully!', 'success');
-  document.getElementById('name').value = '';
-  document.getElementById('city').value = '';
-  document.getElementById('age').value = '';
-}
-
-function loadUsers(){
-  if(users.length === 0){
-    document.getElementById('userList').innerHTML = '<p style="color:#999;text-align:center">No users found</p>';
+function loadAnchors(){
+  let search = document.getElementById('anchorSearch').value.toLowerCase();
+  let allAnchors = [
+    ...users.map(u=>({...u, gender:'female'})),
+    ...maleUsers.map(u=>({...u, gender:'male'}))
+  ];
+  
+  // Filter by tab
+  let filtered = allAnchors;
+  if(currentAnchorTab === 'male') filtered = allAnchors.filter(u=>u.gender==='male');
+  if(currentAnchorTab === 'female') filtered = allAnchors.filter(u=>u.gender==='female');
+  if(currentAnchorTab === 'pending') filtered = allAnchors.filter(u=>u.gender==='female' && u.approved===false);
+  
+  // Filter by search
+  if(search){
+    filtered = filtered.filter(u=> 
+      u.name.toLowerCase().includes(search) || 
+      (u.id && u.id.toString().includes(search))
+    );
+  }
+  
+  updateStats(allAnchors);
+  
+  if(filtered.length === 0){
+    document.getElementById('anchorList').innerHTML = '<p style="color:#999;text-align:center">No anchors found</p>';
     return;
   }
+  
   let html = '';
-  users.forEach((u, index)=>{
-    html += `<div class="user-item">
-      <div class="user-info">
-        <b>${u.name}</b>
-        <span>${u.city} • ${u.age}yrs • ${u.friends} friends • Lv${u.level}</span>
+  filtered.forEach(u=>{
+    let income = u.income || 0;
+    let totalCoins = u.coins || 0;
+    let isOnline = u.online;
+    let lastSeen = u.lastSeen || '2h ago';
+    let bio = u.bio || u.desc || 'No bio';
+    let id = u.id || 'N/A';
+    let status = u.approved === true ? 'approved' : u.approved === false ? 'pending' : 'approved';
+    
+    html += `<div class="anchor-card">
+      <div class="anchor-avatar">
+        <img src="${u.avatar}">
+        ${isOnline?'<div class="online-dot"></div>':''}
       </div>
-      <button class="del-btn" onclick="deleteUser(${index})">Delete</button>
+      <div class="anchor-info">
+        <div class="anchor-info-row"><span>NickName :</span> <b>${u.name} <span style="color:#888">(${u.gender})</span></b></div>
+        <div class="anchor-info-row"><span>Income :</span> <b style="color:#00C853">${income.toFixed(2)}</b></div>
+        <div class="anchor-info-row"><span>Total Coins :</span> <b>${totalCoins}</b></div>
+        <div class="anchor-info-row"><span>Status :</span> <b style="color:${isOnline?'#4CAF50':'#999'}">${isOnline?'Online':`Last seen ${lastSeen}`}</b></div>
+        <div class="anchor-info-row"><span>Bio :</span> <span style="font-size:12px">${bio.substring(0,50)}</span></div>
+        <div>
+          <span class="anchor-id">ID:${id}</span>
+          ${u.gender==='female'?`<span class="status-badge status-${status}">${status.toUpperCase()}</span>`:''}
+        </div>
+        <div style="margin-top:8px">
+          <button class="btn btn-yellow" onclick="viewAnchorDetails('${id}')">details</button>
+          ${u.gender==='female' && status==='pending'?`
+            <button class="btn btn-success" onclick="approveAnchor('${id}')">✅ Approve</button>
+            <button class="btn btn-danger" onclick="rejectAnchor('${id}')">❌ Reject</button>
+          `:''}
+        </div>
+      </div>
     </div>`;
   });
-  document.getElementById('userList').innerHTML = html;
+  document.getElementById('anchorList').innerHTML = html;
 }
 
-function deleteUser(index){
-  if(confirm('Delete ' + users[index].name + '?')){
-    users.splice(index,1);
-    saveAll();
-    showAlert('User deleted', 'success');
-  }
+function approveAnchor(id){
+  let u = users.find(x=>x.id==id);
+  if(u){ u.approved = true; localStorage.setItem('patanishaUsers', JSON.stringify(users)); }
+  showAlert('Anchor Approved', 'success');
+  loadAnchors();
 }
 
-function viewChats(){
-  let chatKeys = Object.keys(chats);
-  if(chatKeys.length === 0){
-    document.getElementById('chatList').innerHTML = '<p style="color:#999">No chats yet</p>';
-    return;
-  }
-  let html = '<h4 style="margin-bottom:10px">Active Chats:</h4>';
-  chatKeys.forEach(name=>{
-    let msgs = chats[name].length;
-    let lastMsg = chats[name][msgs-1]?.text || '';
-    html += `<div class="user-item">
-      <div class="user-info">
-        <b>${name}</b>
-        <span>${msgs} messages • Last: ${lastMsg.substring(0,30)}</span>
-      </div>
-      <button class="del-btn" onclick="deleteChat('${name}')">Clear</button>
-    </div>`;
-  });
-  document.getElementById('chatList').innerHTML = html;
+function rejectAnchor(id){
+  let u = users.find(x=>x.id==id);
+  if(u){ u.approved = false; localStorage.setItem('patanishaUsers', JSON.stringify(users)); }
+  showAlert('Anchor Rejected', 'success');
+  loadAnchors();
 }
 
-function deleteChat(name){
-  delete chats[name];
-  saveAll();
-  viewChats();
-  showAlert('Chat cleared', 'success');
+function viewAnchorDetails(id){
+  let u = [...users, ...maleUsers].find(x=>x.id==id);
+  if(!u) return;
+  alert(`Anchor Details:\n\nName: ${u.name}\nID: ${u.id}\nGender: ${u.gender}\nCity: ${u.city}\nAge: ${u.age}\nIncome: ${u.income||0}\nCoins: ${u.coins||0}\nApproved: ${u.approved}\nBio: ${u.bio||u.desc||'None'}`);
 }
 
-function clearChats(){
-  if(confirm('Clear ALL chats?')){
-    chats = {};
-    saveAll();
-    viewChats();
-    showAlert('All chats cleared', 'success');
-  }
+function updateStats(allAnchors){
+  let totalIncome = allAnchors.reduce((sum,u)=>sum+(u.income||0),0);
+  document.getElementById('totalUsers').innerText = allAnchors.length;
+  document.getElementById('totalAnchors').innerText = allAnchors.length;
+  document.getElementById('pendingAnchors').innerText = users.filter(u=>u.approved===false).length;
+  document.getElementById('totalIncome').innerText = totalIncome.toFixed(0);
 }
 
-function clearUsers(){
-  if(confirm('Reset all users to demo data?')){
-    localStorage.removeItem('patanishaUsers');
+// TERMS EDITOR
+function switchEditTab(tab, btn){
+  document.getElementById('termsEditor').style.display = tab==='terms'? 'block' : 'none';
+  document.getElementById('privacyEditor').style.display = tab==='privacy'? 'block' : 'none';
+}
+
+function saveContent(){
+  localStorage.setItem('keke_terms', document.getElementById('termsEditor').value);
+  localStorage.setItem('keke_privacy', document.getElementById('privacyEditor').value);
+  showAlert('Saved', 'success');
+}
+
+function clearAll(){
+  if(confirm('RESET EVERYTHING?')){
+    localStorage.clear();
     location.reload();
   }
 }
 
-function clearBlocked(){
-  if(confirm('Clear blocked users list?')){
-    blocked = [];
-    saveAll();
-    showAlert('Blocked list cleared', 'success');
-  }
-}
-
-function clearAll(){
-  if(confirm('⚠️ THIS WILL DELETE EVERYTHING! Are you sure?')){
-    localStorage.clear();
-    showAlert('Everything reset. Reloading...', 'success');
-    setTimeout(()=>location.reload(), 1000);
-  }
-}
-
-// ADDED: TERMS FUNCTIONS
-function switchEditTab(tab, btn){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('editTerms').style.display = tab==='terms'? 'block' : 'none';
-  document.getElementById('editPrivacy').style.display = tab==='privacy'? 'block' : 'none';
-}
-
-function loadTerms(){
-  document.getElementById('termsEditor').value = localStorage.getItem('keke_terms') || DEFAULT_TERMS;
-  document.getElementById('privacyEditor').value = localStorage.getItem('keke_privacy') || DEFAULT_PRIVACY;
-}
-
-function saveTerms(){
-  localStorage.setItem('keke_terms', document.getElementById('termsEditor').value);
-  showAlert('Terms saved successfully!', 'success');
-}
-
-function savePrivacy(){
-  localStorage.setItem('keke_privacy', document.getElementById('privacyEditor').value);
-  showAlert('Privacy saved successfully!', 'success');
-}
-
-function resetTerms(){
-  if(confirm('Reset Terms to default?')){
-    localStorage.setItem('keke_terms', DEFAULT_TERMS);
-    loadTerms();
-    showAlert('Terms reset', 'success');
-  }
-}
-
-function resetPrivacy(){
-  if(confirm('Reset Privacy to default?')){
-    localStorage.setItem('keke_privacy', DEFAULT_PRIVACY);
-    loadTerms();
-    showAlert('Privacy reset', 'success');
-  }
-}
-
-updateStats();
-loadUsers();
-loadTerms();
+// INIT
+document.getElementById('termsEditor').value = localStorage.getItem('keke_terms') || DEFAULT_TERMS;
+document.getElementById('privacyEditor').value = localStorage.getItem('keke_privacy') || DEFAULT_PRIVACY;
+loadAnchors();
 </script>
 </body>
 </html>
