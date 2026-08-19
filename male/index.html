@@ -89,7 +89,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 <!-- NAV WITH CHAT SUBMENU -->
 <div class="nav">
   <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
-  <div class="nav-item" onclick="openInfoRates()"><span class="nav-icon">ℹ️</span>Info</div>
+  <div class="nav-item" onclick="window.location='../about.html'"><span class="nav-icon">ℹ️</span>About</div>
   <div class="nav-item" id="chatNavItem" onclick="toggleChatMenu()">
     <span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span>
     <div class="nav-submenu" id="chatSubmenu">
@@ -132,6 +132,9 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
     <div style="padding:0 0 80px">
       <div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div>
       <div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div>
+      <!-- ADDED TERMS -->
+      <div class="menu-item" onclick="window.location='../about.html'">📄 Terms & Conditions</div>
+      <div class="menu-item" onclick="window.location='../about.html'">🔒 Privacy Policy</div>
       <button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button>
     </div>
   </div>
