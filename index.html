@@ -106,7 +106,7 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 
 <div class="nav">
   <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
-  <div class="nav-item" onclick="openInfo()"><span class="nav-icon">ℹ️</span>Info</div>
+  <div class="nav-item" onclick="window.location='about.html'"><span class="nav-icon">ℹ️</span>About</div>
   <div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span></div>
   <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
 </div>
@@ -143,6 +143,9 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
     <div style="padding:0 15px 80px">
       <div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div>
       <div class="menu-item" onclick="openAccountSettings()">🏦 Receiving Account</div>
+      <!-- ADDED TERMS -->
+      <div class="menu-item" onclick="window.location='about.html'">📄 Terms & Conditions</div>
+      <div class="menu-item" onclick="window.location='about.html'">🔒 Privacy Policy</div>
       <button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button>
     </div>
   </div>
