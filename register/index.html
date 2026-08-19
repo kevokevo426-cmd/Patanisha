@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KEKE - Login</title>
+<title>Patanisha - Login</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
 body{background:linear-gradient(135deg,#00C8FF 0%,#00FFC8 50%,#FF00FF 100%);min-height:100vh;padding:0}
@@ -19,7 +19,7 @@ h2{font-size:20px;color:#333;margin-bottom:10px}
 .tab-auth.active{background:#fff;color:#9370DB;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
 .step{display:none}
 .step.active{display:block}
-.form-group{margin-bottom:16px;position:relative}
+.form-group{margin-bottom:16px}
 label{display:block;margin-bottom:8px;font-weight:600;font-size:14px;color:#333}
 input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:15px;background:#f8f8f8}
 .gender-box{display:flex;gap:15px;justify-content:center}
@@ -54,11 +54,13 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 .confirm-ok{flex:1;padding:14px;background:linear-gradient(135deg,#FF9800,#FF5722);color:#fff;border:none;border-radius:15px;font-weight:700}
 .error{color:red;font-size:12px;margin-top:5px;display:none}
 .link-text{text-align:center;margin-top:15px;color:#9370DB;font-weight:600;cursor:pointer}
+
+/* NEW - Terms checkbox */
 .terms-box{display:flex;align-items:flex-start;gap:10px;margin-top:10px;font-size:13px;color:#555}
 .terms-box input{width:18px;height:18px;margin-top:2px}
 .terms-box a{color:#9370DB;text-decoration:underline}
-.password-wrapper{position:relative}
-.eye-icon{position:absolute;right:14px;top:42px;cursor:pointer;font-size:18px;color:#999;user-select:none}
+
+/* NEW - Terms Modal */
 .terms-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px}
 .terms-content{background:#fff;border-radius:20px;padding:20px;max-width:500px;max-height:70vh;overflow-y:auto;text-align:left}
 .terms-content h3{margin-bottom:10px;color:#333}
@@ -78,29 +80,31 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 </div>
 
 <div class="container">
-  <h1>Welcome to KEKE</h1>
+  <h1>Welcome to Patanisha</h1>
 
+  <!-- AUTH TABS -->
   <div class="tabs-auth">
     <div class="tab-auth active" id="tabSignIn" onclick="switchAuth('signin')">Sign In</div>
     <div class="tab-auth" id="tabSignUp" onclick="switchAuth('signup')">Sign Up</div>
   </div>
 
+  <!-- SIGN IN FORM -->
   <div class="step active" id="signinStep">
     <div class="form-group">
       <label>Email</label>
       <input type="email" id="loginEmail" placeholder="you@gmail.com">
       <div class="error" id="loginEmailError">Enter your email</div>
     </div>
-    <div class="form-group password-wrapper">
+    <div class="form-group">
       <label>Password</label>
       <input type="password" id="loginPassword" placeholder="Your password">
-      <span class="eye-icon" onclick="togglePassword('loginPassword', this)">👁️</span>
       <div class="error" id="loginPassError">Enter your password</div>
     </div>
     <button class="btn" onclick="doSignIn()">Sign In</button>
     <p class="link-text" onclick="switchAuth('signup')">Don't have an account? Sign Up</p>
   </div>
 
+  <!-- SIGN UP STEP 1 -->
   <div class="step" id="step1">
     <h2>Create Account</h2>
     <p class="subtitle">Cannot be modified after submission</p>
@@ -109,16 +113,15 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
       <input type="email" id="email" placeholder="you@gmail.com">
       <div class="error" id="emailError">Please enter a valid email</div>
     </div>
-    <div class="form-group password-wrapper">
+    <div class="form-group">
       <label>Password</label>
       <input type="password" id="password" placeholder="Min 6 characters">
-      <span class="eye-icon" onclick="togglePassword('password', this)">👁️</span>
       <div class="error" id="passError">Password must be 6+ characters</div>
     </div>
-    <div class="form-group password-wrapper">
+    <!-- NEW: Confirm Password -->
+    <div class="form-group">
       <label>Confirm Password</label>
       <input type="password" id="confirmPassword" placeholder="Re-enter password">
-      <span class="eye-icon" onclick="togglePassword('confirmPassword', this)">👁️</span>
       <div class="error" id="confirmPassError">Passwords do not match</div>
     </div>
     <div class="gender-box">
@@ -128,9 +131,10 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
     <div class="error" id="genderError">Please select gender</div>
     <div class="form-group"><label>Invitation Code <small>(Optional)</small></label><input type="text" id="inviteCode"></div>
 
+    <!-- CHANGED: Made "Terms" clickable -->
     <div class="terms-box">
       <input type="checkbox" id="termsCheck">
-      <label for="termsCheck">I agree to the <a href="#" onclick="openTerms(event)">Terms & Conditions</a> and <a href="#" onclick="openPrivacy(event)">Privacy Policy</a></label>
+      <label for="termsCheck">I agree to the <a href="#" onclick="openTerms(event)">Terms</a></label>
     </div>
     <div class="error" id="termsError">You must agree to Terms & Conditions</div>
 
@@ -183,11 +187,12 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
   </div>
 </div>
 
+<!-- NEW: Terms Modal -->
 <div class="terms-modal" id="termsModal">
   <div class="terms-content">
-    <h3 id="termsTitle">Terms & Conditions</h3>
+    <h3>Terms & Conditions</h3>
     <pre id="termsBody"></pre>
-    <button class="close-terms" onclick="closeTerms()">I Understand</button>
+    <button class="close-terms" onclick="closeTerms()">Close</button>
   </div>
 </div>
 
@@ -211,59 +216,26 @@ KE is a social platform that may provide services including:
 KEKE may add, change, suspend, or remove features from time to time.
 
 2. Age Requirement
-KE is intended for users who are 18 years or older, or who meet the applicable legal age requirement in their jurisdiction, whichever is higher.
+KEKE is intended for users who are 18 years or older, or who meet the applicable legal age requirement in their jurisdiction, whichever is higher.
 You must not use KEKE if you do not meet the applicable age requirement.
 If we discover that an account belongs to a person who is below the required age, we may suspend or terminate that account.
 
 Contact: kevokevo426@gmail.com
 Thank you for using KEKE.`;
 
-const KEKE_PRIVACY = `KEKE Privacy Policy
-
-Last updated: 19 Aug 2026
-
-1. Information We Collect
-We collect information you provide when creating an account: Email, Name, DOB, City, Bio, Photos, Avatar.
-We also collect usage data to improve KEKE.
-
-2. How We Use Information
-To provide social networking, chat, live features, and virtual items.
-To keep KEKE safe and secure.
-To comply with legal obligations.
-
-3. Data Storage
-Your data is stored securely. Photos and profile data are saved to provide app functionality.
-
-4. Sharing
-We do not sell your personal information. We may use third-party services for hosting, payments, and analytics.
-
-5. Your Rights
-You can request deletion of your account by contacting kevokevo426@gmail.com
-
-6. Contact
-KEKE Agency
-Email: kevokevo426@gmail.com`;
-
 let userData = {};let selectedGender = '';let tempGender = '';let selectedHobbies = [];let uploadedPhotos = [];
 const MAX_HOBBIES = 3;const MAX_PHOTOS = 5;
 const hobbiesData = {"Creativity":["Painting","Drawing","Crafts"],"Sports":["Ping pong","Volleyball","Swimming"],"Outdoor":["Hiking","Camping"],"At home":["Cooking","Reading"]};
 
-function togglePassword(id, el){
-  const input = document.getElementById(id);
-  if(input.type === "password"){
-    input.type = "text";
-    el.innerText = "🙈";
-  }else{
-    input.type = "password";
-    el.innerText = "👁️";
-  }
+// NEW: Open Terms
+function openTerms(e){
+  e.preventDefault();
+  document.getElementById('termsBody').innerText = KEKE_TERMS;
+  document.getElementById('termsModal').style.display = 'flex';
 }
+function closeTerms(){document.getElementById('termsModal').style.display = 'none';}
 
-// FIXED: Use correct variable names KEKE_TERMS and KEKE_PRIVACY
-function openTerms(e){e.preventDefault();document.getElementById('termsTitle').innerText="Terms & Conditions";document.getElementById('termsBody').innerText=KE_TERMS;document.getElementById('termsModal').style.display='flex';}
-function openPrivacy(e){e.preventDefault();document.getElementById('termsTitle').innerText="Privacy Policy";document.getElementById('termsBody').innerText=KE_PRIVACY;document.getElementById('termsModal').style.display='flex';}
-function closeTerms(){document.getElementById('termsModal').style.display='none';}
-
+// SWITCH BETWEEN SIGN IN AND SIGN UP
 function switchAuth(type){
   document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab-auth').forEach(t=>t.classList.remove('active'));
@@ -276,6 +248,7 @@ function switchAuth(type){
   }
 }
 
+// SIGN IN LOGIC
 function doSignIn(){
   const email = document.getElementById('loginEmail').value;
   const pass = document.getElementById('loginPassword').value;
@@ -283,6 +256,7 @@ function doSignIn(){
   document.getElementById('loginPassError').style.display = 'none';
   if(!email){document.getElementById('loginEmailError').style.display = 'block';return;}
   if(!pass){document.getElementById('loginPassError').style.display = 'block';return;}
+
   const savedProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
   if(savedProfile && savedProfile.email === email && savedProfile.password === pass){
     alert('Welcome back ' + savedProfile.name + '!');
@@ -313,16 +287,19 @@ function goToStep2(){
   const pass = document.getElementById('password').value;
   const confirmPass = document.getElementById('confirmPassword').value;
   const terms = document.getElementById('termsCheck').checked;
+
   document.getElementById('emailError').style.display = 'none';
   document.getElementById('passError').style.display = 'none';
   document.getElementById('confirmPassError').style.display = 'none';
   document.getElementById('genderError').style.display = 'none';
   document.getElementById('termsError').style.display = 'none';
+
   if(!email.includes('@')) {document.getElementById('emailError').style.display = 'block';valid = false;}
   if(pass.length < 6) {document.getElementById('passError').style.display = 'block';valid = false;}
   if(pass!== confirmPass) {document.getElementById('confirmPassError').style.display = 'block';valid = false;}
   if(!selectedGender) {document.getElementById('genderError').style.display = 'block';valid = false;}
   if(!terms) {document.getElementById('termsError').style.display = 'block';valid = false;}
+
   if(!valid) return;
   userData.email = email;userData.password = pass;userData.gender = selectedGender;userData.inviteCode = document.getElementById('inviteCode').value;
   document.getElementById('step1').classList.remove('active');document.getElementById('step2').classList.add('active');
