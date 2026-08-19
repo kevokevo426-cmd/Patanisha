@@ -22,7 +22,7 @@ h2{font-size:20px;color:#333;margin-bottom:10px}
 .form-group{margin-bottom:16px;position:relative}
 label{display:block;margin-bottom:8px;font-weight:600;font-size:14px;color:#333}
 input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:15px;background:#f8f8f8}
-.gender-box{display:flex;gap:15px;justify-content:center}
+.gender-box{display:flex;gap:15px;justify-content:center;margin-bottom:16px}
 .gender-card{flex:1;text-align:center;padding:20px 10px;border:2px solid #eee;border-radius:16px;cursor:pointer}
 .gender-card.selected{border-color:#FF9800;background:#FFF3E0}
 .peacock{width:70px;height:70px;margin:0 auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px}
@@ -70,9 +70,7 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 <body>
 
 <div class="top-bg">
-  <div class="float-avatars" id="randomAvatars">
-    <!-- 4 random photos will load here -->
-  </div>
+  <div class="float-avatars" id="randomAvatars"></div>
 </div>
 
 <div class="container">
@@ -119,11 +117,15 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
       <span class="eye-icon" onclick="togglePassword('confirmPassword', this)">👁️</span>
       <div class="error" id="confirmPassError">Passwords do not match</div>
     </div>
+
+    <!-- GENDER JOINED TO REGISTRATION -->
+    <label>Select Gender</label>
     <div class="gender-box">
       <div class="gender-card" onclick="askGenderConfirm('Male')"><div class="peacock male">👑🦚</div><div>♂ Male</div></div>
       <div class="gender-card" onclick="askGenderConfirm('Female')"><div class="peacock female">🎀🦚</div><div>♀ Female</div></div>
     </div>
     <div class="error" id="genderError">Please select gender</div>
+
     <div class="form-group"><label>Invitation Code <small>(Optional)</small></label><input type="text" id="inviteCode"></div>
 
     <div class="terms-box">
@@ -192,7 +194,61 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 <input type="file" id="photoInput" accept="image/*" style="display:none">
 
 <script>
-const KEKE_TERMS = `KE Terms and Conditions... Contact: kevokevo426@gmail.com`;
+const KEKE_TERMS = `KE Terms and Conditions
+
+Welcome to KEKE. These Terms and Conditions (“Terms”) explain the rules that apply when you access or use the KEKE application, website, and related services.
+
+By downloading, registering for, accessing, or using KEKE, you agree to these Terms. If you do not agree with these Terms, please do not use KEKE.
+
+1. About KEKE
+KE is a social platform that may provide services including:
+· Social networking
+· Text and voice chatting
+· Live broadcasting
+· User profiles
+· Virtual coins and other virtual items
+· Other social and entertainment features introduced by KEKE
+
+KE may add, change, suspend, or remove features from time to time.
+
+2. Age Requirement
+KE is intended for users who are 18 years or older, or who meet the applicable legal age requirement in their jurisdiction, whichever is higher.
+You must not use KEKE if you do not meet the applicable age requirement.
+If we discover that an account belongs to a person who is below the required age, we may suspend or terminate that account.
+
+3. Account Registration and Security
+To use certain features, you must create an account. You agree to:
+· Provide accurate and complete information
+· Keep your login information confidential
+· Be responsible for all activity under your account
+Notify us immediately if you suspect unauthorized use of your account.
+
+4. User Conduct
+You agree not to:
+· Harass, bully, or harm other users
+· Post content that is illegal, hateful, or harmful
+· Impersonate others
+· Use KEKE for spam or commercial purposes without permission
+· Attempt to hack or disrupt the service
+
+5. Content
+You retain ownership of content you post. By posting, you grant KEKE a license to use, display, and distribute your content on the platform.
+We may remove content that violates these Terms.
+
+6. Virtual Items and Payments
+KE may offer virtual coins and items. All purchases are final. Virtual items have no cash value.
+
+7. Termination
+We may suspend or terminate your account if you violate these Terms.
+
+8. Disclaimer
+KEKE is provided "as is". We do not guarantee the service will be uninterrupted or error-free.
+
+9. Changes to Terms
+We may update these Terms. Continued use means you accept the changes.
+
+Contact: kevokevo426@gmail.com
+Thank you for using KEKE.`;
 
 // OPTION 1: ONLINE AVATAR POOL - WORKS ON PHONE
 const avatarPool = [
@@ -203,7 +259,6 @@ const avatarPool = [
   "https://i.pravatar.cc/60?img=15"
 ];
 
-// SHUFFLE AND SHOW 4 RANDOM ON EVERY LOAD
 function shuffleAvatars(){
   let shuffled = [...avatarPool].sort(() => 0.5 - Math.random());
   let selected = shuffled.slice(0, 4);
@@ -213,8 +268,6 @@ function shuffleAvatars(){
   });
   document.getElementById('randomAvatars').innerHTML = html;
 }
-
-// RUN ON PAGE LOAD
 window.addEventListener('load', shuffleAvatars);
 
 let userData = {};let selectedGender = '';let tempGender = '';let selectedHobbies = [];let uploadedPhotos = [];
@@ -280,7 +333,9 @@ function doSignIn(){
   const savedProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
   if(savedProfile && savedProfile.email === email && savedProfile.password === pass){
     alert('Welcome back ' + savedProfile.name + '!');
-    window.location.href = '../index.html';
+    // REDIRECT BASED ON GENDER ON LOGIN TOO
+    if(savedProfile.gender === 'Male') window.location.href = 'male.html';
+    else window.location.href = 'female.html';
   }else{
     alert('Invalid email or password. Please Sign Up first.');
   }
@@ -384,7 +439,13 @@ function saveProfile(){
   localStorage.setItem('patanishaUsers', JSON.stringify(users));
 
   alert('Profile Created Successfully!');
-  window.location.href = '../index.html';
+
+  // REDIRECT BASED ON GENDER
+  if(userData.gender === 'Male'){
+    window.location.href = 'male.html';
+  } else {
+    window.location.href = 'female.html';
+  }
 }
 </script>
 </body>
