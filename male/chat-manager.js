@@ -22,7 +22,8 @@ const ChatManager = {
       );
 
       if(document.getElementById('meCoins')){
-        document.getElementById('meCoins').innerText = myProfile.coins;
+        document.getElementById('meCoins').innerText =
+          myProfile.coins;
       }
 
       if(!myProfile.usage) myProfile.usage = [];
@@ -71,6 +72,10 @@ const ChatManager = {
     };
   },
 
+  /* =====================================================
+     VOICE CALL
+     ===================================================== */
+
   startVoiceCall(user){
     if(myProfile.coins < 50){
       this.showNoCoins();
@@ -90,6 +95,10 @@ const ChatManager = {
 
     return true;
   },
+
+  /* =====================================================
+     VIDEO CALL
+     ===================================================== */
 
   startVideoCall(user){
     if(myProfile.coins < 100){
@@ -113,12 +122,14 @@ const ChatManager = {
 
   callTimer:null,
 
-  startCallTimer(user, type, costPerMin){
+  startCallTimer(user,type,costPerMin){
+
     let seconds = 0;
 
     clearInterval(this.callTimer);
 
     this.callTimer = setInterval(()=>{
+
       seconds++;
 
       if(seconds % 60 === 0){
@@ -153,7 +164,7 @@ const ChatManager = {
             JSON.stringify(myProfile)
           );
 
-        } else {
+        }else{
 
           this.endCall();
 
@@ -199,10 +210,480 @@ const ChatManager = {
     alert(
       '⚠️ Insufficient Coins\n' +
       'Chat: 10 coins/msg\n' +
+      'Photo: 20 coins/photo\n' +
+      'Voice message: 30 coins\n' +
       'Voice: 50 coins/min\n' +
       'Video: 100 coins/min\n' +
       'Please recharge.'
     );
+  },
+
+  /* =====================================================
+     PHOTO SYSTEM
+     ===================================================== */
+
+  openGallery(userName){
+
+    let input =
+      document.getElementById(
+        'photoGalleryInput_' + userName
+      );
+
+    if(!input){
+      return;
+    }
+
+    input.value = '';
+    input.click();
+  },
+
+  openCamera(userName){
+
+    let input =
+      document.getElementById(
+        'photoCameraInput_' + userName
+      );
+
+    if(!input){
+      return;
+    }
+
+    input.value = '';
+    input.click();
+  },
+
+  handlePhotoSelected(file,userName){
+
+    if(!file){
+      return;
+    }
+
+    if(!file.type.startsWith('image/')){
+      alert('Please select a photo.');
+      return;
+    }
+
+    if(myProfile.coins < 20){
+      this.showNoCoins();
+      return;
+    }
+
+    /*
+      Resize the image before saving it.
+      This keeps localStorage from becoming
+      unnecessarily large.
+    */
+
+    let reader = new FileReader();
+
+    reader.onload = (event)=>{
+
+      let img = new Image();
+
+      img.onload = ()=>{
+
+        let maxWidth = 1000;
+        let maxHeight = 1000;
+
+        let width = img.width;
+        let height = img.height;
+
+        if(width > maxWidth){
+
+          height =
+            height *
+            (maxWidth / width);
+
+          width = maxWidth;
+        }
+
+        if(height > maxHeight){
+
+          width =
+            width *
+            (maxHeight / height);
+
+          height = maxHeight;
+        }
+
+        let canvas =
+          document.createElement('canvas');
+
+        canvas.width = width;
+        canvas.height = height;
+
+        let ctx =
+          canvas.getContext('2d');
+
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          width,
+          height
+        );
+
+        let photoData =
+          canvas.toDataURL(
+            'image/jpeg',
+            0.75
+          );
+
+        this.sendPhoto(
+          userName,
+          photoData
+        );
+      };
+
+      img.src = event.target.result;
+    };
+
+    reader.readAsDataURL(file);
+  },
+
+  sendPhoto(userName,photoData){
+
+    if(myProfile.coins < 20){
+      this.showNoCoins();
+      return false;
+    }
+
+    let confirmed = confirm(
+      'Send this photo for 20 coins?'
+    );
+
+    if(!confirmed){
+      return false;
+    }
+
+    let chatKey =
+      'patanisha_chat_' +
+      myProfile.id +
+      '_' +
+      userName;
+
+    let chatData =
+      JSON.parse(
+        localStorage.getItem(chatKey)
+      ) || {
+        messages:[],
+        msgCount:0
+      };
+
+    chatData.messages.push({
+      from:'me',
+      type:'photo',
+      photo:photoData,
+      text:'📷 Photo',
+      time:new Date().toLocaleTimeString()
+    });
+
+    localStorage.setItem(
+      chatKey,
+      JSON.stringify(chatData)
+    );
+
+    /* Deduct 20 coins */
+
+    myProfile.coins -= 20;
+
+    if(!myProfile.usage){
+      myProfile.usage = [];
+    }
+
+    myProfile.usage.unshift({
+      coins:20,
+      to:userName,
+      reason:'Photo message',
+      date:new Date().toLocaleString()
+    });
+
+    localStorage.setItem(
+      'patanisha_myProfile_male',
+      JSON.stringify(myProfile)
+    );
+
+    if(document.getElementById('meCoins')){
+      document.getElementById('meCoins').innerText =
+        myProfile.coins;
+    }
+
+    this.renderChat(userName);
+
+    return true;
+  },
+
+  /* =====================================================
+     VOICE MESSAGE SYSTEM
+     ===================================================== */
+
+  mediaRecorder:null,
+  audioChunks:[],
+  recordingUser:null,
+  recordingStartTime:null,
+
+  startVoiceMessage(userName){
+
+    if(myProfile.coins < 30){
+      this.showNoCoins();
+      return false;
+    }
+
+    if(!navigator.mediaDevices ||
+       !navigator.mediaDevices.getUserMedia){
+
+      alert(
+        'Voice recording is not supported by this browser.'
+      );
+
+      return false;
+    }
+
+    if(this.mediaRecorder &&
+       this.mediaRecorder.state === 'recording'){
+
+      this.stopVoiceMessage();
+      return true;
+    }
+
+    navigator.mediaDevices
+      .getUserMedia({
+        audio:true
+      })
+      .then(stream=>{
+
+        this.audioChunks = [];
+        this.recordingUser = userName;
+        this.recordingStartTime = Date.now();
+
+        this.mediaRecorder =
+          new MediaRecorder(stream);
+
+        this.mediaRecorder.ondataavailable =
+          event=>{
+
+            if(event.data.size > 0){
+              this.audioChunks.push(
+                event.data
+              );
+            }
+          };
+
+        this.mediaRecorder.onstop =
+          ()=>{
+
+            let audioBlob =
+              new Blob(
+                this.audioChunks,
+                {
+                  type:
+                    this.mediaRecorder.mimeType ||
+                    'audio/webm'
+                }
+              );
+
+            stream.getTracks().forEach(
+              track=>track.stop()
+            );
+
+            this.finishVoiceMessage(
+              userName,
+              audioBlob
+            );
+          };
+
+        this.mediaRecorder.start();
+
+        this.showRecordingState(
+          userName,
+          true
+        );
+
+      })
+      .catch(error=>{
+
+        console.error(error);
+
+        alert(
+          'Microphone permission is required to record a voice message.'
+        );
+      });
+
+    return true;
+  },
+
+  stopVoiceMessage(){
+
+    if(
+      this.mediaRecorder &&
+      this.mediaRecorder.state === 'recording'
+    ){
+
+      this.mediaRecorder.stop();
+
+      this.showRecordingState(
+        this.recordingUser,
+        false
+      );
+    }
+  },
+
+  showRecordingState(userName,isRecording){
+
+    let button =
+      document.getElementById(
+        'voiceRecordButton_' + userName
+      );
+
+    let status =
+      document.getElementById(
+        'voiceRecordingStatus_' + userName
+      );
+
+    if(button){
+
+      button.innerText =
+        isRecording ? '⏹️' : '🎤';
+
+      button.title =
+        isRecording
+          ? 'Stop recording'
+          : 'Voice message';
+    }
+
+    if(status){
+
+      status.style.display =
+        isRecording
+          ? 'block'
+          : 'none';
+
+      if(isRecording){
+
+        status.innerText =
+          '🔴 Recording... tap 🎤 to send';
+      }
+    }
+  },
+
+  finishVoiceMessage(userName,audioBlob){
+
+    if(!audioBlob ||
+       audioBlob.size === 0){
+
+      alert('No voice recording was captured.');
+
+      return;
+    }
+
+    if(myProfile.coins < 30){
+
+      this.showNoCoins();
+
+      return;
+    }
+
+    let reader =
+      new FileReader();
+
+    reader.onload = event=>{
+
+      let audioData =
+        event.target.result;
+
+      let confirmed =
+        confirm(
+          'Send this voice message for 30 coins?'
+        );
+
+      if(!confirmed){
+        return;
+      }
+
+      this.sendVoiceMessage(
+        userName,
+        audioData
+      );
+    };
+
+    reader.readAsDataURL(
+      audioBlob
+    );
+  },
+
+  sendVoiceMessage(userName,audioData){
+
+    if(myProfile.coins < 30){
+
+      this.showNoCoins();
+
+      return false;
+    }
+
+    let chatKey =
+      'patanisha_chat_' +
+      myProfile.id +
+      '_' +
+      userName;
+
+    let chatData =
+      JSON.parse(
+        localStorage.getItem(chatKey)
+      ) || {
+        messages:[],
+        msgCount:0
+      };
+
+    chatData.messages.push({
+
+      from:'me',
+
+      type:'voice',
+
+      audio:audioData,
+
+      text:'🎤 Voice message',
+
+      time:new Date().toLocaleTimeString()
+    });
+
+    localStorage.setItem(
+      chatKey,
+      JSON.stringify(chatData)
+    );
+
+    /* Deduct 30 coins */
+
+    myProfile.coins -= 30;
+
+    if(!myProfile.usage){
+      myProfile.usage = [];
+    }
+
+    myProfile.usage.unshift({
+
+      coins:30,
+
+      to:userName,
+
+      reason:'Voice message',
+
+      date:new Date().toLocaleString()
+    });
+
+    localStorage.setItem(
+      'patanisha_myProfile_male',
+      JSON.stringify(myProfile)
+    );
+
+    if(document.getElementById('meCoins')){
+      document.getElementById('meCoins').innerText =
+        myProfile.coins;
+    }
+
+    this.renderChat(userName);
+
+    return true;
   },
 
   /* =====================================================
@@ -254,13 +735,15 @@ const ChatManager = {
 
   openGiftPanel(user){
 
-    let giftId = 'giftPanelPopup';
+    let giftId =
+      'giftPanelPopup';
 
     if(document.getElementById(giftId)){
       document.getElementById(giftId).remove();
     }
 
     let giftHtml = `
+
       <div
         id="${giftId}"
         style="
@@ -287,8 +770,6 @@ const ChatManager = {
             flex-direction:column;
           "
         >
-
-          <!-- HEADER -->
 
           <div
             style="
@@ -378,8 +859,6 @@ const ChatManager = {
 
           </div>
 
-          <!-- SET A WISH -->
-
           <div
             style="
               padding:0 20px 15px;
@@ -406,8 +885,6 @@ const ChatManager = {
             </button>
 
           </div>
-
-          <!-- GIFT GRID -->
 
           <div
             style="
@@ -450,12 +927,6 @@ const ChatManager = {
                     justify-content:center;
                     text-align:center;
                   "
-                  onmouseover="
-                    this.style.borderColor='#FFD700'
-                  "
-                  onmouseout="
-                    this.style.borderColor='transparent'
-                  "
                 >
 
                   <div
@@ -481,12 +952,7 @@ const ChatManager = {
                       font-weight:600;
                     "
                   >
-                    <span style="font-size:17px">
-                      🪙
-                    </span>
-
-                    ${gift.coins}
-
+                    🪙 ${gift.coins}
                   </div>
 
                   <div
@@ -494,10 +960,6 @@ const ChatManager = {
                       margin-top:5px;
                       font-size:14px;
                       color:#eee;
-                      white-space:nowrap;
-                      overflow:hidden;
-                      text-overflow:ellipsis;
-                      width:100%;
                     "
                   >
                     ${gift.name}
@@ -510,8 +972,6 @@ const ChatManager = {
             </div>
 
           </div>
-
-          <!-- RECEIVER -->
 
           <div
             style="
@@ -527,7 +987,6 @@ const ChatManager = {
             <strong style="color:#fff">
               ${user.name}
             </strong>
-
           </div>
 
         </div>
@@ -543,7 +1002,8 @@ const ChatManager = {
 
   selectGift(index,receiverName,giftPanelId){
 
-    let gift = this.giftList[index];
+    let gift =
+      this.giftList[index];
 
     if(!gift){
       return;
@@ -561,15 +1021,16 @@ const ChatManager = {
       return;
     }
 
-    let confirmed = confirm(
-      'Send ' +
-      gift.name +
-      ' to ' +
-      receiverName +
-      ' for ' +
-      gift.coins +
-      ' coins?'
-    );
+    let confirmed =
+      confirm(
+        'Send ' +
+        gift.name +
+        ' to ' +
+        receiverName +
+        ' for ' +
+        gift.coins +
+        ' coins?'
+      );
 
     if(!confirmed){
       return;
@@ -583,8 +1044,6 @@ const ChatManager = {
   },
 
   sendGift(gift,receiverName,giftPanelId){
-
-    /* SENDER */
 
     myProfile.coins -= gift.coins;
 
@@ -609,11 +1068,10 @@ const ChatManager = {
         myProfile.coins;
     }
 
-    /* RECEIVER */
-
-    let receiver = users.find(
-      u => u.name === receiverName
-    );
+    let receiver =
+      users.find(
+        u => u.name === receiverName
+      );
 
     if(receiver){
 
@@ -649,8 +1107,6 @@ const ChatManager = {
       );
     }
 
-    /* TRANSACTION */
-
     let giftTransactions =
       JSON.parse(
         localStorage.getItem(
@@ -672,10 +1128,10 @@ const ChatManager = {
       JSON.stringify(giftTransactions)
     );
 
-    /* CLOSE */
-
     let panel =
-      document.getElementById(giftPanelId);
+      document.getElementById(
+        giftPanelId
+      );
 
     if(panel){
       panel.remove();
@@ -698,13 +1154,15 @@ const ChatManager = {
 
   openInbox(){
 
-    let inboxId = 'chatInboxPopup';
+    let inboxId =
+      'chatInboxPopup';
 
     if(document.getElementById(inboxId)){
       document.getElementById(inboxId).remove();
     }
 
     let inboxHtml = `
+
       <div
         class="popup"
         id="${inboxId}"
@@ -731,7 +1189,7 @@ const ChatManager = {
           "
         >
 
-          <!-- HEADER -->
+          <!-- TOP -->
 
           <div
             style="
@@ -775,12 +1233,14 @@ const ChatManager = {
               </div>
 
               <div
+                onclick="
+                  alert('Call history')
+                "
                 style="
                   font-size:18px;
                   color:#999;
                   cursor:pointer
                 "
-                onclick="alert('Call history')"
               >
                 Call
               </div>
@@ -796,7 +1256,9 @@ const ChatManager = {
             >
 
               <span
-                onclick="alert('Select a chat first to send a gift')"
+                onclick="
+                  alert('Select a chat to send a gift')
+                "
                 style="cursor:pointer"
                 title="Gift"
               >
@@ -804,7 +1266,9 @@ const ChatManager = {
               </span>
 
               <span
-                onclick="alert('Profile')"
+                onclick="
+                  alert('Profile')
+                "
                 style="cursor:pointer"
                 title="Profile"
               >
@@ -812,9 +1276,11 @@ const ChatManager = {
               </span>
 
               <span
-                onclick="alert('Statistics')"
+                onclick="
+                  alert('Information')
+                "
                 style="cursor:pointer"
-                title="Statistics"
+                title="Information"
               >
                 📊
               </span>
@@ -822,8 +1288,6 @@ const ChatManager = {
             </div>
 
           </div>
-
-          <!-- INBOX -->
 
           <div
             id="inboxList"
@@ -834,7 +1298,7 @@ const ChatManager = {
             "
           ></div>
 
-          <!-- BOTTOM NAV -->
+          <!-- BOTTOM NAVIGATION -->
 
           <div
             style="
@@ -848,7 +1312,9 @@ const ChatManager = {
           >
 
             <div
-              onclick="alert('Home')"
+              onclick="
+                ChatManager.homeButton()
+              "
               style="
                 text-align:center;
                 color:#999;
@@ -864,7 +1330,9 @@ const ChatManager = {
             </div>
 
             <div
-              onclick="alert('Moment')"
+              onclick="
+                ChatManager.momentButton()
+              "
               style="
                 text-align:center;
                 color:#999;
@@ -880,7 +1348,9 @@ const ChatManager = {
             </div>
 
             <div
-              onclick="ChatManager.openInbox()"
+              onclick="
+                ChatManager.openInbox()
+              "
               style="
                 text-align:center;
                 color:#2196F3;
@@ -896,7 +1366,9 @@ const ChatManager = {
             </div>
 
             <div
-              onclick="alert('My Profile')"
+              onclick="
+                ChatManager.meButton()
+              "
               style="
                 text-align:center;
                 color:#999;
@@ -925,11 +1397,58 @@ const ChatManager = {
     this.renderInbox();
   },
 
+  /* Keep navigation buttons active */
+
+  homeButton(){
+
+    if(typeof openHome === 'function'){
+      openHome();
+      return;
+    }
+
+    if(typeof showHome === 'function'){
+      showHome();
+      return;
+    }
+
+    alert('Home');
+  },
+
+  momentButton(){
+
+    if(typeof openMoment === 'function'){
+      openMoment();
+      return;
+    }
+
+    if(typeof showMoment === 'function'){
+      showMoment();
+      return;
+    }
+
+    alert('Moment');
+  },
+
+  meButton(){
+
+    if(typeof openMe === 'function'){
+      openMe();
+      return;
+    }
+
+    if(typeof showMe === 'function'){
+      showMe();
+      return;
+    }
+
+    alert('My Profile');
+  },
+
   renderInbox(){
 
     let html = '';
 
-    users.forEach(user => {
+    users.forEach(user=>{
 
       let chatData =
         this.loadChat(user.name);
@@ -981,6 +1500,7 @@ const ChatManager = {
           : '';
 
       html += `
+
         <div
           onclick="
             ChatManager.openChatFromInbox(
@@ -1098,10 +1618,13 @@ const ChatManager = {
     });
 
     let inboxList =
-      document.getElementById('inboxList');
+      document.getElementById(
+        'inboxList'
+      );
 
     if(inboxList){
-      inboxList.innerHTML = html;
+      inboxList.innerHTML =
+        html;
     }
   },
 
@@ -1131,6 +1654,7 @@ const ChatManager = {
     }
 
     let chatHtml = `
+
       <div
         class="popup"
         id="${chatId}"
@@ -1282,6 +1806,35 @@ const ChatManager = {
 
           </div>
 
+          <!-- MEDIA INPUTS -->
+
+          <input
+            type="file"
+            id="photoGalleryInput_${user.name}"
+            accept="image/*"
+            style="display:none"
+            onchange="
+              ChatManager.handlePhotoSelected(
+                this.files[0],
+                '${user.name}'
+              )
+            "
+          >
+
+          <input
+            type="file"
+            id="photoCameraInput_${user.name}"
+            accept="image/*"
+            capture="environment"
+            style="display:none"
+            onchange="
+              ChatManager.handlePhotoSelected(
+                this.files[0],
+                '${user.name}'
+              )
+            "
+          >
+
           <!-- COMPOSER -->
 
           <div
@@ -1292,26 +1845,27 @@ const ChatManager = {
             "
           >
 
-            <!-- INPUT -->
-
             <div
               style="
                 display:flex;
                 align-items:center;
                 gap:8px;
-                margin-bottom:10px;
+                margin-bottom:5px;
                 width:100%
               "
             >
 
-              <!-- MICROPHONE -->
+              <!-- VOICE MESSAGE -->
 
               <button
                 type="button"
+                id="voiceRecordButton_${user.name}"
                 onclick="
-                  alert('Voice message feature')
+                  ChatManager.startVoiceMessage(
+                    '${user.name}'
+                  )
                 "
-                title="Voice message"
+                title="Record voice message"
                 style="
                   width:42px;
                   height:42px;
@@ -1329,7 +1883,7 @@ const ChatManager = {
                 🎤
               </button>
 
-              <!-- INPUT -->
+              <!-- MESSAGE INPUT -->
 
               <input
                 type="text"
@@ -1394,7 +1948,7 @@ const ChatManager = {
                     '${user.name}'
                   )
                 "
-                title="Send"
+                title="Send message"
                 style="
                   width:42px;
                   height:42px;
@@ -1414,6 +1968,21 @@ const ChatManager = {
 
             </div>
 
+            <!-- RECORDING STATUS -->
+
+            <div
+              id="voiceRecordingStatus_${user.name}"
+              style="
+                display:none;
+                text-align:center;
+                color:#ff3b30;
+                font-size:12px;
+                padding:3px 0 8px;
+              "
+            >
+              🔴 Recording...
+            </div>
+
             <!-- ACTION ICONS -->
 
             <div
@@ -1426,14 +1995,16 @@ const ChatManager = {
               "
             >
 
-              <!-- IMAGE -->
+              <!-- GALLERY -->
 
               <button
                 type="button"
                 onclick="
-                  alert('Image feature')
+                  ChatManager.openGallery(
+                    '${user.name}'
+                  )
                 "
-                title="Image"
+                title="Choose photo from gallery"
                 style="
                   flex:1;
                   height:42px;
@@ -1450,14 +2021,16 @@ const ChatManager = {
                 🖼️
               </button>
 
-              <!-- GALLERY -->
+              <!-- CAMERA -->
 
               <button
                 type="button"
                 onclick="
-                  alert('Gallery feature')
+                  ChatManager.openCamera(
+                    '${user.name}'
+                  )
                 "
-                title="Gallery"
+                title="Take a photo"
                 style="
                   flex:1;
                   height:42px;
@@ -1471,7 +2044,7 @@ const ChatManager = {
                   padding:0
                 "
               >
-                🖼️
+                📷
               </button>
 
               <!-- VOICE CALL -->
@@ -1563,6 +2136,7 @@ const ChatManager = {
           </div>
 
         </div>
+
       </div>
     `;
 
@@ -1598,6 +2172,10 @@ const ChatManager = {
     }
   },
 
+  /* =====================================================
+     RENDER CHAT
+     ===================================================== */
+
   renderChat(to){
 
     let chatData =
@@ -1620,7 +2198,7 @@ const ChatManager = {
         </div>
       `;
 
-    } else {
+    }else{
 
       html = `
         <div
@@ -1638,7 +2216,114 @@ const ChatManager = {
 
     chatData.messages.forEach(m=>{
 
+      /* PHOTO MESSAGE */
+
+      if(m.type === 'photo'){
+
+        html += `
+
+          <div
+            style="
+              margin-bottom:12px;
+              text-align:right
+            "
+          >
+
+            <div
+              style="
+                display:inline-block;
+                max-width:75%;
+                background:#2196F3;
+                padding:5px;
+                border-radius:15px
+              "
+            >
+
+              <img
+                src="${m.photo}"
+                style="
+                  display:block;
+                  max-width:100%;
+                  max-height:300px;
+                  border-radius:12px;
+                  object-fit:contain;
+                "
+              >
+
+            </div>
+
+            <div
+              style="
+                font-size:10px;
+                color:#8B949E;
+                margin-top:3px
+              "
+            >
+              ${m.time}
+            </div>
+
+          </div>
+
+        `;
+
+        return;
+      }
+
+      /* VOICE MESSAGE */
+
+      if(m.type === 'voice'){
+
+        html += `
+
+          <div
+            style="
+              margin-bottom:12px;
+              text-align:right
+            "
+          >
+
+            <div
+              style="
+                display:inline-block;
+                background:#2196F3;
+                padding:8px 12px;
+                border-radius:18px;
+                max-width:80%
+              "
+            >
+
+              <audio
+                controls
+                src="${m.audio}"
+                style="
+                  width:220px;
+                  max-width:100%
+                "
+              ></audio>
+
+            </div>
+
+            <div
+              style="
+                font-size:10px;
+                color:#8B949E;
+                margin-top:3px
+              "
+            >
+              ${m.time}
+            </div>
+
+          </div>
+
+        `;
+
+        return;
+      }
+
+      /* NORMAL TEXT MESSAGE */
+
       html += `
+
         <div
           style="
             margin-bottom:10px;
@@ -1671,6 +2356,7 @@ const ChatManager = {
           </div>
 
         </div>
+
       `;
     });
 
@@ -1683,7 +2369,8 @@ const ChatManager = {
       return;
     }
 
-    messageBox.innerHTML = html;
+    messageBox.innerHTML =
+      html;
 
     messageBox.scrollTop =
       messageBox.scrollHeight;
