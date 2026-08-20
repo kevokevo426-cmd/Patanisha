@@ -34,11 +34,12 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 .nav-item{text-align:center;font-size:11px;color:#8B949E;cursor:pointer;position:relative;flex:1}
 .nav-item.active{color:#2196F3}
 .nav-icon{font-size:26px;display:block}
-.nav-submenu{display:none;position:absolute;bottom:70px;left:50%;transform:translateX(-50%);background:#21262D;border-radius:15px;padding:10px;box-shadow:0 5px 20px rgba(0,0,0,0.5);gap:15px;min-width:180px}
+.notif{position:absolute;top:0;right:25%;background:red;color:#fff;font-size:10px;font-weight:bold;border-radius:50%;width:18px;height:18px;display:none;align-items:center;justify-content:center} /* NEW */
+.nav-submenu{display:none;position:absolute;bottom:70px;left:50%;transform:translateX(-50%);background:#21262D;border-radius:15px;padding:10px;box-shadow:0 5px 20px rgba(0,0,0,0.5);gap:10px;min-width:200px;flex-direction:column} /* CHANGED */
 .nav-submenu.active{display:flex}
-.nav-subitem{text-align:center;color:#C9D1D9;cursor:pointer;font-size:11px}
-.nav-subitem span{font-size:22px;display:block;margin-bottom:3px}
-.nav-subitem:hover{color:#2196F3}
+.nav-subitem{text-align:left;color:#C9D1D9;cursor:pointer;font-size:13px;padding:8px;border-radius:10px}
+.nav-subitem span{font-size:18px;margin-right:8px}
+.nav-subitem:hover{background:#30363D}
 .popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:999;overflow-y:auto}
 .popup-content{background:#161B22;margin:5% auto;border-radius:15px;text-align:center;position:relative;max-width:500px;width:90%;color:#C9D1D9}
 .close-btn{position:absolute;top:10px;right:20px;font-size:30px;color:#8B949E;cursor:pointer;z-index:10}
@@ -60,7 +61,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 #successToast{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#E8F5E9;color:#2E7D32;padding:12px 20px;border-radius:12px;font-weight:600;z-index:1001}
 .call-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:1000;color:white;text-align:center;padding-top:100px}
 
-/* NEW PROFILE POPUP STYLES */
+/* PROFILE POPUP */
 .profile-popup-body{padding:0;text-align:left}
 .profile-cover{height:250px;position:relative}
 .profile-cover img{width:100%;height:100%;object-fit:cover}
@@ -70,7 +71,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 .profile-city{color:#8B949E;font-size:14px;margin:5px 0 15px}
 .profile-bio{background:#21262D;padding:15px;border-radius:12px;color:#C9D1D9;line-height:1.6}
 .profile-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:15px 0}
-.profile-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.profile-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;cursor:pointer}
 .action-btns{display:flex;gap:10px;margin-top:20px}
 .action-btn{flex:1;padding:14px;border-radius:12px;border:none;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
 .btn-chat{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff}
@@ -83,6 +84,21 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 .call-screen-name{font-size:24px;font-weight:700}
 .call-screen-status{color:#aaa;margin:10px 0 40px}
 .call-end-btn{width:70px;height:70px;background:red;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer}
+
+/* PHOTO VIEWER */
+.photo-viewer{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:1001;align-items:center;justify-content:center}
+.photo-viewer img{max-width:90%;max-height:90%;border-radius:10px}
+.photo-viewer.close{position:absolute;top:20px;right:30px;font-size:40px;color:#fff;cursor:pointer}
+
+/* INSUFFICIENT BALANCE POPUP */
+.balance-popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1002;align-items:center;justify-content:center}
+.balance-box{background:#161B22;border-radius:20px;padding:25px;text-align:center;max-width:300px}
+.balance-box h3{color:#FF5252;margin-bottom:10px}
+.balance-box p{color:#C9D1D9;margin-bottom:20px}
+.balance-btns{display:flex;gap:10px}
+.balance-btn{flex:1;padding:12px;border:none;border-radius:12px;font-weight:700;cursor:pointer}
+.btn-cancel{background:#30363D;color:#C9D1D9}
+.btn-topup{background:linear-gradient(135deg,#F59E0B,#D97706);color:#000}
 </style>
 </head>
 <body>
@@ -107,28 +123,24 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 
 </div>
 
-<!-- NAV WITH CHAT SUBMENU -->
+<!-- NAV WITH NOTIFICATION -->
 <div class="nav">
   <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
   <div class="nav-item" onclick="window.location='../about.html'"><span class="nav-icon">ℹ️</span>About</div>
   <div class="nav-item" id="chatNavItem" onclick="toggleChatMenu()">
-    <span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span>
-    <div class="nav-submenu" id="chatSubmenu">
-      <div class="nav-subitem" onclick="alert('Open Text Chats')"><span>💬</span>Chat</div>
-      <div class="nav-subitem" onclick="alert('Open Voice Calls')"><span>📞</span>Voice</div>
-      <div class="nav-subitem" onclick="alert('Open Video Calls')"><span>📹</span>Video</div>
-    </div>
+    <span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span> <!-- NOTIF DOT -->
+    <div class="nav-submenu" id="chatSubmenu"></div> <!-- NOW FILLED DYNAMICALLY -->
   </div>
   <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
 </div>
 
-<!-- PROFILE POPUP NEW -->
+<!-- PROFILE POPUP -->
 <div class="popup" id="profilePopup">
   <span class="close-btn" onclick="closeProfile()">×</span>
   <div class="popup-content profile-popup-body">
     <div class="profile-cover">
-      <img id="profileCover" src="">
-      <img id="profileAvatarBig" class="profile-avatar-big" src="">
+      <img id="profileCover" src="" onclick="viewPhoto(this.src)">
+      <img id="profileAvatarBig" class="profile-avatar-big" src="" onclick="viewPhoto(this.src)">
     </div>
     <div class="profile-info">
       <div class="profile-name" id="profileName"></div>
@@ -151,6 +163,24 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   <div class="call-screen-name" id="callScreenName"></div>
   <div class="call-screen-status" id="callScreenStatus">Calling...</div>
   <div class="call-end-btn" onclick="endCall()">📞</div>
+</div>
+
+<!-- PHOTO VIEWER -->
+<div class="photo-viewer" id="photoViewer">
+  <span class="close" onclick="closePhoto()">×</span>
+  <img id="photoViewerImg" src="">
+</div>
+
+<!-- INSUFFICIENT BALANCE POPUP -->
+<div class="balance-popup" id="balancePopup">
+  <div class="balance-box">
+    <h3>⚠️ Insufficient Balance</h3>
+    <p>Please top up to continue</p>
+    <div class="balance-btns">
+      <button class="balance-btn btn-cancel" onclick="closeBalance()">Cancel</button>
+      <button class="balance-btn btn-topup" onclick="openRecharge();closeBalance()">Top Up</button>
+    </div>
+  </div>
 </div>
 
 <!-- ME POPUP -->
@@ -196,7 +226,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   <span class="close-btn" onclick="closePopup('infoPopup')">×</span>
   <div class="popup-content" style="text-align:left;padding:25px">
     <h3 style="text-align:center;margin-bottom:20px;color:#2196F3">Coin Rates</h3>
-    <div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Test SMS</b><p style="color:#8B949E;font-size:13px">5 Coins per message</p></div>
+    <div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Chat</b><p style="color:#8B949E;font-size:13px">1st message FREE, then 10 Coins per message</p></div>
     <div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📞 Voice Call</b><p style="color:#8B949E;font-size:13px">50 Coins per minute</p></div>
     <div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📹 Video Call</b><p style="color:#8B949E;font-size:13px">100 Coins per minute</p></div>
     <div style="background:#21262D;padding:15px;border-radius:12px"><b>🔄 Recharge Rate</b><p style="color:#8B949E;font-size:13px">KES 100 = 1000 Coins</p></div>
@@ -249,22 +279,83 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 <div id="successToast">✅ Success!</div>
 
 <script>
-let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_male')) || {name:"Male User",id:"M1001",avatar:"https://i.pravatar.cc/100?img=51",coins:100,friends:[],following:[],followers:[],visitors:[],recharges:[],usage:[]};
+let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_male')) || {name:"Male User",id:"M1001",avatar:"https://i.pravatar.cc/100?img=51",coins:0,friends:[],following:[],followers:[],visitors:[],recharges:[],usage:[]};
 let users = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [
   {name:"Amina", city:"Nairobi", bio:"Love hiking and coffee. Looking for genuine connection.", avatar:"https://i.pravatar.cc/100?img=1", photos:["https://picsum.photos/200?1","https://picsum.photos/200?2","https://picsum.photos/200?3"], friends:[]},
   {name:"Jane", city:"Mombasa", bio:"Foodie and beach lover. Let's explore together!", avatar:"https://i.pravatar.cc/100?img=2", photos:["https://picsum.photos/200?4","https://picsum.photos/200?5"], friends:[]}
 ];
 let currentProfile = {};
 
-// CHAT SUBMENU TOGGLE
+// NEW: LOAD NOTIFICATIONS ON START
+window.addEventListener('load', ()=>{
+  loadUsers();
+  updateChatNotifications();
+});
+
+// CHAT SUBMENU TOGGLE WITH NOTIFICATIONS
 function toggleChatMenu(){
-  document.getElementById('chatSubmenu').classList.toggle('active');
+  let submenu = document.getElementById('chatSubmenu');
+  submenu.classList.toggle('active');
+  if(submenu.classList.contains('active')){
+    renderChatNotifications(); // fill submenu
+    clearChatNotifications(); // clear red dot
+  }
 }
+
 document.addEventListener('click', function(e){
   if(!e.target.closest('#chatNavItem')) document.getElementById('chatSubmenu').classList.remove('active');
 })
 
-// NEW: OPEN PROFILE
+// NEW: RENDER NOTIFICATIONS
+function renderChatNotifications(){
+  let inbox = JSON.parse(localStorage.getItem('patanisha_inbox_' + myProfile.id)) || {messages:[], missedCalls:[]};
+  let html = '';
+
+  if(inbox.messages.length === 0 && inbox.missedCalls.length === 0){
+    html = `<div class="nav-subitem" style="text-align:center;color:#8B949E">No new activity</div>`;
+  } else {
+    inbox.messages.forEach(m=>{
+      html += `<div class="nav-subitem" onclick="openChatFromNotif('${m.from}')"><span>💬</span><b>${m.from}</b>: ${m.text.substring(0,20)}...</div>`;
+    });
+    inbox.missedCalls.forEach(c=>{
+      html += `<div class="nav-subitem" onclick="openProfileByName('${c.from}')"><span>📞</span>Missed ${c.type} call from <b>${c.from}</b></div>`;
+    });
+  }
+  document.getElementById('chatSubmenu').innerHTML = html;
+}
+
+// NEW: UPDATE RED DOT
+function updateChatNotifications(){
+  let inbox = JSON.parse(localStorage.getItem('patanisha_inbox_' + myProfile.id)) || {messages:[], missedCalls:[]};
+  let total = inbox.messages.length + inbox.missedCalls.length;
+  let notif = document.getElementById('chatNotif');
+  if(total > 0){
+    notif.style.display = 'flex';
+    notif.innerText = total;
+  } else {
+    notif.style.display = 'none';
+  }
+}
+
+// NEW: CLEAR NOTIFICATIONS WHEN OPENED
+function clearChatNotifications(){
+  localStorage.setItem('patanisha_inbox_' + myProfile.id, JSON.stringify({messages:[], missedCalls:[]}));
+  document.getElementById('chatNotif').style.display = 'none';
+}
+
+function openChatFromNotif(name){
+  let user = users.find(u=>u.name === name);
+  if(user){ openChat(user); }
+  document.getElementById('chatSubmenu').classList.remove('active');
+}
+
+function openProfileByName(name){
+  let idx = users.findIndex(u=>u.name === name);
+  if(idx!== -1){ openProfile(idx); }
+  document.getElementById('chatSubmenu').classList.remove('active');
+}
+
+// OPEN PROFILE
 function openProfile(idx){
   currentProfile = users[idx];
   document.getElementById('profileCover').src = currentProfile.avatar;
@@ -274,27 +365,56 @@ function openProfile(idx){
   document.getElementById('profileBio').innerText = currentProfile.bio || 'No bio yet';
 
   let photosHtml = '';
-  if(currentProfile.photos) currentProfile.photos.forEach(p=>{photosHtml += `<img src="${p}">`});
+  if(currentProfile.photos) currentProfile.photos.forEach(p=>{photosHtml += `<img src="${p}" onclick="viewPhoto('${p}')">`});
   document.getElementById('profilePhotos').innerHTML = photosHtml;
   document.getElementById('profilePopup').style.display = 'block';
 }
 
 function closeProfile(){ document.getElementById('profilePopup').style.display = 'none'; }
 
-// FIXED: NO ALERT, OPEN CHAT DIRECTLY
+// PHOTO VIEWER
+function viewPhoto(src){
+  document.getElementById('photoViewerImg').src = src;
+  document.getElementById('photoViewer').style.display = 'flex';
+}
+function closePhoto(){
+  document.getElementById('photoViewer').style.display = 'none';
+}
+
+// BALANCE POPUP
+function showBalancePopup(){ document.getElementById('balancePopup').style.display = 'flex'; }
+function closeBalance(){ document.getElementById('balancePopup').style.display = 'none'; }
+
+// CHECK COINS BEFORE CHAT/CALL
 function startChat(){
+  if(myProfile.coins <= 0 && getChatMsgCount(currentProfile.name) >= 1){
+    showBalancePopup(); return;
+  }
   closeProfile();
   openChat(currentProfile);
 }
 
 function startCall(type){
+  let cost = type === 'voice'? 50 : 100;
+  if(myProfile.coins < cost){
+    showBalancePopup(); return;
+  }
+  // LOG MISSED CALL TO INBOX FOR DEMO - REMOVE LATER
+  logMissedCall(currentProfile.name, type);
+
   document.getElementById('callScreenAvatar').src = currentProfile.avatar;
   document.getElementById('callScreenName').innerText = currentProfile.name;
   document.getElementById('callScreenStatus').innerText = type === 'voice'? 'Voice calling...' : 'Video calling...';
   document.getElementById('callScreen').style.display = 'flex';
   closeProfile();
 }
-function endCall(){ document.getElementById('callScreen').style.display = 'none'; alert('Call ended'); }
+function endCall(){ document.getElementById('callScreen').style.display = 'none'; }
+
+function getChatMsgCount(to){
+  let chatKey = 'patanisha_chat_' + myProfile.id + '_' + to;
+  let chatData = JSON.parse(localStorage.getItem(chatKey)) || {msgCount:0};
+  return chatData.msgCount;
+}
 
 function openMe(){
   document.getElementById('meAvatar').src = myProfile.avatar;
@@ -365,7 +485,7 @@ function switchTab(tab, el){ document.querySelectorAll('.tab').forEach(t=>t.clas
 function goHome(){window.scrollTo(0,0)}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
 
-// NEW CHAT SYSTEM - ADDED
+// CHAT SYSTEM
 function openChat(user){
   let chatId = 'chat_' + user.name;
   if(document.getElementById(chatId)) document.getElementById(chatId).remove();
@@ -378,67 +498,4 @@ function openChat(user){
         <img src="${user.avatar}" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
         <b>${user.name}</b>
       </div>
-      <div id="chatMessages_${user.name}" style="flex:1;padding:15px;overflow-y:auto;background:#0D1117"></div>
-      <div style="padding:10px;background:#161B22;display:flex;gap:10px;border-top:1px solid #30363D">
-        <input type="text" id="chatInput_${user.name}" placeholder="Type message..." onkeypress="if(event.key==='Enter')sendMessage('${user.name}')" style="flex:1;padding:12px;border-radius:20px;border:1px solid #30363D;background:#21262D;color:#fff">
-        <button onclick="sendMessage('${user.name}')" style="background:#2196F3;border:none;color:#fff;padding:0 20px;border-radius:20px;font-weight:bold;cursor:pointer">Send</button>
-      </div>
-    </div>
-  </div>`;
-  document.body.insertAdjacentHTML('beforeend', chatHtml);
-  loadChatHistory(user.name);
-}
-
-function sendMessage(to){
-  let input = document.getElementById(`chatInput_${to}`);
-  let msg = input.value.trim();
-  if(!msg) return;
-
-  let chatKey = 'patanisha_chat_' + myProfile.id + '_' + to;
-  let chatData = JSON.parse(localStorage.getItem(chatKey)) || {messages:[], msgCount:0};
-
-  // COIN LOGIC: 1ST FREE, THEN 10 COINS
-  if(chatData.msgCount >= 1){
-    if(myProfile.coins < 10){
-      alert('Not enough coins. Need 10 coins per message');
-      return;
-    }
-    myProfile.coins -= 10;
-    localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile));
-    document.getElementById('meCoins').innerText = myProfile.coins;
-
-    if(!myProfile.usage) myProfile.usage = [];
-    myProfile.usage.unshift({coins:10, to:to, reason:'Chat message', date:new Date().toLocaleString()});
-  }
-
-  chatData.messages.push({from:'me', text:msg, time:new Date().toLocaleTimeString()});
-  chatData.msgCount += 1;
-  localStorage.setItem(chatKey, JSON.stringify(chatData));
-
-  input.value = '';
-  loadChatHistory(to);
-}
-
-function loadChatHistory(to){
-  let chatKey = 'patanisha_chat_' + myProfile.id + '_' + to;
-  let chatData = JSON.parse(localStorage.getItem(chatKey)) || {messages:[], msgCount:0};
-  let html = '';
-
-  if(chatData.msgCount === 0){
-    html = `<div style="text-align:center;color:#4CAF50;padding:20px;font-weight:600">🎉 First message is FREE!</div>`;
-  } else {
-    html = `<div style="text-align:center;color:#F59E0B;padding:10px;font-size:12px">10 Coins per message</div>`;
-  }
-
-  chatData.messages.forEach(m=>{
-    html += `<div style="margin-bottom:10px;text-align:right"><div style="background:#2196F3;color:#fff;padding:10px 15px;border-radius:15px;display:inline-block;max-width:70%;font-size:14px">${m.text}</div><div style="font-size:10px;color:#8B949E;margin-top:3px">${m.time}</div></div>`;
-  });
-
-  document.getElementById(`chatMessages_${to}`).innerHTML = html;
-  document.getElementById(`chatMessages_${to}`).scrollTop = document.getElementById(`chatMessages_${to}`).scrollHeight;
-}
-
-loadUsers();
-</script>
-</body>
-</html>
+      <
