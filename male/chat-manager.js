@@ -10,7 +10,7 @@ const ChatManager = {
         return false;
       }
 
-      myProfile.coins -= 10; 
+      myProfile.coins -= 10;
       localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile));
       document.getElementById('meCoins').innerText = myProfile.coins;
 
@@ -32,42 +32,42 @@ const ChatManager = {
       time:new Date().toLocaleTimeString()
     });
 
-    chatData.msgCount += 1; 
-    localStorage.setItem(chatKey, JSON.stringify(chatData)); 
+    chatData.msgCount += 1;
+    localStorage.setItem(chatKey, JSON.stringify(chatData));
 
     return true;
   },
 
-  loadChat(to){ 
-    let chatKey = 'patanisha_chat_' + myProfile.id + '_' + to; 
+  loadChat(to){
+    let chatKey = 'patanisha_chat_' + myProfile.id + '_' + to;
     return JSON.parse(localStorage.getItem(chatKey)) || {
       messages:[],
       msgCount:0
-    }; 
+    };
   },
 
-  startVoiceCall(user){ 
+  startVoiceCall(user){
     if(myProfile.coins < 50){
       this.showNoCoins();
       return false;
-    } 
+    }
 
-    this.showCallScreen(user, 'Voice calling...'); 
-    this.startCallTimer(user, 'voice', 50); 
+    this.showCallScreen(user, 'Voice calling...');
+    this.startCallTimer(user, 'voice', 50);
 
-    return true; 
+    return true;
   },
 
-  startVideoCall(user){ 
+  startVideoCall(user){
     if(myProfile.coins < 100){
       this.showNoCoins();
       return false;
-    } 
+    }
 
-    this.showCallScreen(user, 'Video calling...'); 
-    this.startCallTimer(user, 'video', 100); 
+    this.showCallScreen(user, 'Video calling...');
+    this.startCallTimer(user, 'video', 100);
 
-    return true; 
+    return true;
   },
 
   callTimer: null,
@@ -75,40 +75,40 @@ const ChatManager = {
   startCallTimer(user, type, costPerMin){
     let seconds = 0;
 
-    this.callTimer = setInterval(()=>{ 
+    this.callTimer = setInterval(()=>{
       seconds++;
 
       if(seconds % 60 === 0){
 
-        if(myProfile.coins >= costPerMin){ 
+        if(myProfile.coins >= costPerMin){
 
-          myProfile.coins -= costPerMin; 
-
-          localStorage.setItem(
-            'patanisha_myProfile_male',
-            JSON.stringify(myProfile)
-          ); 
-
-          document.getElementById('meCoins').innerText = myProfile.coins;
-
-          if(!myProfile.usage) myProfile.usage = []; 
-
-          myProfile.usage.unshift({
-            coins:costPerMin,
-            to:user.name,
-            reason:type + ' call',
-            date:new Date().toLocaleString()
-          }); 
+          myProfile.coins -= costPerMin;
 
           localStorage.setItem(
             'patanisha_myProfile_male',
             JSON.stringify(myProfile)
           );
 
-        } else { 
+          document.getElementById('meCoins').innerText = myProfile.coins;
 
-          this.endCall(); 
-          alert('Call ended: Insufficient coins'); 
+          if(!myProfile.usage) myProfile.usage = [];
+
+          myProfile.usage.unshift({
+            coins:costPerMin,
+            to:user.name,
+            reason:type + ' call',
+            date:new Date().toLocaleString()
+          });
+
+          localStorage.setItem(
+            'patanisha_myProfile_male',
+            JSON.stringify(myProfile)
+          );
+
+        } else {
+
+          this.endCall();
+          alert('Call ended: Insufficient coins');
 
         }
       }
@@ -116,26 +116,487 @@ const ChatManager = {
     }, 1000);
   },
 
-  showCallScreen(user, status){ 
-    document.getElementById('callScreenAvatar').src = user.avatar; 
-    document.getElementById('callScreenName').innerText = user.name; 
-    document.getElementById('callScreenStatus').innerText = status; 
-    document.getElementById('callScreen').style.display = 'flex'; 
+  showCallScreen(user, status){
+    document.getElementById('callScreenAvatar').src = user.avatar;
+    document.getElementById('callScreenName').innerText = user.name;
+    document.getElementById('callScreenStatus').innerText = status;
+    document.getElementById('callScreen').style.display = 'flex';
   },
 
-  endCall(){ 
-    clearInterval(this.callTimer); 
-    document.getElementById('callScreen').style.display = 'none'; 
+  endCall(){
+    clearInterval(this.callTimer);
+    document.getElementById('callScreen').style.display = 'none';
   },
 
-  showNoCoins(){ 
+  showNoCoins(){
     alert(
       '⚠️ Insufficient Coins\n' +
       'Chat: 10 coins/msg\n' +
       'Voice: 50 coins/min\n' +
       'Video: 100 coins/min\n' +
       'Please recharge.'
-    ); 
+    );
+  },
+
+  /* =========================================================
+     GIFT SYSTEM
+     ========================================================= */
+
+  giftList: [
+    {
+      name: '2026',
+      coins: 20,
+      icon: '🎆'
+    },
+    {
+      name: 'Heart',
+      coins: 150,
+      icon: '❤️'
+    },
+    {
+      name: 'Electric Heart',
+      coins: 500,
+      icon: '💖'
+    },
+    {
+      name: 'Flower Diamond',
+      coins: 25990,
+      icon: '💎'
+    },
+    {
+      name: 'Nigeria',
+      coins: 300,
+      icon: '🇳🇬'
+    },
+    {
+      name: 'Shiny Butterfly',
+      coins: 500,
+      icon: '🦋'
+    },
+    {
+      name: 'Gold Necklace',
+      coins: 1500,
+      icon: '📿'
+    },
+    {
+      name: 'Flying Parrot',
+      coins: 500,
+      icon: '🦜'
+    }
+  ],
+
+  openGiftPanel(user){
+
+    let giftId = 'giftPanelPopup';
+
+    if(document.getElementById(giftId)){
+      document.getElementById(giftId).remove();
+    }
+
+    let giftHtml = `
+    <div
+      id="${giftId}"
+      style="
+        position:fixed;
+        inset:0;
+        z-index:99999;
+        background:rgba(0,0,0,.65);
+        display:flex;
+        align-items:flex-end;
+        justify-content:center;
+      "
+    >
+
+      <div
+        style="
+          width:100%;
+          max-width:600px;
+          max-height:90vh;
+          background:#211f32;
+          color:#fff;
+          border-radius:25px 25px 0 0;
+          overflow:hidden;
+          display:flex;
+          flex-direction:column;
+        "
+      >
+
+        <!-- GIFT HEADER -->
+        <div
+          style="
+            padding:18px 20px 12px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+          "
+        >
+
+          <div
+            style="
+              display:flex;
+              align-items:center;
+              gap:28px;
+              font-size:22px;
+              font-weight:800;
+            "
+          >
+            <span
+              style="
+                position:relative;
+                color:#fff;
+              "
+            >
+              Gift
+              <span
+                style="
+                  position:absolute;
+                  width:9px;
+                  height:9px;
+                  background:#FFD700;
+                  border-radius:50%;
+                  bottom:-3px;
+                  left:18px;
+                "
+              ></span>
+            </span>
+
+            <span
+              style="
+                color:#aaa;
+                font-weight:500;
+                font-size:20px;
+                position:relative;
+              "
+            >
+              Privilege
+              <span
+                style="
+                  position:absolute;
+                  width:8px;
+                  height:8px;
+                  background:#ff3b30;
+                  border-radius:50%;
+                  top:-3px;
+                  right:-12px;
+                "
+              ></span>
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onclick="document.getElementById('${giftId}').remove()"
+            style="
+              width:40px;
+              height:40px;
+              border:none;
+              border-radius:50%;
+              background:#3b394d;
+              color:#fff;
+              font-size:25px;
+              cursor:pointer;
+            "
+          >
+            ×
+          </button>
+
+        </div>
+
+        <!-- SET A WISH -->
+        <div
+          style="
+            padding:0 20px 15px;
+            display:flex;
+            justify-content:flex-end;
+          "
+        >
+          <button
+            type="button"
+            onclick="alert('Wish feature')"
+            style="
+              border:none;
+              border-radius:30px;
+              padding:14px 25px;
+              background:#4a485c;
+              color:#fff;
+              font-size:16px;
+              font-weight:700;
+              cursor:pointer;
+            "
+          >
+            Set a wish&nbsp; ❯
+          </button>
+        </div>
+
+        <!-- GIFT GRID -->
+        <div
+          style="
+            flex:1;
+            overflow-y:auto;
+            padding:0 12px 20px;
+          "
+        >
+
+          <div
+            style="
+              display:grid;
+              grid-template-columns:repeat(4,1fr);
+              gap:10px;
+            "
+          >
+
+            ${this.giftList.map((gift,index)=>`
+
+              <button
+                type="button"
+                onclick="
+                  ChatManager.selectGift(
+                    ${index},
+                    '${user.name}',
+                    '${giftId}'
+                  )
+                "
+                style="
+                  min-height:185px;
+                  border:1px solid transparent;
+                  border-radius:18px;
+                  background:#151421;
+                  color:#fff;
+                  cursor:pointer;
+                  padding:10px 5px;
+                  display:flex;
+                  flex-direction:column;
+                  align-items:center;
+                  justify-content:center;
+                  text-align:center;
+                  transition:.15s;
+                "
+                onmouseover="this.style.borderColor='#FFD700'"
+                onmouseout="this.style.borderColor='transparent'"
+              >
+
+                <div
+                  style="
+                    width:100%;
+                    height:105px;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-size:65px;
+                  "
+                >
+                  ${gift.icon}
+                </div>
+
+                <div
+                  style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    gap:5px;
+                    font-size:20px;
+                    font-weight:600;
+                    margin-top:5px;
+                  "
+                >
+                  <span style="font-size:18px">🪙</span>
+                  ${gift.coins}
+                </div>
+
+                <div
+                  style="
+                    margin-top:5px;
+                    font-size:14px;
+                    color:#eee;
+                    white-space:nowrap;
+                    overflow:hidden;
+                    text-overflow:ellipsis;
+                    width:100%;
+                  "
+                >
+                  ${gift.name}
+                </div>
+
+              </button>
+
+            `).join('')}
+
+          </div>
+
+        </div>
+
+        <!-- RECEIVER -->
+        <div
+          style="
+            padding:12px 20px;
+            border-top:1px solid #393747;
+            color:#aaa;
+            font-size:13px;
+            text-align:center;
+          "
+        >
+          Sending gift to
+          <strong style="color:#fff">
+            ${user.name}
+          </strong>
+        </div>
+
+      </div>
+    </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', giftHtml);
+  },
+
+  selectGift(index, receiverName, giftPanelId){
+
+    let gift = this.giftList[index];
+
+    if(!gift){
+      return;
+    }
+
+    if(myProfile.coins < gift.coins){
+
+      alert(
+        '⚠️ Insufficient Coins\n\n' +
+        'Gift: ' + gift.name + '\n' +
+        'Cost: ' + gift.coins + ' coins\n' +
+        'Your balance: ' + myProfile.coins + ' coins'
+      );
+
+      return;
+    }
+
+    let confirmed = confirm(
+      'Send ' +
+      gift.name +
+      ' to ' +
+      receiverName +
+      ' for ' +
+      gift.coins +
+      ' coins?'
+    );
+
+    if(!confirmed){
+      return;
+    }
+
+    this.sendGift(gift, receiverName, giftPanelId);
+  },
+
+  sendGift(gift, receiverName, giftPanelId){
+
+    /* -----------------------------
+       DEDUCT FROM SENDER
+       ----------------------------- */
+
+    myProfile.coins -= gift.coins;
+
+    if(!myProfile.usage){
+      myProfile.usage = [];
+    }
+
+    myProfile.usage.unshift({
+      coins:gift.coins,
+      to:receiverName,
+      reason:'Gift: ' + gift.name,
+      date:new Date().toLocaleString()
+    });
+
+    localStorage.setItem(
+      'patanisha_myProfile_male',
+      JSON.stringify(myProfile)
+    );
+
+    let meCoins = document.getElementById('meCoins');
+
+    if(meCoins){
+      meCoins.innerText = myProfile.coins;
+    }
+
+    /* -----------------------------
+       ADD COINS TO RECEIVER
+       ----------------------------- */
+
+    let receiver = users.find(
+      u => u.name === receiverName
+    );
+
+    if(receiver){
+
+      receiver.coins = Number(receiver.coins || 0) + gift.coins;
+
+      receiver.receivedGifts = receiver.receivedGifts || [];
+
+      receiver.receivedGifts.unshift({
+        from:myProfile.name || 'User',
+        gift:gift.name,
+        icon:gift.icon,
+        coins:gift.coins,
+        date:new Date().toLocaleString()
+      });
+
+      /* Save receiver account */
+
+      let receiverId =
+        receiver.id ||
+        receiver.userId ||
+        receiver.name;
+
+      localStorage.setItem(
+        'patanisha_user_' + receiverId,
+        JSON.stringify(receiver)
+      );
+
+      /* Also update users list */
+
+      localStorage.setItem(
+        'patanisha_users',
+        JSON.stringify(users)
+      );
+    }
+
+    /* -----------------------------
+       SAVE GIFT TRANSACTION
+       ----------------------------- */
+
+    let giftTransactions =
+      JSON.parse(
+        localStorage.getItem('patanisha_gift_transactions')
+      ) || [];
+
+    giftTransactions.unshift({
+      from:myProfile.id,
+      to:receiverName,
+      gift:gift.name,
+      icon:gift.icon,
+      coins:gift.coins,
+      date:new Date().toLocaleString()
+    });
+
+    localStorage.setItem(
+      'patanisha_gift_transactions',
+      JSON.stringify(giftTransactions)
+    );
+
+    /* -----------------------------
+       CLOSE GIFT PANEL
+       ----------------------------- */
+
+    let panel = document.getElementById(giftPanelId);
+
+    if(panel){
+      panel.remove();
+    }
+
+    alert(
+      '🎁 Gift Sent!\n\n' +
+      gift.icon + ' ' + gift.name +
+      '\n' +
+      gift.coins + ' coins sent to ' +
+      receiverName
+    );
   },
 
   // NEW INBOX LIKE SCREENSHOT
@@ -150,7 +611,8 @@ const ChatManager = {
     let inboxHtml = `
     <div class="popup" id="${inboxId}" style="display:block;background:#fff">
 
-      <div class="popup-content"
+      <div
+        class="popup-content"
         style="
           text-align:left;
           padding:0;
@@ -163,70 +625,87 @@ const ChatManager = {
           color:#000;
           display:flex;
           flex-direction:column
-        ">
+        "
+      >
 
-        <div style="
-          padding:15px 20px;
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          border-bottom:1px solid #eee
-        ">
+        <div
+          style="
+            padding:15px 20px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            border-bottom:1px solid #eee
+          "
+        >
 
           <div style="display:flex;gap:25px">
 
-            <div style="
-              font-size:22px;
-              font-weight:800;
-              color:#000;
-              position:relative
-            ">
+            <div
+              style="
+                font-size:22px;
+                font-weight:800;
+                color:#000;
+                position:relative
+              "
+            >
               Chat
 
-              <div style="
-                width:8px;
-                height:8px;
-                background:#FFD700;
-                border-radius:50%;
-                position:absolute;
-                bottom:2px;
-                left:-2px
-              "></div>
+              <div
+                style="
+                  width:8px;
+                  height:8px;
+                  background:#FFD700;
+                  border-radius:50%;
+                  position:absolute;
+                  bottom:2px;
+                  left:-2px
+                "
+              ></div>
 
             </div>
 
-            <div style="
-              font-size:18px;
-              color:#999
-            ">
+            <div
+              style="
+                font-size:18px;
+                color:#999
+              "
+            >
               Call
             </div>
 
           </div>
 
-          <div style="
-            display:flex;
-            gap:15px;
-            font-size:22px
-          ">
+          <div
+            style="
+              display:flex;
+              gap:15px;
+              font-size:22px
+            "
+          >
 
             <span
               onclick="alert('Gift feature')"
               style="cursor:pointer"
               title="Gift"
-            >🎁</span>
+            >
+              🎁
+            </span>
 
             <span
               onclick="alert('Profile')"
               style="cursor:pointer"
               title="Profile"
-            >👤</span>
+            >
+              👤
+            </span>
 
             <span
               onclick="alert('Statistics')"
               style="cursor:pointer"
               title="Statistics"
-            >📊</span>
+            >
+              📊
+            </span>
 
           </div>
 
@@ -241,13 +720,15 @@ const ChatManager = {
           "
         ></div>
 
-        <div style="
-          display:flex;
-          justify-content:space-around;
-          padding:10px 0;
-          border-top:1px solid #eee;
-          background:#fff
-        ">
+        <div
+          style="
+            display:flex;
+            justify-content:space-around;
+            padding:10px 0;
+            border-top:1px solid #eee;
+            background:#fff
+          "
+        >
 
           <div
             onclick="alert('Home')"
@@ -311,18 +792,18 @@ const ChatManager = {
       </div>
     </div>`;
 
-    document.body.insertAdjacentHTML('beforeend', inboxHtml); 
+    document.body.insertAdjacentHTML('beforeend', inboxHtml);
 
     this.renderInbox();
   },
 
   renderInbox(){
 
-    let html = ''; 
+    let html = '';
 
     users.forEach(user => {
 
-      let chatData = this.loadChat(user.name); 
+      let chatData = this.loadChat(user.name);
 
       let lastMsg =
         chatData.messages.length > 0
@@ -332,17 +813,19 @@ const ChatManager = {
       let unread =
         chatData.msgCount > 0
           ? `
-            <div style="
-              background:red;
-              color:#fff;
-              font-size:11px;
-              border-radius:50%;
-              width:20px;
-              height:20px;
-              display:flex;
-              align-items:center;
-              justify-content:center
-            ">
+            <div
+              style="
+                background:red;
+                color:#fff;
+                font-size:11px;
+                border-radius:50%;
+                width:20px;
+                height:20px;
+                display:flex;
+                align-items:center;
+                justify-content:center
+              "
+            >
               1
             </div>
           `
@@ -351,14 +834,16 @@ const ChatManager = {
       let newBadge =
         chatData.msgCount === 1
           ? `
-            <span style="
-              background:#00C853;
-              color:#fff;
-              font-size:10px;
-              padding:2px 6px;
-              border-radius:10px;
-              margin-right:5px
-            ">
+            <span
+              style="
+                background:#00C853;
+                color:#fff;
+                font-size:10px;
+                padding:2px 6px;
+                border-radius:10px;
+                margin-right:5px
+              "
+            >
               NEW
             </span>
           `
@@ -388,67 +873,81 @@ const ChatManager = {
             "
           >
 
-          <div style="
-            width:12px;
-            height:12px;
-            background:#4CAF50;
-            border-radius:50%;
-            position:absolute;
-            bottom:2px;
-            right:2px;
-            border:2px solid #fff
-          "></div>
+          <div
+            style="
+              width:12px;
+              height:12px;
+              background:#4CAF50;
+              border-radius:50%;
+              position:absolute;
+              bottom:2px;
+              right:2px;
+              border:2px solid #fff
+            "
+          ></div>
 
         </div>
 
         <div style="flex:1">
 
-          <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center
-          ">
-
-            <div style="
+          <div
+            style="
               display:flex;
-              align-items:center;
-              gap:5px
-            ">
+              justify-content:space-between;
+              align-items:center
+            "
+          >
+
+            <div
+              style="
+                display:flex;
+                align-items:center;
+                gap:5px
+              "
+            >
               ${newBadge}
 
-              <b style="
-                font-size:16px;
-                color:#000
-              ">
+              <b
+                style="
+                  font-size:16px;
+                  color:#000
+                "
+              >
                 ${user.name}
               </b>
 
             </div>
 
-            <div style="
-              font-size:12px;
-              color:#999
-            ">
+            <div
+              style="
+                font-size:12px;
+                color:#999
+              "
+            >
               08-20 08:25
             </div>
 
           </div>
 
-          <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-top:3px
-          ">
+          <div
+            style="
+              display:flex;
+              justify-content:space-between;
+              align-items:center;
+              margin-top:3px
+            "
+          >
 
-            <div style="
-              font-size:14px;
-              color:#777;
-              white-space:nowrap;
-              overflow:hidden;
-              text-overflow:ellipsis;
-              max-width:200px
-            ">
+            <div
+              style="
+                font-size:14px;
+                color:#777;
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+                max-width:200px
+              "
+            >
               ${lastMsg}
             </div>
 
@@ -460,24 +959,26 @@ const ChatManager = {
 
       </div>`;
 
-    }); 
+    });
 
     document.getElementById('inboxList').innerHTML = html;
   },
 
-  openChatFromInbox(userName){ 
+  openChatFromInbox(userName){
 
-    let user = users.find(u => u.name === userName); 
+    let user = users.find(
+      u => u.name === userName
+    );
 
     if(user){
-      this.openChat(user); 
+      this.openChat(user);
     }
   },
 
   // NEW CHAT WINDOW LIKE SCREENSHOT
   openChat(user){
 
-    let chatId = 'chat_' + user.name; 
+    let chatId = 'chat_' + user.name;
 
     if(document.getElementById(chatId)){
       document.getElementById(chatId).remove();
@@ -511,14 +1012,17 @@ const ChatManager = {
       >
 
         <!-- CHAT HEADER -->
-        <div style="
-          background:#fff;
-          padding:15px;
-          display:flex;
-          align-items:center;
-          gap:10px;
-          border-bottom:1px solid #eee
-        ">
+
+        <div
+          style="
+            background:#fff;
+            padding:15px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+            border-bottom:1px solid #eee
+          "
+        >
 
           <span
             onclick="closePopup('${chatId}')"
@@ -533,21 +1037,23 @@ const ChatManager = {
             ←
           </span>
 
-          <div style="
-            flex:1;
-            text-align:center
-          ">
+          <div
+            style="
+              flex:1;
+              text-align:center
+            "
+          >
 
-            <b style="
-              font-size:18px
-            ">
+            <b style="font-size:18px">
               ${user.name}
             </b>
 
-            <div style="
-              font-size:12px;
-              color:#4CAF50
-            ">
+            <div
+              style="
+                font-size:12px;
+                color:#4CAF50
+              "
+            >
               ● Online
             </div>
 
@@ -566,6 +1072,7 @@ const ChatManager = {
         </div>
 
         <!-- CHAT MESSAGES -->
+
         <div
           id="chatMessages_${user.name}"
           style="
@@ -576,16 +1083,21 @@ const ChatManager = {
         ></div>
 
         <!-- QUICK MESSAGES -->
-        <div style="
-          padding:10px;
-          display:flex;
-          gap:8px;
-          overflow-x:auto
-        ">
+
+        <div
+          style="
+            padding:10px;
+            display:flex;
+            gap:8px;
+            overflow-x:auto
+          "
+        >
 
           <button
             onclick="
-              document.getElementById('chatInput_${user.name}').value='Hi! How are you doing?'
+              document.getElementById(
+                'chatInput_${user.name}'
+              ).value='Hi! How are you doing?'
             "
             style="
               background:#FFD700;
@@ -601,7 +1113,9 @@ const ChatManager = {
 
           <button
             onclick="
-              document.getElementById('chatInput_${user.name}').value='How are you'
+              document.getElementById(
+                'chatInput_${user.name}'
+              ).value='How are you'
             "
             style="
               background:#FFD700;
@@ -618,22 +1132,29 @@ const ChatManager = {
         </div>
 
         <!-- MESSAGE AREA -->
-        <div style="
-          background:#fff;
-          padding:10px;
-          border-top:1px solid #eee
-        ">
+
+        <div
+          style="
+            background:#fff;
+            padding:10px;
+            border-top:1px solid #eee
+          "
+        >
 
           <!-- INPUT ROW -->
-          <div style="
-            display:flex;
-            align-items:center;
-            gap:8px;
-            margin-bottom:10px;
-            width:100%
-          ">
+
+          <div
+            style="
+              display:flex;
+              align-items:center;
+              gap:8px;
+              margin-bottom:10px;
+              width:100%
+            "
+          >
 
             <!-- MICROPHONE -->
+
             <button
               type="button"
               onclick="alert('Voice message feature')"
@@ -656,6 +1177,7 @@ const ChatManager = {
             </button>
 
             <!-- MESSAGE INPUT -->
+
             <input
               type="text"
               id="chatInput_${user.name}"
@@ -678,11 +1200,17 @@ const ChatManager = {
             >
 
             <!-- EMOJI -->
+
             <button
               type="button"
               onclick="
-                document.getElementById('chatInput_${user.name}').value += ' 😊';
-                document.getElementById('chatInput_${user.name}').focus();
+                document.getElementById(
+                  'chatInput_${user.name}'
+                ).value += ' 😊';
+
+                document.getElementById(
+                  'chatInput_${user.name}'
+                ).focus();
               "
               title="Emoji"
               style="
@@ -703,6 +1231,7 @@ const ChatManager = {
             </button>
 
             <!-- SEND -->
+
             <button
               type="button"
               onclick="
@@ -729,16 +1258,20 @@ const ChatManager = {
           </div>
 
           <!-- ACTION ICONS -->
-          <div style="
-            display:flex;
-            align-items:center;
-            justify-content:space-around;
-            width:100%;
-            gap:5px;
-            font-size:24px
-          ">
 
-            <!-- IMAGE 1 -->
+          <div
+            style="
+              display:flex;
+              align-items:center;
+              justify-content:space-around;
+              width:100%;
+              gap:5px;
+              font-size:24px
+            "
+          >
+
+            <!-- IMAGE -->
+
             <button
               type="button"
               onclick="alert('Image feature')"
@@ -759,7 +1292,8 @@ const ChatManager = {
               🖼️
             </button>
 
-            <!-- IMAGE 2 -->
+            <!-- GALLERY -->
+
             <button
               type="button"
               onclick="alert('Gallery feature')"
@@ -781,11 +1315,14 @@ const ChatManager = {
             </button>
 
             <!-- VOICE CALL -->
+
             <button
               type="button"
               onclick="
                 ChatManager.startVoiceCall(
-                  users.find(u=>u.name==='${user.name}')
+                  users.find(
+                    u=>u.name==='${user.name}'
+                  )
                 )
               "
               title="Voice call"
@@ -806,10 +1343,17 @@ const ChatManager = {
             </button>
 
             <!-- GIFT -->
+
             <button
               type="button"
-              onclick="alert('Gift feature')"
-              title="Gift"
+              onclick="
+                ChatManager.openGiftPanel(
+                  users.find(
+                    u=>u.name==='${user.name}'
+                  )
+                )
+              "
+              title="Send gift"
               style="
                 flex:1;
                 height:42px;
@@ -827,11 +1371,14 @@ const ChatManager = {
             </button>
 
             <!-- VIDEO CALL -->
+
             <button
               type="button"
               onclick="
                 ChatManager.startVideoCall(
-                  users.find(u=>u.name==='${user.name}')
+                  users.find(
+                    u=>u.name==='${user.name}'
+                  )
                 )
               "
               title="Video call"
@@ -858,93 +1405,115 @@ const ChatManager = {
       </div>
     </div>`;
 
-    document.body.insertAdjacentHTML('beforeend', chatHtml); 
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      chatHtml
+    );
 
     this.renderChat(user.name);
   },
 
-  sendMessageUI(to){ 
+  sendMessageUI(to){
 
-    let input = document.getElementById(`chatInput_${to}`); 
+    let input =
+      document.getElementById(
+        `chatInput_${to}`
+      );
 
-    if(this.sendMessage(to, input.value)){ 
+    if(this.sendMessage(to, input.value)){
 
-      input.value = ''; 
+      input.value = '';
 
-      this.renderChat(to); 
-    } 
+      this.renderChat(to);
+    }
   },
 
   renderChat(to){
 
-    let chatData = this.loadChat(to); 
+    let chatData = this.loadChat(to);
 
     let html = '';
 
-    if(chatData.msgCount === 0){ 
+    if(chatData.msgCount === 0){
 
       html = `
-        <div style="
-          text-align:center;
-          color:#4CAF50;
-          padding:20px;
-          font-weight:600
-        ">
+        <div
+          style="
+            text-align:center;
+            color:#4CAF50;
+            padding:20px;
+            font-weight:600
+          "
+        >
           🎉 First message is FREE!
         </div>
       `;
 
-    } else { 
+    } else {
 
       html = `
-        <div style="
-          text-align:center;
-          color:#F59E0B;
-          padding:10px;
-          font-size:12px
-        ">
+        <div
+          style="
+            text-align:center;
+            color:#F59E0B;
+            padding:10px;
+            font-size:12px
+          "
+        >
           10 Coins per message
         </div>
       `;
 
     }
 
-    chatData.messages.forEach(m=>{ 
+    chatData.messages.forEach(m=>{
 
       html += `
-        <div style="
-          margin-bottom:10px;
-          text-align:right
-        ">
+        <div
+          style="
+            margin-bottom:10px;
+            text-align:right
+          "
+        >
 
-          <div style="
-            background:#2196F3;
-            color:#fff;
-            padding:10px 15px;
-            border-radius:15px;
-            display:inline-block;
-            max-width:70%;
-            font-size:14px
-          ">
+          <div
+            style="
+              background:#2196F3;
+              color:#fff;
+              padding:10px 15px;
+              border-radius:15px;
+              display:inline-block;
+              max-width:70%;
+              font-size:14px
+            "
+          >
             ${m.text}
           </div>
 
-          <div style="
-            font-size:10px;
-            color:#8B949E;
-            margin-top:3px
-          ">
+          <div
+            style="
+              font-size:10px;
+              color:#8B949E;
+              margin-top:3px
+            "
+          >
             ${m.time}
           </div>
 
         </div>
-      `; 
+      `;
 
     });
 
-    document.getElementById(`chatMessages_${to}`).innerHTML = html;
+    document.getElementById(
+      `chatMessages_${to}`
+    ).innerHTML = html;
 
-    document.getElementById(`chatMessages_${to}`).scrollTop =
-      document.getElementById(`chatMessages_${to}`).scrollHeight;
+    document.getElementById(
+      `chatMessages_${to}`
+    ).scrollTop =
+      document.getElementById(
+        `chatMessages_${to}`
+      ).scrollHeight;
   }
 };
