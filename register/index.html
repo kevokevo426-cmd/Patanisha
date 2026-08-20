@@ -201,7 +201,7 @@ By downloading, registering for, accessing, or using KEKE, you agree to these Te
 
 1. About KEKE
 
-KE is a social platform that may provide services including:
+KEKE is a social platform that may provide services including:
 
 · Social networking
 · Text and voice chatting
@@ -210,11 +210,11 @@ KE is a social platform that may provide services including:
 · Virtual coins and other virtual items
 · Other social and entertainment features introduced by KEKE
 
-KE may add, change, suspend, or remove features from time to time.
+KEKE may add, change, suspend, or remove features from time to time.
 
 2. Age Requirement
 
-KE is intended for users who are 18 years or older, or who meet the applicable legal age requirement in their jurisdiction, whichever is higher.
+KEKE is intended for users who are 18 years or older, or who meet the applicable legal age requirement in their jurisdiction, whichever is higher.
 
 You must not use KEKE if you do not meet the applicable age requirement.
 
@@ -266,7 +266,7 @@ You must not use KEKE to post, transmit, promote, or distribute Content that:
 13. Promotes scams or other harmful financial activity.
 14. Contains content that KEKE reasonably considers harmful to users or the Platform.
 
-KE may remove Content that violates these Terms.
+KEKE may remove Content that violates these Terms.
 
 6. Respecting Other Users
 
@@ -290,7 +290,7 @@ If you see Content or behavior that violates these Terms, you can report it thro
 
 Reports may be reviewed by KEKE or its authorized moderation team.
 
-KEKE may take appropriate action, including removing Content, restricting an account, suspending an account, or permanently banning an account.
+KE may take appropriate action, including removing Content, restricting an account, suspending an account, or permanently banning an account.
 
 You can contact KEKE at:
 
@@ -298,7 +298,7 @@ kevokevo426@gmail.com
 
 8. Account Suspension and Termination
 
-KEKE may suspend or terminate an account if:
+KE may suspend or terminate an account if:
 · The user violates these Terms.
 · The user provides false information.
 · The account is involved in fraud or abuse.
@@ -340,7 +340,7 @@ Subscription terms, prices, and features may change. Where required, KEKE will p
 
 11. Virtual Coins and Virtual Items
 
-KEKE may provide virtual items such as Coins, diamonds, gifts, or other digital features.
+KE may provide virtual items such as Coins, diamonds, gifts, or other digital features.
 
 Virtual items:
 · Are digital features of KEKE.
@@ -389,7 +389,7 @@ Users should avoid sharing sensitive personal information publicly.
 
 15. Intellectual Property
 
-KE and its authorized licensors may own or control the Platform, software, branding, logos, graphics, designs, and other materials used to operate KEKE.
+KEKE and its authorized licensors may own or control the Platform, software, branding, logos, graphics, designs, and other materials used to operate KEKE.
 
 You may not copy, modify, distribute, sell, or commercially exploit KEKE's intellectual property without appropriate authorization.
 
@@ -403,7 +403,7 @@ kevokevo426@gmail.com
 
 Please provide enough information for us to understand the complaint and identify the relevant Content.
 
-KEKE may remove or restrict Content where appropriate.
+KE may remove or restrict Content where appropriate.
 
 17. User Feedback
 
@@ -429,7 +429,7 @@ KE may sometimes be unavailable because of:
 · Updates
 · Events outside our reasonable control
 
-KE may change, suspend, or discontinue any feature or part of the Platform where reasonably necessary.
+KEKE may change, suspend, or discontinue any feature or part of the Platform where reasonably necessary.
 
 20. No Guarantee
 
@@ -446,7 +446,7 @@ You are responsible for making your own decisions about information or Content p
 
 21. User-to-User Interactions
 
-KE allows users to interact with one another.
+KEKE allows users to interact with one another.
 
 You are responsible for your interactions with other users.
 
@@ -483,7 +483,7 @@ Users agree to cooperate with reasonable compliance and verification procedures.
 
 24. Changes to These Terms
 
-KEKE may update these Terms from time to time.
+KE may update these Terms from time to time.
 
 When important changes are made, KEKE may provide notice through the Platform or other appropriate means.
 
@@ -519,20 +519,20 @@ The Platform is owned and operated by:
 
 KE AGENCY
 
-KEKE may make the application available through authorized app stores and other authorized channels.
+KE may make the application available through authorized app stores and other authorized channels.
 
-KEKE does not accept responsibility for applications, services, products, or versions obtained from unauthorized sources.
+KE does not accept responsibility for applications, services, products, or versions obtained from unauthorized sources.
 
 For questions, complaints, reports, or other concerns regarding KEKE, contact:
 
-KE Agency
+KEKE Agency
 Email: kevokevo426@gmail.com
 
 30. Contact Us
 
 If you have questions about these Terms, your account, Content, payments, reports, or other KEKE services, contact us at:
 
-KE Agency
+KEKE Agency
 Email: kevokevo426@gmail.com
 
 Thank you for using KEKE.`;
@@ -544,7 +544,7 @@ let userData={},selectedGender='',tempGender='',selectedHobbies=[],uploadedPhoto
 const MAX_HOBBIES=5,MAX_PHOTOS=5;
 const hobbiesData={"Creativity":["Painting","Singing","Makeup","Crafts","Writing","Design"],"Sports":["Ping pong","Volleyball","Swimming","Gymnastics","Bodybuilding","Athletics","Yoga"],"Outdoor":["Hiking","Camping","Surfing","Dancing","Concerts","Karaoke"],"At home":["Cooking","Reading","Gardening","DIY","Board games","Video games"],"Movies and TV shows":["Action & Adventure","Comedy","Drama","Documentaries","Horror","Romance"],"Reading":["Fiction","Non-fiction","Self-help","Biographies","Poetry","Mystery"],"Music":["Pop","Rock","Hip hop","Jazz","Classical","Electronic"],"Food":["Baking","Coffee","Tea","Pizza","Sushi","BBQ","Vegetarian","Vegan"],"Pets":["Dogs","Cats","Birds","Fish","Rabbits","Reptiles"],"Values and Personality":["Honesty","Kindness","Ambition","Creativity","Loyalty","Open-mindedness"]};
 function togglePassword(id,el){const input=document.getElementById(id);if(input.type==="password"){input.type="text";el.innerText="🙈";}else{input.type="password";el.innerText="👁️";}}
-function openTerms(e){e.preventDefault();document.getElementById('termsBody').innerText=KEKE_TERMS;document.getElementById('termsModal').style.display='flex';document.getElementById('acceptTermsBtn').disabled=true;}
+function openTerms(e){e.preventDefault();document.getElementById('termsBody').innerText=KE_TERMS;document.getElementById('termsModal').style.display='flex';document.getElementById('acceptTermsBtn').disabled=true;}
 function checkScroll(){const el=document.getElementById('termsBody');if(el.scrollTop+el.clientHeight>=el.scrollHeight-5){document.getElementById('acceptTermsBtn').disabled=false;}}
 function acceptTerms(){document.getElementById('termsCheck').disabled=false;document.getElementById('termsCheck').checked=true;closeTerms();}
 function closeTerms(){document.getElementById('termsModal').style.display='none';}
@@ -566,4 +566,4 @@ document.getElementById('photoInput').onchange=function(e){let file=e.target.fil
 function addPhoto(){if(uploadedPhotos.length>=MAX_PHOTOS)return;document.getElementById('photoInput').click();}
 function renderPhotos(){let grid=document.getElementById('photoGrid');grid.innerHTML='';uploadedPhotos.forEach((src,idx)=>{grid.innerHTML+=`<div class="photo-box"><img src="${src}"><div class="photo-box remove" onclick="removePhoto(${idx})">×</div></div>`;});if(uploadedPhotos.length<MAX_PHOTOS)grid.innerHTML+=`<div class="photo-box" onclick="addPhoto()">+</div>`;document.getElementById('photoCount').innerText=`${uploadedPhotos.length}/${MAX_PHOTOS}`;}
 function removePhoto(idx){uploadedPhotos.splice(idx,1);renderPhotos();}
-function saveProfile(){userData.photos=uploadedPhotos;userData.id='PT'+Math.floor(Math.random()*900000+100000);userData.level=1;userData.friends=[];userData.following=[];userData.followers=[];userData.visitors=[];userData.coins=20;userData.distance=Math.floor(Math.random()*50)+1+'km';localStorage.setItem('patanisha_myProfile',JSON.stringify(user
+function saveProfile(){userData.photos=uploadedPhotos;userData.id='PT'+Math.floor(Math.random()*
