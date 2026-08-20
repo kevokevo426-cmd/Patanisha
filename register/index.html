@@ -126,20 +126,33 @@ document.getElementById('photoInput').onchange=function(e){let file=e.target.fil
 function addPhoto(){if(uploadedPhotos.length>=MAX_PHOTOS)return;document.getElementById('photoInput').click();}
 function renderPhotos(){let grid=document.getElementById('photoGrid');grid.innerHTML='';uploadedPhotos.forEach((src,idx)=>{grid.innerHTML+=`<div class="photo-box"><img src="${src}"><div class="photo-box remove" onclick="removePhoto(${idx})">×</div></div>`;});if(uploadedPhotos.length<MAX_PHOTOS)grid.innerHTML+=`<div class="photo-box" onclick="addPhoto()">+</div>`;}
 function removePhoto(idx){uploadedPhotos.splice(idx,1);renderPhotos();}
+
+// UPDATED FUNCTION ONLY - SAVES DATA + CUSTOM POPUP
 function saveProfile(){
   userData.photos=uploadedPhotos;
   userData.id='PT'+Math.floor(Math.random()*900000+100000);
   localStorage.setItem('patanisha_myProfile', JSON.stringify(userData));
 
-  if(userData.gender==='Male'){
-    localStorage.setItem('patanisha_myProfile_male', JSON.stringify(userData));
-    alert('Account Created Successfully!');
-    window.location.href='/male/index.html'; // <-- CHANGED TO /
-  } else {
-    localStorage.setItem('patanisha_myProfile_female', JSON.stringify(userData));
-    alert('Account Created Successfully!');
-    window.location.href='/index.html'; // <-- CHANGED TO /
-  }
+  // SHOW CUSTOM MESSAGE - NO ADDRESS
+  let msg = document.createElement('div');
+  msg.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+  msg.innerHTML = `<div style="background:#fff;padding:30px;border-radius:20px;text-align:center;max-width:300px">
+    <h2 style="font-weight:bold;font-size:18px;color:#000;margin-bottom:10px">Account created successfully</h2>
+    <p style="font-weight:bold;font-size:16px;color:#FF8F00">Meet and socialize</p>
+    <button onclick="this.parentElement.parentElement.remove()" style="margin-top:20px;padding:12px 30px;background:linear-gradient(135deg,#FFD600,#FF8F00);border:none;border-radius:12px;font-weight:bold;cursor:pointer">OK</button>
+  </div>`;
+  document.body.appendChild(msg);
+
+  // REDIRECT AFTER 2 SECONDS AND SAVE TO CORRECT KEY
+  setTimeout(()=>{
+    if(userData.gender==='Male'){
+      localStorage.setItem('patanisha_myProfile_male', JSON.stringify(userData));
+      window.location.href='/male/index.html';
+    } else {
+      localStorage.setItem('patanisha_myProfile_female', JSON.stringify(userData));
+      window.location.href='/index.html';
+    }
+  }, 2000);
 }
 </script>
 </body>
