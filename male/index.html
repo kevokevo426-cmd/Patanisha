@@ -281,8 +281,12 @@ function openProfile(idx){
 
 function closeProfile(){ document.getElementById('profilePopup').style.display = 'none'; }
 
-// NEW: CALL FUNCTIONS
-function startChat(){ alert('Opening chat with ' + currentProfile.name); closeProfile(); }
+// FIXED: NO ALERT, OPEN CHAT DIRECTLY
+function startChat(){
+  closeProfile();
+  openChat(currentProfile);
+}
+
 function startCall(type){
   document.getElementById('callScreenAvatar').src = currentProfile.avatar;
   document.getElementById('callScreenName').innerText = currentProfile.name;
@@ -352,7 +356,6 @@ function renderRechargeHistory(){
 function loadUsers(){
   let html = '';
   users.forEach((u, idx)=>{
-    // ADDED onclick to avatar and name
     html += `<div class="card"><div class="avatar" onclick="openProfile(${idx})"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info" onclick="openProfile(${idx})"><h3>${u.name}</h3><div class="friends-count">${u.friends.length} friends</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation(); alert('Say Hi to ${u.name}')">💬 Hi 5s</button></div></div></div>`
   });
   document.getElementById('userList').innerHTML = html;
@@ -361,6 +364,79 @@ function loadUsers(){
 function switchTab(tab, el){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); }
 function goHome(){window.scrollTo(0,0)}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
+
+// NEW CHAT SYSTEM - ADDED
+function openChat(user){
+  let chatId = 'chat_' + user.name;
+  if(document.getElementById(chatId)) document.getElementById(chatId).remove();
+
+  let chatHtml = `
+  <div class="popup" id="${chatId}" style="display:block">
+    <span class="close-btn" onclick="closePopup('${chatId}')">×</span>
+    <div class="popup-content" style="text-align:left;padding:0;height:85vh;display:flex;flex-direction:column">
+      <div style="background:linear-gradient(135deg,#2196F3,#1976D2);padding:15px;color:#fff;display:flex;align-items:center;gap:10px">
+        <img src="${user.avatar}" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
+        <b>${user.name}</b>
+      </div>
+      <div id="chatMessages_${user.name}" style="flex:1;padding:15px;overflow-y:auto;background:#0D1117"></div>
+      <div style="padding:10px;background:#161B22;display:flex;gap:10px;border-top:1px solid #30363D">
+        <input type="text" id="chatInput_${user.name}" placeholder="Type message..." onkeypress="if(event.key==='Enter')sendMessage('${user.name}')" style="flex:1;padding:12px;border-radius:20px;border:1px solid #30363D;background:#21262D;color:#fff">
+        <button onclick="sendMessage('${user.name}')" style="background:#2196F3;border:none;color:#fff;padding:0 20px;border-radius:20px;font-weight:bold;cursor:pointer">Send</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', chatHtml);
+  loadChatHistory(user.name);
+}
+
+function sendMessage(to){
+  let input = document.getElementById(`chatInput_${to}`);
+  let msg = input.value.trim();
+  if(!msg) return;
+
+  let chatKey = 'patanisha_chat_' + myProfile.id + '_' + to;
+  let chatData = JSON.parse(localStorage.getItem(chatKey)) || {messages:[], msgCount:0};
+
+  // COIN LOGIC: 1ST FREE, THEN 10 COINS
+  if(chatData.msgCount >= 1){
+    if(myProfile.coins < 10){
+      alert('Not enough coins. Need 10 coins per message');
+      return;
+    }
+    myProfile.coins -= 10;
+    localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile));
+    document.getElementById('meCoins').innerText = myProfile.coins;
+
+    if(!myProfile.usage) myProfile.usage = [];
+    myProfile.usage.unshift({coins:10, to:to, reason:'Chat message', date:new Date().toLocaleString()});
+  }
+
+  chatData.messages.push({from:'me', text:msg, time:new Date().toLocaleTimeString()});
+  chatData.msgCount += 1;
+  localStorage.setItem(chatKey, JSON.stringify(chatData));
+
+  input.value = '';
+  loadChatHistory(to);
+}
+
+function loadChatHistory(to){
+  let chatKey = 'patanisha_chat_' + myProfile.id + '_' + to;
+  let chatData = JSON.parse(localStorage.getItem(chatKey)) || {messages:[], msgCount:0};
+  let html = '';
+
+  if(chatData.msgCount === 0){
+    html = `<div style="text-align:center;color:#4CAF50;padding:20px;font-weight:600">🎉 First message is FREE!</div>`;
+  } else {
+    html = `<div style="text-align:center;color:#F59E0B;padding:10px;font-size:12px">10 Coins per message</div>`;
+  }
+
+  chatData.messages.forEach(m=>{
+    html += `<div style="margin-bottom:10px;text-align:right"><div style="background:#2196F3;color:#fff;padding:10px 15px;border-radius:15px;display:inline-block;max-width:70%;font-size:14px">${m.text}</div><div style="font-size:10px;color:#8B949E;margin-top:3px">${m.time}</div></div>`;
+  });
+
+  document.getElementById(`chatMessages_${to}`).innerHTML = html;
+  document.getElementById(`chatMessages_${to}`).scrollTop = document.getElementById(`chatMessages_${to}`).scrollHeight;
+}
 
 loadUsers();
 </script>
