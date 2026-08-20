@@ -59,9 +59,30 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 .menu-item:hover{background:#21262D}
 #successToast{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#E8F5E9;color:#2E7D32;padding:12px 20px;border-radius:12px;font-weight:600;z-index:1001}
 .call-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:1000;color:white;text-align:center;padding-top:100px}
-.call-timer{font-size:48px;font-weight:bold;margin:20px}
-.call-coins{font-size:18px;color:#F59E0B}
-.end-call-btn{background:red;color:white;border:none;padding:15px 40px;border-radius:30px;font-size:16px;margin-top:30px;cursor:pointer}
+
+/* NEW PROFILE POPUP STYLES */
+.profile-popup-body{padding:0;text-align:left}
+.profile-cover{height:250px;position:relative}
+.profile-cover img{width:100%;height:100%;object-fit:cover}
+.profile-avatar-big{width:100px;height:100px;border-radius:50%;border:4px solid #161B22;position:absolute;bottom:-50px;left:20px;object-fit:cover}
+.profile-info{padding:70px 20px 20px}
+.profile-name{font-size:22px;font-weight:800;color:#fff}
+.profile-city{color:#8B949E;font-size:14px;margin:5px 0 15px}
+.profile-bio{background:#21262D;padding:15px;border-radius:12px;color:#C9D1D9;line-height:1.6}
+.profile-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:15px 0}
+.profile-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.action-btns{display:flex;gap:10px;margin-top:20px}
+.action-btn{flex:1;padding:14px;border-radius:12px;border:none;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-chat{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff}
+.btn-voice{background:linear-gradient(135deg,#F59E0B,#D97706);color:#000}
+.btn-video{background:linear-gradient(135deg,#2196F3,#1976D2);color:#fff}
+
+/* CALL SCREEN */
+.call-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:1000;align-items:center;justify-content:center;flex-direction:column;color:#fff}
+.call-screen-avatar{width:150px;height:150px;border-radius:50%;margin-bottom:20px;border:4px solid #25D366}
+.call-screen-name{font-size:24px;font-weight:700}
+.call-screen-status{color:#aaa;margin:10px 0 40px}
+.call-end-btn{width:70px;height:70px;background:red;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -101,6 +122,37 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
 </div>
 
+<!-- PROFILE POPUP NEW -->
+<div class="popup" id="profilePopup">
+  <span class="close-btn" onclick="closeProfile()">×</span>
+  <div class="popup-content profile-popup-body">
+    <div class="profile-cover">
+      <img id="profileCover" src="">
+      <img id="profileAvatarBig" class="profile-avatar-big" src="">
+    </div>
+    <div class="profile-info">
+      <div class="profile-name" id="profileName"></div>
+      <div class="profile-city" id="profileCity"></div>
+      <div class="profile-bio" id="profileBio"></div>
+      <h3 style="margin:20px 0 10px;color:#fff">Photos</h3>
+      <div class="profile-photos" id="profilePhotos"></div>
+      <div class="action-btns">
+        <button class="action-btn btn-chat" onclick="startChat()">💬 Chat</button>
+        <button class="action-btn btn-voice" onclick="startCall('voice')">📞 Voice</button>
+        <button class="action-btn btn-video" onclick="startCall('video')">📹 Video</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CALL SCREEN -->
+<div class="call-screen" id="callScreen">
+  <img id="callScreenAvatar" class="call-screen-avatar" src="">
+  <div class="call-screen-name" id="callScreenName"></div>
+  <div class="call-screen-status" id="callScreenStatus">Calling...</div>
+  <div class="call-end-btn" onclick="endCall()">📞</div>
+</div>
+
 <!-- ME POPUP -->
 <div class="popup" id="mePopup">
   <span class="close-btn" onclick="closePopup('mePopup')">×</span>
@@ -132,7 +184,6 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
     <div style="padding:0 0 80px">
       <div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div>
       <div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div>
-      <!-- ADDED -->
       <div class="menu-item" onclick="window.location='../about.html'">📄 Terms & Conditions</div>
       <div class="menu-item" onclick="window.location='../about.html'">🔒 Privacy Policy</div>
       <button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button>
@@ -200,9 +251,10 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 <script>
 let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_male')) || {name:"Male User",id:"M1001",avatar:"https://i.pravatar.cc/100?img=51",coins:100,friends:[],following:[],followers:[],visitors:[],recharges:[],usage:[]};
 let users = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [
-  {name:"Amina", avatar:"https://i.pravatar.cc/100?img=1", friends:[]},
-  {name:"Jane", avatar:"https://i.pravatar.cc/100?img=2", friends:[]}
+  {name:"Amina", city:"Nairobi", bio:"Love hiking and coffee. Looking for genuine connection.", avatar:"https://i.pravatar.cc/100?img=1", photos:["https://picsum.photos/200?1","https://picsum.photos/200?2","https://picsum.photos/200?3"], friends:[]},
+  {name:"Jane", city:"Mombasa", bio:"Foodie and beach lover. Let's explore together!", avatar:"https://i.pravatar.cc/100?img=2", photos:["https://picsum.photos/200?4","https://picsum.photos/200?5"], friends:[]}
 ];
+let currentProfile = {};
 
 // CHAT SUBMENU TOGGLE
 function toggleChatMenu(){
@@ -211,6 +263,34 @@ function toggleChatMenu(){
 document.addEventListener('click', function(e){
   if(!e.target.closest('#chatNavItem')) document.getElementById('chatSubmenu').classList.remove('active');
 })
+
+// NEW: OPEN PROFILE
+function openProfile(idx){
+  currentProfile = users[idx];
+  document.getElementById('profileCover').src = currentProfile.avatar;
+  document.getElementById('profileAvatarBig').src = currentProfile.avatar;
+  document.getElementById('profileName').innerText = currentProfile.name;
+  document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown');
+  document.getElementById('profileBio').innerText = currentProfile.bio || 'No bio yet';
+
+  let photosHtml = '';
+  if(currentProfile.photos) currentProfile.photos.forEach(p=>{photosHtml += `<img src="${p}">`});
+  document.getElementById('profilePhotos').innerHTML = photosHtml;
+  document.getElementById('profilePopup').style.display = 'block';
+}
+
+function closeProfile(){ document.getElementById('profilePopup').style.display = 'none'; }
+
+// NEW: CALL FUNCTIONS
+function startChat(){ alert('Opening chat with ' + currentProfile.name); closeProfile(); }
+function startCall(type){
+  document.getElementById('callScreenAvatar').src = currentProfile.avatar;
+  document.getElementById('callScreenName').innerText = currentProfile.name;
+  document.getElementById('callScreenStatus').innerText = type === 'voice'? 'Voice calling...' : 'Video calling...';
+  document.getElementById('callScreen').style.display = 'flex';
+  closeProfile();
+}
+function endCall(){ document.getElementById('callScreen').style.display = 'none'; alert('Call ended'); }
 
 function openMe(){
   document.getElementById('meAvatar').src = myProfile.avatar;
@@ -271,8 +351,9 @@ function renderRechargeHistory(){
 
 function loadUsers(){
   let html = '';
-  users.forEach(u=>{
-    html += `<div class="card"><div class="avatar"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info"><h3>${u.name}</h3><div class="friends-count">${u.friends.length} friends</div><div class="btn-row"><button class="hi-btn" onclick="alert('Say Hi to ${u.name}')">💬 Hi 5s</button></div></div></div>`
+  users.forEach((u, idx)=>{
+    // ADDED onclick to avatar and name
+    html += `<div class="card"><div class="avatar" onclick="openProfile(${idx})"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info" onclick="openProfile(${idx})"><h3>${u.name}</h3><div class="friends-count">${u.friends.length} friends</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation(); alert('Say Hi to ${u.name}')">💬 Hi 5s</button></div></div></div>`
   });
   document.getElementById('userList').innerHTML = html;
 }
