@@ -79,14 +79,12 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 <div class="tabs-wrapper"><div class="tabs" id="tabs"><span class="tab active" onclick="switchTab('nearby', this)">Nearby</span><span class="tab" onclick="switchTab('top', this)">🏆 Top</span></div></div>
 <div id="userList"></div>
 </div>
-
 <div class="nav">
   <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
   <div class="nav-item" onclick="window.location='../about.html'"><span class="nav-icon">ℹ️</span>About</div>
   <div class="nav-item" onclick="ChatManager.openInbox()"><span class="nav-icon">💬</span>Chat</div>
   <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
 </div>
-
 <div class="popup" id="profilePopup"><span class="close-btn" onclick="closeProfile()">×</span><div class="popup-content profile-popup-body"><div class="profile-cover"><img id="profileCover" src=""><img id="profileAvatarBig" class="profile-avatar-big" src=""></div><div class="profile-info"><div class="profile-name" id="profileName"></div><div class="profile-city" id="profileCity"></div><div class="profile-bio" id="profileBio"></div><h3 style="margin:20px 0 10px;color:#fff">Photos</h3><div class="profile-photos" id="profilePhotos"></div><div class="action-btns"><button class="action-btn btn-chat" onclick="startChat()">💬 Chat</button><button class="action-btn btn-voice" onclick="startCall('voice')">📞 Voice</button><button class="action-btn btn-video" onclick="startCall('video')">📹 Video</button></div></div></div></div>
 <div class="call-screen" id="callScreen"><img id="callScreenAvatar" class="call-screen-avatar" src=""><div class="call-screen-name" id="callScreenName"></div><div class="call-screen-status" id="callScreenStatus">Calling...</div><div class="call-end-btn" onclick="endCall()">📞</div></div>
 <div class="popup" id="mePopup"><span class="close-btn" onclick="closePopup('mePopup')">×</span><div class="popup-content" style="text-align:left; padding:0"><div class="me-header"><div style="display:flex;align-items:center;gap:15px"><img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover"><div><h2 id="meName" style="color:#fff;margin:0">Name</h2><p id="meID" style="color:#BBDEFB;font-size:12px;margin-top:5px">ID:123456</p></div></div></div><div class="me-stats"><div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div><div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div><div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div><div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div></div><div class="me-cards"><div class="me-card coin-card" onclick="openUsageHistory()"><span style="background:#000;color:#F59E0B;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#000">My Coins</div><b id="meCoins">0</b></div></div><div class="me-card" style="background:linear-gradient(135deg,#2196F3,#1976D2);color:white;justify-content:center;cursor:pointer;font-weight:bold" onclick="openRecharge()">Recharge</div></div><div style="padding:0 0 80px"><div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div><div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div><div class="menu-item" onclick="window.location='../about.html'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='../about.html'">🔒 Privacy Policy</div><button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button></div></div></div>
@@ -95,16 +93,23 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 <div class="popup" id="usagePopup"><span class="close-btn" onclick="closePopup('usagePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Coin Usage</h3><div id="usageList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="rechargeHistoryPopup"><span class="close-btn" onclick="closePopup('rechargeHistoryPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Recharge History</h3><div id="rechargeList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="adminChatPopup"><span class="close-btn" onclick="closePopup('adminChatPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Contact Admin</h3><p style="font-size:12px;color:#8B949E">For recharge issues or account help</p><div class="form-group"><label>Your Message</label><textarea id="adminMessage" style="width:100%;height:100px;background:#21262D;border:1px solid #30363D;color:#C9D1D9;border-radius:12px;padding:10px"></textarea></div><button class="btn" onclick="sendToAdmin()">Send to Admin</button></div></div>
-
 <script>
 let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_male')) || {name:"Male User",id:"M1001",avatar:"https://i.pravatar.cc/100?img=51",coins:100,friends:[],following:[],followers:[],visitors:[],recharges:[],usage:[]};
 let users = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [
-  {name:"Prince Kolawole", city:"Nairobi", bio:"Hello babe ^_^", avatar:"https://i.pravatar.cc/100?img=5", photos:["https://picsum.photos/200?1"], friends:[]},
-  {name:"Leonard EA", city:"Mombasa", bio:"VIP User", avatar:"https://picsum.photos/100?random=1", photos:[], friends:[]},
-  {name:"M.gen", city:"Kisumu", bio:"Didn't reply to the other p...", avatar:"https://picsum.photos/100?random=2", photos:[], friends:[]}
+  {name:"Breezy 🔥", gender:"Female", city:"Ruiru", bio:"I'm as open as much as you're willing to flip my pages", avatar:"https://i.pravatar.cc/100?img=47", photos:["https://picsum.photos/200?1"], friends:[]},
+  {name:"Aisha W.", gender:"Female", city:"Nairobi", bio:"Hello babe ^_^", avatar:"https://i.pravatar.cc/100?img=45", photos:[], friends:[]},
+  {name:"Wanjiru K.", gender:"Female", city:"Ruiru", bio:"VIP User", avatar:"https://i.pravatar.cc/100?img=44", photos:[], friends:[]}
 ];
 let currentProfile = {};
-function openProfile(idx){ currentProfile = users[idx]; document.getElementById('profileCover').src = currentProfile.avatar; document.getElementById('profileAvatarBig').src = currentProfile.avatar; document.getElementById('profileName').innerText = currentProfile.name; document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown'); document.getElementById('profileBio').innerText = currentProfile.bio || 'No bio yet'; let photosHtml = ''; if(currentProfile.photos) currentProfile.photos.forEach(p=>{photosHtml += `<img src="${p}">`}); document.getElementById('profilePhotos').innerHTML = photosHtml; document.getElementById('profilePopup').style.display = 'block'; }
+let filteredUsers = [];
+function getFilteredUsers(){
+  // MALE APP: Show ONLY Females
+  return users.filter(u => {
+    if(!u.gender) return false;
+    return u.gender.toLowerCase().trim() === 'female';
+  });
+}
+function openProfile(idx){ currentProfile = filteredUsers[idx]; document.getElementById('profileCover').src = currentProfile.avatar; document.getElementById('profileAvatarBig').src = currentProfile.avatar; document.getElementById('profileName').innerText = currentProfile.name; document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown'); document.getElementById('profileBio').innerText = currentProfile.bio || 'No bio yet'; let photosHtml = ''; if(currentProfile.photos) currentProfile.photos.forEach(p=>{photosHtml += `<img src="${p}">`}); document.getElementById('profilePhotos').innerHTML = photosHtml; document.getElementById('profilePopup').style.display = 'block'; }
 function closeProfile(){ document.getElementById('profilePopup').style.display = 'none'; }
 function startChat(){ closeProfile(); ChatManager.openChat(currentProfile); }
 function startCall(type){ closeProfile(); if(type === 'voice') ChatManager.startVoiceCall(currentProfile); if(type === 'video') ChatManager.startVideoCall(currentProfile); }
@@ -120,7 +125,13 @@ function openAdminChat(){ document.getElementById('adminChatPopup').style.displa
 function sendToAdmin(){ let msg = document.getElementById('adminMessage').value; if(msg.trim() === ''){alert('Type message');return;} if(!myProfile.adminMessages) myProfile.adminMessages = []; myProfile.adminMessages.push({msg:msg, date:new Date().toLocaleString()}); localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile)); alert('Message sent to Admin'); document.getElementById('adminMessage').value = ''; closePopup('adminChatPopup'); }
 function openRechargeHistory(){ renderRechargeHistory(); document.getElementById('rechargeHistoryPopup').style.display = 'block'; }
 function renderRechargeHistory(){ let list = document.getElementById('rechargeList'); if(!myProfile.recharges || myProfile.recharges.length === 0){ list.innerHTML = '<div class="empty">No recharges yet</div>'; return; } let html = ''; myProfile.recharges.forEach(r=>{ html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:#4CAF50">KES ${r.amount}</b> → ${r.coins} Coins<div style="font-size:12px;color:#888">${r.mpesa} • ${r.date}</div></div>`; }); list.innerHTML = html; }
-function loadUsers(){ let html = ''; users.forEach((u, idx)=>{ html += `<div class="card"><div class="avatar" onclick="openProfile(${idx})"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info" onclick="openProfile(${idx})"><h3>${u.name}</h3><div class="friends-count">${u.friends.length} friends</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation(); alert('Say Hi to ${u.name}')">💬 Hi 5s</button></div></div></div>` }); document.getElementById('userList').innerHTML = html; }
+function loadUsers(){ 
+  filteredUsers = getFilteredUsers();
+  if(filteredUsers.length === 0){ document.getElementById('userList').innerHTML = '<div class="empty">No ladies found yet<br><span style="font-size:12px">No Female users in Ruiru yet</span></div>'; return; }
+  let html = ''; 
+  filteredUsers.forEach((u, idx)=>{ html += `<div class="card"><div class="avatar" onclick="openProfile(${idx})"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info" onclick="openProfile(${idx})"><h3>${u.name} ♀</h3><div class="friends-count">${u.friends.length} friends • 📍 ${u.city}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation(); alert('Say Hi to ${u.name}')">💬 Hi 5s</button></div></div></div>` }); 
+  document.getElementById('userList').innerHTML = html; 
+}
 function switchTab(tab, el){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); }
 function goHome(){window.scrollTo(0,0)}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
