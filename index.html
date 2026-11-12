@@ -3,14 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Patanisha</title>
-
-<!-- KE APP ICON - PWA -->
+<title>Patanisha - Female</title>
 <link rel="icon" href="/logo-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="/logo-180.png">
 <meta name="theme-color" content="#FFA4C7">
 <link rel="manifest" href="/manifest.json">
-
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
@@ -64,8 +61,6 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .form-group{margin-bottom:16px;text-align:left;padding:0 20px}
 .form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:14px;color:#333}
 .form-group input{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:15px;background:#f8f8f8}
-
-/* ME PAGE */
 .me-header{background:linear-gradient(135deg,#FFD700,#FFA500);padding:25px 20px;border-radius:15px 15px 0 0}
 .me-stats{display:flex;justify-content:space-around;padding:15px 10px;background:white}
 .stat-item{text-align:center;cursor:pointer}
@@ -78,179 +73,71 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .menu-item{padding:12px 0;border-bottom:1px solid #eee;text-align:left;display:flex;align-items:center;gap:10px;cursor:pointer}
 .menu-item:hover{background:#f9f9f9}
 .btn{width:100%;padding:16px;background:linear-gradient(135deg,#BA55D3,#9370DB);color:#fff;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px}
-
-/* SUCCESS TOAST */
 #successToast{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#E8F5E9;color:#2E7D32;padding:12px 20px;border-radius:12px;font-weight:600;z-index:1001;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
 </style>
 </head>
 <body>
 <div class="wrapper">
-
-<div class="banner">
-  <div class="banner-text">
-    <b>Set up 3 Say hi texts</b>
-    <p>The other user is more likely to reply to you</p>
-  </div>
-  <button class="banner-btn" onclick="openHiSetup()">Go</button>
-</div>
-
-<div class="tabs-wrapper">
-  <div class="tabs" id="tabs">
-    <span class="tab" onclick="switchTab('recommend', this)">Recommend</span>
-    <span class="tab" onclick="switchTab('newcomer', this)">Newcomer</span>
-    <span class="tab active" onclick="switchTab('nearby', this)">Nearby</span>
-    <span class="tab" onclick="switchTab('top', this)">🏆 Top</span>
-    <span class="tab" onclick="switchTab('search', this)">🔍 Search</span>
-  </div>
-</div>
-
-<div id="searchBox" style="display:none;text-align:center">
-  <input type="text" class="search-box" id="searchInput" placeholder="Search name..." onkeyup="searchUsers()">
-</div>
-
+<div class="banner"><div class="banner-text"><b>Set up 3 Say hi texts</b><p>The other user is more likely to reply to you</p></div><button class="banner-btn" onclick="openHiSetup()">Go</button></div>
+<div class="tabs-wrapper"><div class="tabs" id="tabs"><span class="tab" onclick="switchTab('recommend', this)">Recommend</span><span class="tab" onclick="switchTab('newcomer', this)">Newcomer</span><span class="tab active" onclick="switchTab('nearby', this)">Nearby</span><span class="tab" onclick="switchTab('top', this)">🏆 Top</span><span class="tab" onclick="switchTab('search', this)">🔍 Search</span></div></div>
+<div id="searchBox" style="display:none;text-align:center"><input type="text" class="search-box" id="searchInput" placeholder="Search name..." onkeyup="searchUsers()"></div>
 <div id="userList"></div>
-
 </div>
-
-<div class="nav">
-  <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
-  <div class="nav-item" onclick="window.location='about.html'"><span class="nav-icon">ℹ️</span>About</div>
-  <div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span></div>
-  <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
-</div>
-
+<div class="nav"><div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div><div class="nav-item" onclick="window.location='about.html'"><span class="nav-icon">ℹ️</span>About</div><div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span></div><div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div></div>
 <div class="popup" id="profilePopup">...</div>
-
-<div class="popup" id="mePopup">
-  <span class="close-btn" onclick="closePopup('mePopup')">×</span>
-  <div class="popup-content" style="text-align:left; padding:0">
-    <div class="me-header">
-      <div style="display:flex;align-items:center;gap:15px">
-        <img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover">
-        <div>
-          <h2 id="meName" style="color:#000;margin:0">Name</h2>
-          <div style="display:flex;gap:8px;margin-top:5px">
-            <span id="meVIP" style="background:#8B5CF6;color:white;padding:3px 8px;border-radius:12px;font-size:12px">VIP0</span>
-            <span id="meLevel" style="background:#4CAF50;color:white;padding:3px 8px;border-radius:12px;font-size:12px">Lv 1</span>
-          </div>
-          <p id="meID" style="color:#333;font-size:12px;margin-top:5px">ID:123456</p>
-        </div>
-      </div>
-    </div>
-    <div class="me-stats">
-      <div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div>
-      <div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div>
-      <div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div>
-      <div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
-    </div>
-    <div class="me-cards">
-      <div class="me-card coin-card" onclick="openIncomeHistory()"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div></div>
-      <div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()"><b>Withdraw</b></div>
-    </div>
-    <div style="padding:0 15px 80px">
-      <div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div>
-      <div class="menu-item" onclick="openAccountSettings()">🏦 Receiving Account</div>
-      <div class="menu-item" onclick="window.location='about.html'">📄 Terms & Conditions</div>
-      <div class="menu-item" onclick="window.location='about.html'">🔒 Privacy Policy</div>
-      <button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button>
-    </div>
-  </div>
-</div>
-
-<div class="popup" id="withdrawFormPopup">
-  <span class="close-btn" onclick="closePopup('withdrawFormPopup')">×</span>
-  <div class="popup-content" style="text-align:left;padding:20px">
-    <h3>Request Withdrawal</h3>
-    <div class="form-group"><label>Receiving M-Pesa Number</label><input type="text" id="withdrawMpesa" placeholder="07XXXXXXXX"></div>
-    <div class="form-group"><label>Withdrawal PIN</label><input type="password" id="withdrawPin" placeholder="Enter 4-6 digit PIN"></div>
-    <p style="font-size:12px;color:#888;padding:0 20px">Min 100 Coins = KES 100. Fee: KES 5</p>
-    <button class="btn" onclick="submitWithdraw()">Submit Request</button>
-  </div>
-</div>
-
-<div class="popup" id="accountSettingsPopup">
-  <span class="close-btn" onclick="closePopup('accountSettingsPopup')">×</span>
-  <div class="popup-content" style="text-align:left;padding:20px">
-    <h3>Receiving Account</h3>
-    <div class="form-group"><label>M-Pesa Number</label><input type="text" id="settingMpesa" placeholder="07XXXXXXXX"></div>
-    <div class="form-group"><label>Set Withdrawal PIN</label><input type="password" id="settingPin" placeholder="4-6 digits"></div>
-    <button class="btn" onclick="saveAccountSettings()">Save</button>
-  </div>
-</div>
-
-<div class="popup" id="withdrawPopup">
-  <span class="close-btn" onclick="closePopup('withdrawPopup')">×</span>
-  <div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white">
-    <h3>Withdrawal history</h3>
-    <div id="withdrawList" style="margin-top:15px"></div>
-  </div>
-</div>
-
-<div class="popup" id="incomePopup">
-  <span class="close-btn" onclick="closePopup('incomePopup')">×</span>
-  <div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white">
-    <h3>💰 Income History</h3>
-    <div id="incomeList" style="margin-top:15px"></div>
-  </div>
-</div>
-
+<div class="popup" id="mePopup"><span class="close-btn" onclick="closePopup('mePopup')">×</span><div class="popup-content" style="text-align:left; padding:0"><div class="me-header"><div style="display:flex;align-items:center;gap:15px"><img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover"><div><h2 id="meName" style="color:#000;margin:0">Name</h2><div style="display:flex;gap:8px;margin-top:5px"><span id="meVIP" style="background:#8B5CF6;color:white;padding:3px 8px;border-radius:12px;font-size:12px">VIP0</span><span id="meLevel" style="background:#4CAF50;color:white;padding:3px 8px;border-radius:12px;font-size:12px">Lv 1</span></div><p id="meID" style="color:#333;font-size:12px;margin-top:5px">ID:123456</p></div></div></div><div class="me-stats"><div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div><div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div><div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div><div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div></div><div class="me-cards"><div class="me-card coin-card" onclick="openIncomeHistory()"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div></div><div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()"><b>Withdraw</b></div></div><div style="padding:0 15px 80px"><div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div><div class="menu-item" onclick="openAccountSettings()">🏦 Receiving Account</div><div class="menu-item" onclick="window.location='about.html'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='about.html'">🔒 Privacy Policy</div><button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button></div></div></div>
+<div class="popup" id="withdrawFormPopup"><span class="close-btn" onclick="closePopup('withdrawFormPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Request Withdrawal</h3><div class="form-group"><label>Receiving M-Pesa Number</label><input type="text" id="withdrawMpesa" placeholder="07XXXXXXXX"></div><div class="form-group"><label>Withdrawal PIN</label><input type="password" id="withdrawPin" placeholder="Enter 4-6 digit PIN"></div><p style="font-size:12px;color:#888;padding:0 20px">Min 100 Coins = KES 100. Fee: KES 5</p><button class="btn" onclick="submitWithdraw()">Submit Request</button></div></div>
+<div class="popup" id="accountSettingsPopup"><span class="close-btn" onclick="closePopup('accountSettingsPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Receiving Account</h3><div class="form-group"><label>M-Pesa Number</label><input type="text" id="settingMpesa" placeholder="07XXXXXXXX"></div><div class="form-group"><label>Set Withdrawal PIN</label><input type="password" id="settingPin" placeholder="4-6 digits"></div><button class="btn" onclick="saveAccountSettings()">Save</button></div></div>
+<div class="popup" id="withdrawPopup"><span class="close-btn" onclick="closePopup('withdrawPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Withdrawal history</h3><div id="withdrawList" style="margin-top:15px"></div></div></div>
+<div class="popup" id="incomePopup"><span class="close-btn" onclick="closePopup('incomePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>💰 Income History</h3><div id="incomeList" style="margin-top:15px"></div></div></div>
 <div id="successToast">✅ Withdrawal requested. We'll process it shortly.</div>
-
 <script>
-// 1. FIXED REDIRECT
 let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
 let isOnRegisterPage = window.location.pathname.includes('register');
 if(!myProfile && !isOnRegisterPage){ window.location.href = 'register/index.html'; }
-
 const tabsOrder = ['recommend','newcomer','nearby','top','search'];
 let currentTab = 'nearby';
 let currentChatUser = '';
 let userCity = 'Ruiru';
 let chats = JSON.parse(localStorage.getItem('patanishaChats')) || {};
 let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || {};
-
 let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
-  {name:"Lawi Lonyama", avatar:"https://i.pravatar.cc/100?img=11", friends:[], following:[], followers:[], level:16, distance:"42.8km", age:20, city:"Nairobi"},
-  {name:"Breezy 🔥", avatar:"https://i.pravatar.cc/100?img=12", friends:[], following:[], followers:[], level:6, distance:"5.8km", age:20, desc:"I'm as open as much as you're willing to flip my pages", city:"Ruiru"}
+  {name:"Lawi Lonyama", gender:"Male", avatar:"https://i.pravatar.cc/100?img=11", friends:[], following:[], followers:[], level:16, distance:"42.8km", age:20, city:"Ruiru"},
+  {name:"Prince Kolawole", gender:"Male", avatar:"https://i.pravatar.cc/100?img=5", friends:[], following:[], followers:[], level:12, distance:"5.8km", age:22, city:"Ruiru"},
+  {name:"Leonard EA", gender:"Male", avatar:"https://i.pravatar.cc/100?img=13", friends:[], following:[], followers:[], level:8, distance:"12.3km", age:21, city:"Ruiru", desc:"VIP User"}
 ];
-
 function getVIPLevel(friends){if(friends >= 50) return 5;if(friends >= 40) return 4;if(friends >= 30) return 3;if(friends >= 20) return 2;if(friends >= 10) return 1;return 0;}
 function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
-
-function switchTab(tab, el){
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  if(el) el.classList.add('active');
-  document.getElementById('searchBox').style.display = tab==='search'? 'block' : 'none';
-  loadUsers();
-}
-
+function switchTab(tab, el){ currentTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); document.getElementById('searchBox').style.display = tab==='search'? 'block' : 'none'; loadUsers(); }
 function filterUsers(){
   let filtered = users.filter(u =>!blocked.includes(u.name));
   if(myProfile) filtered = filtered.filter(u => u.name!== myProfile.name);
+  // FEMALE APP: Show ONLY Males
+  filtered = filtered.filter(u => {
+    if(!u.gender) return false;
+    return u.gender.toLowerCase().trim() === 'male';
+  });
   if(currentTab === 'nearby') return filtered.filter(u => u.city === userCity);
   return filtered;
 }
-
 function loadUsers(){let filtered = filterUsers();renderUsers(filtered);}
-
 function renderUsers(filtered){
-  if(filtered.length === 0){document.getElementById('userList').innerHTML = '<div class="empty" style="grid-column:1/-1">No users found</div>';return;}
+  if(filtered.length === 0){document.getElementById('userList').innerHTML = '<div class="empty" style="grid-column:1/-1">No boys found yet<br><span style="font-size:12px">No Male users in '+userCity+' yet</span></div>';return;}
   let html = '';
   filtered.forEach(u=>{
     let vipLevel = getVIPLevel(u.friends.length);
     let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';
-    html += `<div class="card"><div class="avatar"><img src="${u.avatar}"><div class="online"></div>${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}</div><div class="card-info"><h3>${u.name}</h3><div class="friends-count">${u.friends.length} friends</div><div class="badges">${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}<span class="badge badge-level">Lv${u.level}</span></div><div class="badges"><span class="badge badge-distance">${u.distance}</span><span class="badge badge-age">♂ ${u.age}</span></div>${u.desc?`<p class="desc">${u.desc}</p>`:''}</div></div>`
+    html += `<div class="card"><div class="avatar"><img src="${u.avatar}"><div class="online"></div>${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}</div><div class="card-info"><h3>${u.name} ♂</h3><div class="friends-count">${u.friends.length} friends • ${u.gender}</div><div class="badges">${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}<span class="badge badge-level">Lv${u.level}</span></div><div class="badges"><span class="badge badge-distance">${u.distance}</span><span class="badge badge-age">♂ ${u.age}</span></div>${u.desc?`<p class="desc">${u.desc}</p>`:''}</div></div>`
   });
   document.getElementById('userList').innerHTML = html;
 }
-
+function searchUsers(){
+  let q = document.getElementById('searchInput').value.toLowerCase();
+  let filtered = filterUsers().filter(u => u.name.toLowerCase().includes(q));
+  renderUsers(filtered);
+}
 function openMe(){
-  if(!myProfile){
-    alert('Please complete your profile first');
-    window.location='register/index.html';
-    return;
-  }
+  if(!myProfile){alert('Please complete your profile first');window.location='register/index.html';return;}
   document.getElementById('meAvatar').src = myProfile.avatar;
   document.getElementById('meName').innerText = myProfile.name;
   document.getElementById('meID').innerText = 'ID:' + myProfile.id;
@@ -263,7 +150,6 @@ function openMe(){
   document.getElementById('meVisitors').innerText = myProfile.visitors?.length || 0;
   document.getElementById('mePopup').style.display = 'block';
 }
-
 function openAccountSettings(){
   document.getElementById('settingMpesa').value = myProfile.mpesa || '';
   document.getElementById('settingPin').value = myProfile.withdrawPin || '';
@@ -274,34 +160,24 @@ function saveAccountSettings(){
   let pin = document.getElementById('settingPin').value;
   if(mpesa.length < 10){alert("Enter valid M-Pesa");return;}
   if(pin.length < 4){alert("PIN must be 4-6 digits");return;}
-  myProfile.mpesa = mpesa;
-  myProfile.withdrawPin = pin;
+  myProfile.mpesa = mpesa;myProfile.withdrawPin = pin;
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
-  alert("Account saved!");
-  closePopup('accountSettingsPopup');
+  alert("Account saved!");closePopup('accountSettingsPopup');
 }
-
 function openWithdrawForm(){
   document.getElementById('withdrawMpesa').value = myProfile.mpesa || '';
   document.getElementById('withdrawPin').value = '';
   document.getElementById('withdrawFormPopup').style.display = 'block';
 }
-
 function submitWithdraw(){
   if((myProfile.coins || 0) < 100){alert('Minimum 100 coins = KES 100');return;}
   let mpesa = document.getElementById('withdrawMpesa').value;
   let pin = document.getElementById('withdrawPin').value;
   if(mpesa.length < 10){alert("Enter valid M-Pesa");return;}
   if(pin!== myProfile.withdrawPin){alert("Wrong Withdrawal PIN");return;}
-
   myProfile.coins -= 100;
   if(!myProfile.withdrawals) myProfile.withdrawals = [];
-  myProfile.withdrawals.unshift({
-    requested: 100, net: 95, mpesa: mpesa,
-    date: new Date().toLocaleString('en-KE'),
-    status: "pending"
-  });
-
+  myProfile.withdrawals.unshift({requested: 100, net: 95, mpesa: mpesa,date: new Date().toLocaleString('en-KE'),status: "pending"});
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
   document.getElementById('meCoins').innerText = myProfile.coins;
   closePopup('withdrawFormPopup');
@@ -309,62 +185,31 @@ function submitWithdraw(){
   setTimeout(()=>document.getElementById('successToast').style.display='none', 3000);
   renderWithdrawals();
 }
-
-function openWithdrawHistory(){
-  renderWithdrawals();
-  document.getElementById('withdrawPopup').style.display = 'block';
-}
-
+function openWithdrawHistory(){renderWithdrawals();document.getElementById('withdrawPopup').style.display = 'block';}
 function renderWithdrawals(){
   let list = document.getElementById('withdrawList');
-  if(!myProfile.withdrawals || myProfile.withdrawals.length === 0){
-    list.innerHTML = '<div class="empty">No withdrawals yet</div>';
-    return;
-  }
+  if(!myProfile.withdrawals || myProfile.withdrawals.length === 0){list.innerHTML = '<div class="empty">No withdrawals yet</div>';return;}
   let html = '';
-  myProfile.withdrawals.forEach(w=>{
-    html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px">
-      <b style="color:white">KES ${w.requested}</b> <span style="color:#aaa;font-size:12px">net KES ${w.net}</span>
-      <div style="font-size:12px;color:#888">${w.mpesa} • ${w.date}</div>
-    </div>`;
-  });
+  myProfile.withdrawals.forEach(w=>{html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:white">KES ${w.requested}</b> <span style="color:#aaa;font-size:12px">net KES ${w.net}</span><div style="font-size:12px;color:#888">${w.mpesa} • ${w.date}</div></div>`;});
   list.innerHTML = html;
 }
-
-function openIncomeHistory(){
-  renderIncome();
-  document.getElementById('incomePopup').style.display = 'block';
-}
-
+function openIncomeHistory(){renderIncome();document.getElementById('incomePopup').style.display = 'block';}
 function renderIncome(){
   let list = document.getElementById('incomeList');
   if(!myProfile.income || myProfile.income.length === 0){
-    myProfile.income = [
-      {amount: 50, from: "Lawi Lonyama", date: "18 Aug 2:30PM"},
-      {amount: 20, from: "Breezy 🔥", date: "17 Aug 11:15AM"},
-      {amount: 10, from: "System Bonus", date: "17 Aug 9:00AM"}
-    ];
+    myProfile.income = [{amount: 50, from: "Lawi Lonyama", date: "18 Aug 2:30PM"},{amount: 20, from: "Prince Kolawole", date: "17 Aug 11:15AM"},{amount: 10, from: "System Bonus", date: "17 Aug 9:00AM"}];
     localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
   }
   let html = '';
-  myProfile.income.forEach(i=>{
-    html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <b style="color:#4CAF50">+${i.amount} Coins</b>
-          <div style="font-size:12px;color:#888;margin-top:4px">From: ${i.from} • ${i.date}</div>
-        </div>
-      </div>
-    </div>`;
-  });
+  myProfile.income.forEach(i=>{html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="color:#4CAF50">+${i.amount} Coins</b><div style="font-size:12px;color:#888;margin-top:4px">From: ${i.from} • ${i.date}</div></div></div></div>`;});
   list.innerHTML = html;
 }
-
 function openInfo(){alert('Patanisha v1.0')}
 function goHome(){switchTab('nearby');window.scrollTo(0,0)}
 function openChatList(){alert('Chat feature')}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
 function openHiSetup(){alert('Hi setup')}
+loadUsers();
 </script>
 </body>
 </html>
