@@ -1,5 +1,7 @@
-// ===== UNIFIED CHAT MANAGER - Works for BOTH Male & Female =====
-// Chats / Calls tabs + Back only in Chats header + No test text + No alert/confirm + Short names
+// ===== MALE CHAT MANAGER - PAID - Every coin Male spends = Female earns =====
+// Male: Chat 10 / Photo 20 / Voice msg 30 / Voice call 50/min / Video 100/min / Gifts
+// Female gets SAME amount instantly (same phone ledger + ready for server later)
+
 function getMyProfileKey(){
   if(typeof myProfile !== 'undefined' && myProfile && myProfile.gender){
     return myProfile.gender === 'Male' ? 'patanisha_myProfile_male' : 'patanisha_myProfile_female';
@@ -25,13 +27,50 @@ function shortName(name){
   if(n.length>12) n=n.substring(0,12)+'...';
   return n;
 }
-// Custom confirm - no browser popup
 function showConfirm(title, msg, okText, onOk){
   let old=document.getElementById('cmConfirm'); if(old) old.remove();
   let html=`<div id="cmConfirm" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999999;display:flex;align-items:center;justify-content:center"><div style="background:#161B22;padding:25px;border-radius:20px;text-align:center;width:85%;max-width:300px;color:#fff"><h3 style="margin:0">${title}</h3><p style="color:#aaa;font-size:13px;margin:10px 0 18px">${msg}</p><div style="display:flex;gap:10px"><button onclick="document.getElementById('cmConfirm').remove()" style="flex:1;padding:14px;border:none;border-radius:12px;background:#333;color:#fff;font-weight:700;cursor:pointer">Cancel</button><button id="cmConfirmOk" style="flex:1;padding:14px;border:none;border-radius:12px;background:#2196F3;color:#fff;font-weight:700;cursor:pointer">${okText||'Confirm'}</button></div></div></div>`;
   document.body.insertAdjacentHTML('beforeend', html);
   document.getElementById('cmConfirmOk').onclick=()=>{ document.getElementById('cmConfirm').remove(); if(onOk) onOk(); };
 }
+
+// ===== ★★★ PAY FEMALE - EVERY COIN MALE SPENDS GOES TO HER ★★★ =====
+function payFemale(amount, reason, femaleName){
+  if(!amount || amount <= 0 || !femaleName) return;
+  let fromName = (typeof myProfile!=='undefined' && myProfile) ? myProfile.name : 'Male';
+  let fromId = (typeof myProfile!=='undefined' && myProfile) ? myProfile.id : '';
+  let dateStr = new Date().toLocaleString();
+  // 1. Ledger - Female reads this when she opens app
+  try{
+    let ledger = JSON.parse(localStorage.getItem('patanisha_earnings')||'[]');
+    ledger.unshift({to:femaleName, from:fromName, fromId:fromId, amount:amount, reason:reason, date:dateStr});
+    localStorage.setItem('patanisha_earnings', JSON.stringify(ledger));
+  }catch(e){}
+  // 2. Update Female in Females list (patanishaUsers_male)
+  try{
+    ['patanishaUsers_male','patanisha_allAccounts'].forEach(key=>{
+      let arr = JSON.parse(localStorage.getItem(key)||'[]');
+      let f = arr.find(x=> x.name===femaleName);
+      if(f){
+        f.coins = (f.coins||0) + amount;
+        if(!f.income) f.income=[];
+        f.income.unshift({amount:amount, from:fromName, reason:reason, date:dateStr});
+        localStorage.setItem(key, JSON.stringify(arr));
+      }
+    });
+  }catch(e){}
+  // 3. If Female profile is on SAME phone, update it directly
+  try{
+    let fp = JSON.parse(localStorage.getItem('patanisha_myProfile_female')||'null');
+    if(fp && fp.name===femaleName){
+      fp.coins = (fp.coins||0) + amount;
+      if(!fp.income) fp.income=[];
+      fp.income.unshift({amount:amount, from:fromName, reason:reason, date:dateStr});
+      localStorage.setItem('patanisha_myProfile_female', JSON.stringify(fp));
+    }
+  }catch(e){}
+}
+
 function getOppositeUsers(){
   let isMale = false;
   if(typeof myProfile !== 'undefined' && myProfile && myProfile.gender){
@@ -39,14 +78,10 @@ function getOppositeUsers(){
   } else {
     isMale = window.location.pathname.includes('/male/');
   }
-  // FIXED - WAS BACKWARDS:
-  // Male -> patanishaUsers_male (Females)
-  // Female -> patanishaUsers (Males)
   let key = isMale ? 'patanishaUsers_male' : 'patanishaUsers';
   let wantGender = isMale ? 'female' : 'male';
   let list = [];
   try{ list = JSON.parse(localStorage.getItem(key)) || []; }catch(e){ list=[]; }
-  // Fallback: also check allAccounts if list empty (helps after register fix)
   if(list.length===0){
     let all = [];
     try{ all = JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); }catch(e){}
@@ -185,6 +220,7 @@ const ChatManager = {
     if(chatData.msgCount >= 1){
       if(myProfile.coins < 10){ this.showNoCoins(); return false; }
       myProfile.coins -= 10;
+      payFemale(10, 'Chat message', to); // ★ Female +10
       saveMyProfile();
       if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText = myProfile.coins;
       if(!myProfile.usage) myProfile.usage = [];
@@ -221,6 +257,7 @@ const ChatManager = {
       if(seconds % 60 === 0){
         if(myProfile.coins >= costPerMin){
           myProfile.coins -= costPerMin;
+          payFemale(costPerMin, type + ' call', user.name); // ★ Female +50 / +100 per min
           saveMyProfile();
           if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText = myProfile.coins;
           if(!myProfile.usage) myProfile.usage = [];
@@ -278,6 +315,7 @@ const ChatManager = {
       chatData.messages.push({from:'me',type:'photo',photo:photoData,text:'📷 Photo',time:new Date().toLocaleTimeString()});
       localStorage.setItem(chatKey, JSON.stringify(chatData));
       myProfile.coins-=20;
+      payFemale(20, 'Photo message', userName); // ★ Female +20
       if(!myProfile.usage) myProfile.usage=[];
       myProfile.usage.unshift({coins:20,to:shortName(userName),reason:'Photo message',date:new Date().toLocaleString()});
       saveMyProfile();
@@ -325,6 +363,7 @@ const ChatManager = {
     chatData.messages.push({from:'me',type:'voice',audio:audioData,text:'🎤 Voice message',time:new Date().toLocaleTimeString()});
     localStorage.setItem(chatKey, JSON.stringify(chatData));
     myProfile.coins-=30;
+    payFemale(30, 'Voice message', userName); // ★ Female +30
     if(!myProfile.usage) myProfile.usage=[];
     myProfile.usage.unshift({coins:30,to:shortName(userName),reason:'Voice message',date:new Date().toLocaleString()});
     saveMyProfile();
@@ -346,6 +385,7 @@ const ChatManager = {
   },
   sendGift(gift,receiverName,giftPanelId){
     myProfile.coins -= gift.coins;
+    payFemale(gift.coins, 'Gift: '+gift.name, receiverName); // ★ Female +gift.coins
     if(!myProfile.usage) myProfile.usage=[];
     myProfile.usage.unshift({coins:gift.coins,to:shortName(receiverName),reason:'Gift: '+gift.name,date:new Date().toLocaleString()});
     saveMyProfile();
