@@ -17,7 +17,6 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .banner-text b{font-size:14px;display:block;margin-bottom:5px;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .banner-text p{font-size:11px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:9px 16px;border-radius:20px;font-weight:bold;cursor:pointer;flex-shrink:0;font-size:13px}
-/* ALIGNED TOP BAR - FITS ALL */
 .tabs-wrapper{position:sticky;top:0;background:#f5f5f5;z-index:10;width:100%;overflow:hidden}
 .tabs{display:flex;gap:4px;padding:10px 8px;border-bottom:2px solid #eee;overflow-x:auto;background:white;scroll-behavior:smooth;align-items:center;white-space:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .tabs::-webkit-scrollbar{display:none}
@@ -186,6 +185,7 @@ function searchUserById(){
   renderUsers([found]);
 }
 function openMe(){
+  if(typeof loadFemaleEarnings === 'function') loadFemaleEarnings();
   if(!myProfile){showToast('Please complete your profile first');window.location='register/index.html';return;}
   document.getElementById('meAvatar').src = myProfile.avatar;
   document.getElementById('meName').innerText = shortName(myProfile.name);
@@ -212,6 +212,7 @@ function saveAccountSettings(){
   if(pin.length < 4){showToast("PIN must be 4-6 digits");return;}
   myProfile.mpesa = mpesa;myProfile.withdrawPin = pin;
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile));
   showToast("Account saved!");closePopup('accountSettingsPopup');
 }
 function openWithdrawForm(){
@@ -229,6 +230,7 @@ function submitWithdraw(){
   if(!myProfile.withdrawals) myProfile.withdrawals = [];
   myProfile.withdrawals.unshift({requested: 100, net: 95, mpesa: mpesa,date: new Date().toLocaleString('en-KE'),status: "pending"});
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile));
   document.getElementById('meCoins').innerText = myProfile.coins;
   closePopup('withdrawFormPopup');
   document.getElementById('successToast').style.display = 'block';
@@ -245,13 +247,14 @@ function renderWithdrawals(){
 }
 function openIncomeHistory(){renderIncome();document.getElementById('incomePopup').style.display = 'block';}
 function renderIncome(){
+  if(typeof loadFemaleEarnings === 'function') loadFemaleEarnings();
   let list = document.getElementById('incomeList');
   if(!myProfile.income || myProfile.income.length === 0){
-    myProfile.income = [{amount: 50, from: "Lawi", date: "18 Aug 2:30PM"},{amount: 20, from: "Prince", date: "17 Aug 11:15AM"},{amount: 10, from: "System Bonus", date: "17 Aug 9:00AM"}];
-    localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+    list.innerHTML = '<div class="empty">No income yet<br><span style="font-size:12px">Chat with boys, they pay, you earn</span></div>';
+    return;
   }
   let html = '';
-  myProfile.income.forEach(i=>{html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="color:#4CAF50">+${i.amount} Coins</b><div style="font-size:12px;color:#888;margin-top:4px">From: ${shortName(i.from)} • ${i.date}</div></div></div></div>`;});
+  myProfile.income.forEach(i=>{html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="color:#4CAF50">+${i.amount} Coins</b><div style="font-size:12px;color:#888;margin-top:4px">From: ${shortName(i.from)} • ${i.reason||''} • ${i.date}</div></div></div></div>`;});
   list.innerHTML = html;
 }
 function openInfo(){showToast('Patanisha v1.0')}
@@ -275,6 +278,6 @@ window.addEventListener('popstate', function(e){
 });
 loadUsers();
 </script>
-<script src="chat-manager.js"></script>
+<script src="/chat-manager/female.js"></script>
 </body>
 </html>
