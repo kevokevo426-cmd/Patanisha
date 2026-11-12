@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Patanisha - Male</title>
+<link rel="icon" href="../logo-192.png">
+<link rel="apple-touch-icon" href="../logo-180.png">
+<meta name="theme-color" content="#2196F3">
+<link rel="manifest" href="../manifest.json">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
@@ -103,7 +107,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 <div class="nav">
   <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
   <div class="nav-item" onclick="window.location='../about.html'"><span class="nav-icon">ℹ️</span>About</div>
-  <div class="nav-item" onclick="ChatManager.openInbox()"><span class="nav-icon">💬</span>Chat</div>
+  <div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat</div>
   <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
 </div>
 <div class="popup" id="profilePopup"><span class="close-btn" onclick="closeProfile()">×</span><div class="popup-content profile-popup-body"><div class="profile-cover"><img id="profileCover" src=""><img id="profileAvatarBig" class="profile-avatar-big" src=""></div><div class="profile-info"><div class="profile-name" id="profileName"></div><div class="profile-city" id="profileCity"></div><div class="profile-bio" id="profileBio"></div><h3 style="margin:20px 0 10px;color:#fff">Photos</h3><div class="profile-photos" id="profilePhotos"></div><div class="action-btns"><button class="action-btn btn-chat" onclick="startChat()">💬 Chat</button><button class="action-btn btn-voice" onclick="startCall('voice')">📞 Voice</button><button class="action-btn btn-video" onclick="startCall('video')">📹 Video</button></div></div></div></div>
@@ -122,17 +126,29 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 <div class="popup" id="adminChatPopup"><span class="close-btn" onclick="closePopup('adminChatPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Contact Admin</h3><p style="font-size:12px;color:#8B949E">For recharge issues or account help</p><div class="form-group"><label>Your Message</label><textarea id="adminMessage" style="width:100%;height:100px;background:#21262D;border:1px solid #30363D;color:#C9D1D9;border-radius:12px;padding:10px"></textarea></div><button class="btn" onclick="sendToAdmin()">Send to Admin</button></div></div>
 <div id="logoutConfirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999999;align-items:center;justify-content:center"><div style="background:#161B22;padding:25px;border-radius:20px;text-align:center;width:85%;max-width:300px;color:#fff"><h3>Log out?</h3><p style="color:#888;font-size:13px;margin:8px 0 18px">You will need to sign in again.</p><div style="display:flex;gap:10px"><button onclick="closeLogoutConfirm()" style="flex:1;padding:14px;border:none;border-radius:12px;background:#333;color:#fff;font-weight:700;cursor:pointer">Cancel</button><button onclick="logoutUser()" style="flex:1;padding:14px;border:none;border-radius:12px;background:#FF5252;color:#fff;font-weight:700;cursor:pointer">Log Out</button></div></div></div>
 <script>
-let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_male')) || {name:"Male User",id:"M1001",avatar:"https://i.pravatar.cc/100?img=51",coins:100,city:"Ruiru",friends:[],following:[],followers:[],visitors:[],recharges:[],usage:[]};
-let users = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [
-  {name:"Breezy 🔥", gender:"Female", city:"Ruiru", bio:"I'm as open as much as you're willing to flip my pages", avatar:"https://i.pravatar.cc/100?img=47", photos:["https://picsum.photos/200?1"], friends:[], id:"PT585061", activityScore:10},
-  {name:"Aisha W.", gender:"Female", city:"Nairobi", bio:"Hello babe ^_^", avatar:"https://i.pravatar.cc/100?img=45", photos:[], friends:[], id:"PT585062", activityScore:25},
-  {name:"Wanjiru K.", gender:"Female", city:"Ruiru", bio:"VIP User", avatar:"https://i.pravatar.cc/100?img=44", photos:[], friends:[], id:"PT585063", activityScore:5}
-];
+let myProfile = null;
+try{ myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile')) || JSON.parse(localStorage.getItem('patanisha_myProfile_male')); }catch(e){ myProfile=null; }
+if(!myProfile){ window.location.href = '../register/index.html'; }
+if(!myProfile.friends) myProfile.friends=[]; if(!myProfile.following) myProfile.following=[]; if(!myProfile.followers) myProfile.followers=[]; if(!myProfile.visitors) myProfile.visitors=[]; if(!myProfile.recharges) myProfile.recharges=[]; if(!myProfile.usage) myProfile.usage=[]; if(myProfile.coins==null) myProfile.coins=0;
+let users = [];
+try{
+  ['patanisha_allAccounts','patanishaUsers','patanishaUsers_male'].forEach(k=>{
+    let arr = JSON.parse(localStorage.getItem(k)||'[]');
+    arr.forEach(u=>{ if(u && !users.find(x=>x.id===u.id)) users.push(u); });
+  });
+}catch(e){}
+if(users.length===0){
+  users = [
+    {name:"Breezy 🔥", gender:"Female", city:"Ruiru", bio:"I'm as open as much as you're willing to flip my pages", avatar:"https://i.pravatar.cc/100?img=47", photos:["https://picsum.photos/200?1"], friends:[], id:"PT585061", activityScore:10},
+    {name:"Aisha W.", gender:"Female", city:"Nairobi", bio:"Hello babe ^_^", avatar:"https://i.pravatar.cc/100?img=45", photos:[], friends:[], id:"PT585062", activityScore:25},
+    {name:"Wanjiru K.", gender:"Female", city:"Ruiru", bio:"VIP User", avatar:"https://i.pravatar.cc/100?img=44", photos:[], friends:[], id:"PT585063", activityScore:5}
+  ];
+}
 let currentProfile = {};
 let filteredUsers = [];
 let currentHomeTab = 'recommend';
 function showToast(msg){ let t=document.getElementById('appToast'); t.innerText=msg; t.style.display='block'; clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.display='none',2500); }
-function shortName(name){ if(!name) return 'User'; let n = name.split(' ')[0]; if(n.length>12) n=n.substring(0,12)+'...'; return n; }
+function shortName(name){ if(!name) return 'User'; let n = String(name).split(' ')[0]; if(n.length>12) n=n.substring(0,12)+'...'; return n; }
 function getFilteredUsers(){
   let base = users.filter(u => u.gender && u.gender.toLowerCase().trim() === 'female');
   if(currentHomeTab === 'nearby'){
@@ -149,62 +165,91 @@ function getFilteredUsers(){
   }
   return base;
 }
-function openProfile(idx){ currentProfile = filteredUsers[idx]; document.getElementById('profileCover').src = currentProfile.avatar; document.getElementById('profileAvatarBig').src = currentProfile.avatar; document.getElementById('profileName').innerText = shortName(currentProfile.name); document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown') + ' • ID:' + (currentProfile.id||''); document.getElementById('profileBio').innerText = currentProfile.bio || 'No bio yet'; let photosHtml = ''; if(currentProfile.photos) currentProfile.photos.forEach(p=>{photosHtml += `<img src="${p}">`}); document.getElementById('profilePhotos').innerHTML = photosHtml; document.getElementById('profilePopup').style.display = 'block'; }
-function closeProfile(){ document.getElementById('profilePopup').style.display = 'none'; }
-function startChat(){ closeProfile(); ChatManager.openChat(currentProfile); }
-function startCall(type){ closeProfile(); if(type === 'voice') ChatManager.startVoiceCall(currentProfile); if(type === 'video') ChatManager.startVideoCall(currentProfile); }
-function endCall(){ ChatManager.endCall(); }
-function openMe(){ document.getElementById('meAvatar').src = myProfile.avatar; document.getElementById('meName').innerText = shortName(myProfile.name); document.getElementById('meID').innerText = 'ID:' + myProfile.id; document.getElementById('meCoins').innerText = myProfile.coins || 0; document.getElementById('meFriends').innerText = myProfile.friends?.length || 0; document.getElementById('meFollowing').innerText = myProfile.following?.length || 0; document.getElementById('meFollowers').innerText = myProfile.followers?.length || 0; document.getElementById('meVisitors').innerText = myProfile.visitors?.length || 0; document.getElementById('mePopup').style.display = 'block'; history.pushState({popup:'mePopup'}, '', location.pathname + '#me'); }
-function openInfoRates(){ document.getElementById('infoPopup').style.display = 'block'; }
-function openRecharge(){ document.getElementById('rechargeAmount').value = 100; calcCoins(); document.getElementById('rechargePopup').style.display = 'block'; }
-function calcCoins(){ let kes = document.getElementById('rechargeAmount').value || 0; let coins = kes * 10; document.getElementById('rechargeCoins').value = coins + ' Coins'; }
-function submitRecharge(){ let kes = parseInt(document.getElementById('rechargeAmount').value); let mpesa = document.getElementById('rechargeMpesa').value; if(kes < 100){showToast('Minimum KES 100');return;} if(mpesa.length < 10){showToast('Enter valid M-Pesa');return;} let coins = kes * 10; myProfile.coins += coins; if(!myProfile.recharges) myProfile.recharges = []; myProfile.recharges.unshift({amount: kes, coins: coins, mpesa: mpesa, date: new Date().toLocaleString(), status: "Success"}); localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); document.getElementById('meCoins').innerText = myProfile.coins; closePopup('rechargePopup'); showToast(`✅ +${coins} Coins added!`); renderRechargeHistory(); }
-function openUsageHistory(){ renderUsageHistory(); document.getElementById('usagePopup').style.display = 'block'; }
-function renderUsageHistory(){ let list = document.getElementById('usageList'); if(!myProfile.usage || myProfile.usage.length === 0){ list.innerHTML = '<div class="empty">No coins spent yet</div>'; return; } let html = ''; myProfile.usage.forEach(u=>{ html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:#FF5252">-${u.coins} Coins</b> to ${shortName(u.to)}<div style="font-size:12px;color:#888">${u.reason} • ${u.date}</div></div>`; }); list.innerHTML = html; }
-function openAdminChat(){ document.getElementById('adminChatPopup').style.display = 'block'; }
-function sendToAdmin(){ let msg = document.getElementById('adminMessage').value; if(msg.trim() === ''){showToast('Type message');return;} if(!myProfile.adminMessages) myProfile.adminMessages = []; myProfile.adminMessages.push({msg:msg, date:new Date().toLocaleString()}); localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); showToast('Message sent to Admin'); document.getElementById('adminMessage').value = ''; closePopup('adminChatPopup'); }
-function openRechargeHistory(){ renderRechargeHistory(); document.getElementById('rechargeHistoryPopup').style.display = 'block'; }
-function renderRechargeHistory(){ let list = document.getElementById('rechargeList'); if(!myProfile.recharges || myProfile.recharges.length === 0){ list.innerHTML = '<div class="empty">No recharges yet</div>'; return; } let html = ''; myProfile.recharges.forEach(r=>{ html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:#4CAF50">KES ${r.amount}</b> → ${r.coins} Coins<div style="font-size:12px;color:#888">${r.mpesa} • ${r.date}</div></div>`; }); list.innerHTML = html; }
-function loadUsers(){
+function renderUsers(){
   filteredUsers = getFilteredUsers();
-  if(filteredUsers.length === 0){
-    let msg = currentHomeTab==='nearby' ? `No Female users in ${myProfile.city||'Ruiru'} yet` : currentHomeTab==='top' ? 'No Top ladies yet' : 'No ladies found yet';
-    document.getElementById('userList').innerHTML = `<div class="empty">No ladies found yet<br><span style="font-size:12px">${msg}</span></div>`; return;
-  }
-  let html = '';
-  filteredUsers.forEach((u, idx)=>{ html += `<div class="card"><div class="avatar" onclick="openProfile(${idx})"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info" onclick="openProfile(${idx})"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">${(u.friends||[]).length} friends • 📍 ${u.city} • ID:${u.id||''}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation(); ChatManager.openChat(filteredUsers[${idx}])">💬 Hi 5s</button></div></div></div>` });
-  document.getElementById('userList').innerHTML = html;
+  let list = document.getElementById('userList');
+  if(filteredUsers.length===0){ list.innerHTML='<div class="empty">No ladies found yet<br><span style="font-size:12px">No Female users in '+(myProfile.city||'Ruiru')+' yet</span></div>'; return; }
+  list.innerHTML = filteredUsers.map((u,i)=>`<div class="card" onclick="openProfile(${i})"><div class="avatar"><img src="${u.avatar||'https://via.placeholder.com/80'}"><div class="online"></div></div><div class="card-info"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">${(u.friends||[]).length} friends • ID:${u.id||''}</div><div style="font-size:12px;color:#8B949E">📍 ${u.city||'Ruiru'} • Tap to view</div>${u.bio?`<div style="font-size:12px;color:#aaa;margin-top:4px">${u.bio.substring(0,60)}</div>`:''}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();openProfile(${i});startChat()">💬 Chat</button></div></div>`).join('');
 }
-function switchTab(tab, el){ currentHomeTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); loadUsers(); }
+function switchTab(tab, el){ currentHomeTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); renderUsers(); }
+function goHome(){ switchTab('recommend', document.querySelector('.tab')); window.scrollTo(0,0); }
+function openProfile(idx){ currentProfile = filteredUsers[idx]; if(!currentProfile) return; document.getElementById('profileCover').src = currentProfile.avatar; document.getElementById('profileAvatarBig').src = currentProfile.avatar; document.getElementById('profileName').innerText = shortName(currentProfile.name); document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown') + ' • ID:' + (currentProfile.id||''); document.getElementById('profileBio').innerText = currentProfile.bio || 'No bio yet'; let photosHtml = ''; if(currentProfile.photos) currentProfile.photos.forEach(p=>{photosHtml += `<img src="${p}">`}); document.getElementById('profilePhotos').innerHTML = photosHtml; document.getElementById('profilePopup').style.display = 'block'; }
+function closeProfile(){ document.getElementById('profilePopup').style.display = 'none'; }
+function startChat(){ closeProfile(); if(window.ChatManager && window.ChatManager.openChat) window.ChatManager.openChat(currentProfile); else showToast('Chat loading... tap again'); }
+function startCall(type){ closeProfile(); if(!window.ChatManager) { showToast('Chat loading... tap again'); return; } if(type==='voice') window.ChatManager.startVoiceCall(currentProfile); else window.ChatManager.startVideoCall(currentProfile); }
+function endCall(){ if(window.ChatManager) window.ChatManager.endCall(); let cs=document.getElementById('callScreen'); if(cs) cs.style.display='none'; }
+function openChatList(){ if(window.ChatManager) window.ChatManager.openInbox(); else showToast('Chats loading... tap again'); }
+function openChatForUser(id){ let u = users.find(x=>x.id===id) || (window.ChatManager ? window.ChatManager.getChatUsers().find(x=>x.id===id) : null); if(u && window.ChatManager) window.ChatManager.openChat(u); }
 function openSearchById(){ document.getElementById('searchByIdBar').style.display='block'; let i=document.getElementById('searchIdInput'); if(i) i.focus(); }
-function closeSearchById(){ document.getElementById('searchByIdBar').style.display='none'; loadUsers(); }
+function closeSearchById(){ document.getElementById('searchByIdBar').style.display='none'; renderUsers(); }
 function searchUserById(){
   let q = document.getElementById('searchIdInput').value.trim().toUpperCase();
   if(!q){ showToast('Enter ID e.g. PT585065'); return; }
   let all = users.filter(u=>u.gender && u.gender.toLowerCase().trim()==='female');
-  let foundIdx = all.findIndex(u => (u.id && u.id.toUpperCase()===q) || (u.id && u.id.toUpperCase().includes(q)) || (u.name && u.name.toUpperCase().includes(q)));
-  if(foundIdx===-1){ showToast('No user found with ID: '+q); return; }
-  let found = all[foundIdx];
-  filteredUsers = [found];
-  document.getElementById('userList').innerHTML = `<div class="card"><div class="avatar" onclick="openProfile(0)"><img src="${found.avatar}"><div class="online"></div></div><div class="card-info" onclick="openProfile(0)"><h3>${shortName(found.name)} ♀</h3><div class="friends-count">📍 ${found.city} • ID:${found.id}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation(); ChatManager.openChat(filteredUsers[0])">💬 Chat</button></div></div></div>`;
+  let found = all.find(u => (u.id && u.id.toUpperCase()===q) || (u.id && u.id.toUpperCase().includes(q)) || (u.name && u.name.toUpperCase().includes(q)));
+  if(!found){ showToast('No user found with ID: '+q); return; }
+  filteredUsers=[found]; document.getElementById('userList').innerHTML = filteredUsers.map((u,i)=>`<div class="card" onclick="openProfile(0)"><div class="avatar"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">ID:${u.id}</div></div></div>`).join('');
 }
-function goHome(){window.scrollTo(0,0)}
-function closePopup(id){document.getElementById(id).style.display = 'none';}
+function openMe(){
+  if(!myProfile) return;
+  document.getElementById('meAvatar').src = myProfile.avatar || 'https://via.placeholder.com/80';
+  document.getElementById('meName').innerText = shortName(myProfile.name);
+  document.getElementById('meID').innerText = 'ID:' + myProfile.id;
+  document.getElementById('meCoins').innerText = myProfile.coins || 0;
+  document.getElementById('meFriends').innerText = (myProfile.friends||[]).length;
+  document.getElementById('meFollowing').innerText = (myProfile.following||[]).length;
+  document.getElementById('meFollowers').innerText = (myProfile.followers||[]).length;
+  document.getElementById('meVisitors').innerText = (myProfile.visitors||[]).length;
+  document.getElementById('mePopup').style.display = 'block';
+}
+function closePopup(id){ document.getElementById(id).style.display = 'none'; }
+function openInfoRates(){ document.getElementById('infoPopup').style.display = 'block'; }
+function openRecharge(){ document.getElementById('rechargePopup').style.display = 'block'; }
+function calcCoins(){ let amt = parseInt(document.getElementById('rechargeAmount').value||'0'); document.getElementById('rechargeCoins').value = amt ? (amt*10) + ' Coins' : ''; }
+function submitRecharge(){
+  let amt = parseInt(document.getElementById('rechargeAmount').value||'0');
+  let mpesa = document.getElementById('rechargeMpesa').value.trim();
+  if(!amt || amt < 100){ showToast('Minimum KES 100'); return; }
+  if(mpesa.length < 10){ showToast('Enter valid M-Pesa number'); return; }
+  if(!myProfile.recharges) myProfile.recharges=[];
+  myProfile.recharges.unshift({amount:amt, coins:amt*10, mpesa:mpesa, date:new Date().toLocaleString(), status:'pending'});
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile));
+  let payments = JSON.parse(localStorage.getItem('payments')||'[]');
+  payments.unshift({userId:myProfile.id, email:myProfile.email||'', txCode:mpesa, amount:amt, coins:amt*10, status:'pending', createdAt:new Date().toLocaleString()});
+  localStorage.setItem('payments', JSON.stringify(payments));
+  closePopup('rechargePopup'); showToast('✅ Recharge submitted - wait for approval');
+  renderRecharges();
+}
+function openUsageHistory(){ renderUsage(); document.getElementById('usagePopup').style.display = 'block'; }
+function renderUsage(){
+  let list = document.getElementById('usageList');
+  if(!myProfile.usage || myProfile.usage.length===0){ list.innerHTML='<div class="empty">No usage yet<br><span style="font-size:12px">1st message is FREE</span></div>'; return; }
+  list.innerHTML = myProfile.usage.map(i=>`<div style="background:#21262D;padding:12px;border-radius:12px;margin-bottom:10px;text-align:left"><b style="color:#FF5252">-${i.coins} Coins</b><div style="font-size:12px;color:#888">To: ${shortName(i.to)} • ${i.reason||''} • ${i.date}</div></div>`).join('');
+}
+function openRechargeHistory(){ renderRecharges(); document.getElementById('rechargeHistoryPopup').style.display = 'block'; }
+function renderRecharges(){
+  let list = document.getElementById('rechargeList');
+  if(!myProfile.recharges || myProfile.recharges.length===0){ list.innerHTML='<div class="empty">No recharges yet</div>'; return; }
+  list.innerHTML = myProfile.recharges.map(r=>`<div style="background:#21262D;padding:12px;border-radius:12px;margin-bottom:10px;text-align:left"><b>KES ${r.amount} = ${r.coins} Coins</b><div style="font-size:12px;color:#888">${r.mpesa} • ${r.date} • ${r.status}</div></div>`).join('');
+}
+function openAdminChat(){ document.getElementById('adminChatPopup').style.display = 'block'; }
+function sendToAdmin(){
+  let msg = document.getElementById('adminMessage').value.trim();
+  if(!msg){ showToast('Type a message'); return; }
+  let arr = JSON.parse(localStorage.getItem('adminMessages')||'[]');
+  arr.unshift({from:myProfile.name, fromId:myProfile.id, message:msg, date:new Date().toLocaleString()});
+  localStorage.setItem('adminMessages', JSON.stringify(arr));
+  document.getElementById('adminMessage').value=''; closePopup('adminChatPopup'); showToast('✅ Sent to Admin');
+}
 function askLogout(){ document.getElementById('logoutConfirm').style.display='flex'; }
 function closeLogoutConfirm(){ document.getElementById('logoutConfirm').style.display='none'; }
 function logoutUser(){
-  localStorage.removeItem('patanisha_myProfile_male');
   localStorage.removeItem('patanisha_myProfile');
+  localStorage.removeItem('patanisha_myProfile_male');
   window.location.replace('../register/index.html');
 }
-history.replaceState({page:'home'}, '', window.location.pathname);
-window.addEventListener('popstate', function(e){
-  document.querySelectorAll('.popup').forEach(p=>{ if(p.style.display==='block'){ p.style.display='none'; } });
-  let inbox=document.getElementById('chatInboxPopup'); if(inbox){ inbox.remove(); }
-  let chat=document.getElementById('chatPopup'); if(chat){ chat.remove(); }
-  history.pushState({page:'home'}, '', window.location.pathname);
-});
-loadUsers();
+renderUsers();
 </script>
 <script src="chat-manager.js"></script>
 </body>
