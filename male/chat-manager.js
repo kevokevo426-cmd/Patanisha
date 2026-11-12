@@ -1,5 +1,5 @@
 // ===== UNIFIED CHAT MANAGER - Works for BOTH Male & Female =====
-// Chats / Calls tabs + Back only in Chats header + No test text
+// Chats / Calls tabs + Back only in Chats header + No test text + No alert/confirm + Short names
 function getMyProfileKey(){
   if(typeof myProfile !== 'undefined' && myProfile && myProfile.gender){
     return myProfile.gender === 'Male' ? 'patanisha_myProfile_male' : 'patanisha_myProfile_female';
@@ -12,6 +12,26 @@ function saveMyProfile(){
   localStorage.setItem(getMyProfileKey(), JSON.stringify(myProfile));
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
 }
+// ===== NO alert() - NO LONG DOMAIN =====
+function showToast(msg){
+  let t=document.getElementById('appToast');
+  if(!t){ t=document.createElement('div'); t.id='appToast'; t.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;z-index:9999999;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:90%;text-align:center'; document.body.appendChild(t); }
+  t.innerText=msg; t.style.display='block';
+  clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.display='none',2500);
+}
+function shortName(name){
+  if(!name) return 'User';
+  let n = String(name).split(' ')[0];
+  if(n.length>12) n=n.substring(0,12)+'...';
+  return n;
+}
+// Custom confirm - no browser popup
+function showConfirm(title, msg, okText, onOk){
+  let old=document.getElementById('cmConfirm'); if(old) old.remove();
+  let html=`<div id="cmConfirm" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999999;display:flex;align-items:center;justify-content:center"><div style="background:#161B22;padding:25px;border-radius:20px;text-align:center;width:85%;max-width:300px;color:#fff"><h3 style="margin:0">${title}</h3><p style="color:#aaa;font-size:13px;margin:10px 0 18px">${msg}</p><div style="display:flex;gap:10px"><button onclick="document.getElementById('cmConfirm').remove()" style="flex:1;padding:14px;border:none;border-radius:12px;background:#333;color:#fff;font-weight:700;cursor:pointer">Cancel</button><button id="cmConfirmOk" style="flex:1;padding:14px;border:none;border-radius:12px;background:#2196F3;color:#fff;font-weight:700;cursor:pointer">${okText||'Confirm'}</button></div></div></div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('cmConfirmOk').onclick=()=>{ document.getElementById('cmConfirm').remove(); if(onOk) onOk(); };
+}
 function getOppositeUsers(){
   let isMale = false;
   if(typeof myProfile !== 'undefined' && myProfile && myProfile.gender){
@@ -19,15 +39,24 @@ function getOppositeUsers(){
   } else {
     isMale = window.location.pathname.includes('/male/');
   }
-  let key = isMale ? 'patanishaUsers' : 'patanishaUsers_male';
+  // FIXED - WAS BACKWARDS:
+  // Male -> patanishaUsers_male (Females)
+  // Female -> patanishaUsers (Males)
+  let key = isMale ? 'patanishaUsers_male' : 'patanishaUsers';
   let wantGender = isMale ? 'female' : 'male';
-  let list = JSON.parse(localStorage.getItem(key)) || [];
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem(key)) || []; }catch(e){ list=[]; }
+  // Fallback: also check allAccounts if list empty (helps after register fix)
+  if(list.length===0){
+    let all = [];
+    try{ all = JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); }catch(e){}
+    list = all;
+  }
   return list.filter(u => {
     if(!u.gender) return false;
     if(u.gender.toLowerCase().trim() !== wantGender) return false;
     if(typeof myProfile !== 'undefined' && myProfile){
-      if(u.email && myProfile.email && u.email === myProfile.email) return false;
-      if(u.name === myProfile.name) return false;
+      if(u.email && myProfile.email && u.email.toLowerCase()===myProfile.email.toLowerCase()) return false;
       if(u.id && myProfile.id && u.id === myProfile.id) return false;
     }
     return true;
@@ -36,8 +65,6 @@ function getOppositeUsers(){
 
 const ChatManager = {
   getChatUsers(){ return getOppositeUsers(); },
-
-  // ===== INBOX - BACK ONLY, CHATS / CALLS TABS =====
   openInbox(){
     let users = this.getChatUsers();
     let isMale = (typeof myProfile !== 'undefined' && myProfile && myProfile.gender === 'Male') || window.location.pathname.includes('/male/');
@@ -83,14 +110,14 @@ const ChatManager = {
       content.innerHTML = users.map((u,i)=>`
         <div onclick="ChatManager.openChatByIndex(${i})" style="display:flex;align-items:center;gap:12px;background:#161B22;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer">
           <img src="${u.avatar}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #2196F3">
-          <div style="flex:1"><b>${u.name} ${isMale ? '♀' : '♂'}</b><div style="font-size:12px;color:#888">📍 ${u.city || 'Ruiru'} • Tap to chat</div></div>
+          <div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(u.name)} ${isMale ? '♀' : '♂'}</b><div style="font-size:12px;color:#888">📍 ${u.city || 'Ruiru'} • Tap to chat</div></div>
           <span style="font-size:22px">💬</span>
         </div>`).join('');
     } else {
       content.innerHTML = users.map((u,i)=>`
         <div style="display:flex;align-items:center;gap:12px;background:#161B22;padding:12px;border-radius:12px;margin-bottom:10px">
           <img src="${u.avatar}" onclick="ChatManager.openChatByIndex(${i})" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #2196F3;cursor:pointer">
-          <div style="flex:1" onclick="ChatManager.openChatByIndex(${i})"><b>${u.name} ${isMale ? '♀' : '♂'}</b><div style="font-size:12px;color:#888">📍 ${u.city || 'Ruiru'}</div></div>
+          <div style="flex:1;min-width:0" onclick="ChatManager.openChatByIndex(${i})"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(u.name)} ${isMale ? '♀' : '♂'}</b><div style="font-size:12px;color:#888">📍 ${u.city || 'Ruiru'}</div></div>
           <button onclick="ChatManager.startVoiceCall(ChatManager.getChatUsers()[${i}])" style="background:#F59E0B;border:none;padding:10px;border-radius:50%;cursor:pointer;font-size:18px">📞</button>
           <button onclick="ChatManager.startVideoCall(ChatManager.getChatUsers()[${i}])" style="background:#2196F3;border:none;padding:10px;border-radius:50%;cursor:pointer;font-size:18px">📹</button>
         </div>`).join('');
@@ -99,11 +126,12 @@ const ChatManager = {
   closeInbox(){ let el=document.getElementById('chatInboxPopup'); if(el) el.remove(); },
   openChatByIndex(idx){ let users=this.getChatUsers(); let user=users[idx]; if(user) this.openChat(user); },
   logoutUser(){
-    if(!confirm('Log out?')) return;
-    localStorage.removeItem(getMyProfileKey());
-    localStorage.removeItem('patanisha_myProfile');
-    let isMalePath = window.location.pathname.includes('/male/');
-    window.location.href = isMalePath ? '../register/index.html' : 'register/index.html';
+    showConfirm('Log out?','You will need to sign in again.','Log Out',()=>{
+      localStorage.removeItem(getMyProfileKey());
+      localStorage.removeItem('patanisha_myProfile');
+      let isMalePath = window.location.pathname.includes('/male/');
+      window.location.href = isMalePath ? '../register/index.html' : 'register/index.html';
+    });
   },
   currentChatUser:null,
   openChat(user){
@@ -116,15 +144,15 @@ const ChatManager = {
       <div style="display:flex;align-items:center;gap:10px;padding:12px;background:#161B22">
         <button onclick="ChatManager.closeChat()" style="background:#2196F3;color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button>
         <img src="${user.avatar}" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
-        <div style="flex:1"><b>${user.name}</b><div style="font-size:11px;color:#4CAF50">● Online</div></div>
+        <div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(user.name)}</b><div style="font-size:11px;color:#4CAF50">● Online</div></div>
         <button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:#F59E0B;border:none;padding:10px;border-radius:50%;cursor:pointer">📞</button>
         <button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:#2196F3;border:none;padding:10px;border-radius:50%;cursor:pointer">📹</button>
       </div>
       <div id="chatMessages" style="flex:1;overflow-y:auto;padding:15px;background:#0D1117"></div>
       <div style="display:flex;gap:8px;padding:10px;background:#161B22;align-items:center">
         <button onclick="ChatManager.openGiftPanel(ChatManager.currentChatUser)" style="background:none;border:none;font-size:22px;cursor:pointer">🎁</button>
-        <input id="chatInput" placeholder="Type message... 10 coins after 1st" style="flex:1;padding:12px;border-radius:20px;border:none;background:#21262D;color:#fff">
-        <button onclick="ChatManager.sendChatMessage()" style="background:#2196F3;color:#fff;border:none;padding:12px 18px;border-radius:20px;font-weight:700;cursor:pointer">Send</button>
+        <input id="chatInput" placeholder="Type message... 10 coins after 1st" style="flex:1;min-width:0;padding:12px;border-radius:20px;border:none;background:#21262D;color:#fff">
+        <button onclick="ChatManager.sendChatMessage()" style="background:#2196F3;color:#fff;border:none;padding:12px 18px;border-radius:20px;font-weight:700;cursor:pointer;flex-shrink:0">Send</button>
       </div>
       <div style="text-align:center;padding:0 0 10px;background:#161B22"><button onclick="ChatManager.closeChat()" style="background:#333;color:#fff;border:none;padding:8px 20px;border-radius:20px;cursor:pointer">← Back to Chats</button></div>
     </div>`;
@@ -146,7 +174,7 @@ const ChatManager = {
     let box=document.getElementById('chatMessages');
     if(!box) return;
     let data=this.loadChat(userName);
-    if(data.messages.length===0){ box.innerHTML='<div style="text-align:center;color:#888;padding:30px">Say Hi to '+userName+' 👋<br><span style="font-size:12px">1st message is FREE</span></div>'; return; }
+    if(data.messages.length===0){ box.innerHTML='<div style="text-align:center;color:#888;padding:30px">Say Hi to '+shortName(userName)+' 👋<br><span style="font-size:12px">1st message is FREE</span></div>'; return; }
     box.innerHTML=data.messages.map(m=>`<div style="text-align:${m.from==='me'?'right':'left'};margin:8px 0"><span style="display:inline-block;background:${m.from==='me'?'#2196F3':'#333'};color:#fff;padding:10px 14px;border-radius:15px;max-width:75%">${m.type==='photo'?`<img src="${m.photo}" style="max-width:200px;border-radius:10px">`:m.type==='voice'?`<audio controls src="${m.audio}" style="max-width:200px"></audio>`:m.text}<div style="font-size:10px;color:#aaa;margin-top:3px">${m.time||''}</div></span></div>`).join('');
     box.scrollTop=box.scrollHeight;
   },
@@ -160,7 +188,7 @@ const ChatManager = {
       saveMyProfile();
       if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText = myProfile.coins;
       if(!myProfile.usage) myProfile.usage = [];
-      myProfile.usage.unshift({coins:10,to:to,reason:'Chat message',date:new Date().toLocaleString()});
+      myProfile.usage.unshift({coins:10,to:shortName(to),reason:'Chat message',date:new Date().toLocaleString()});
       saveMyProfile();
     }
     chatData.messages.push({from:'me',text:message,time:new Date().toLocaleTimeString()});
@@ -196,9 +224,9 @@ const ChatManager = {
           saveMyProfile();
           if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText = myProfile.coins;
           if(!myProfile.usage) myProfile.usage = [];
-          myProfile.usage.unshift({coins:costPerMin,to:user.name,reason:type + ' call',date:new Date().toLocaleString()});
+          myProfile.usage.unshift({coins:costPerMin,to:shortName(user.name),reason:type + ' call',date:new Date().toLocaleString()});
           saveMyProfile();
-        }else{ this.endCall(); alert('Call ended: Insufficient coins'); }
+        }else{ this.endCall(); showToast('Call ended: Insufficient coins'); }
       }
     },1000);
   },
@@ -206,25 +234,25 @@ const ChatManager = {
     let cs=document.getElementById('callScreen');
     if(cs){
       cs.innerHTML = `<img src="${user.avatar}" style="width:150px;height:150px;border-radius:50%;margin-bottom:20px;border:4px solid #25D366">
-      <div style="font-size:24px;font-weight:700">${user.name}</div>
+      <div style="font-size:24px;font-weight:700">${shortName(user.name)}</div>
       <div style="color:#aaa;margin:10px 0 40px">${status}</div>
       <div style="display:flex;gap:20px"><button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button>
       <button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">← Back</button></div>`;
       cs.style.display='flex';
     } else {
       document.getElementById('callScreenAvatar').src = user.avatar;
-      document.getElementById('callScreenName').innerText = user.name;
+      document.getElementById('callScreenName').innerText = shortName(user.name);
       document.getElementById('callScreenStatus').innerText = status;
       document.getElementById('callScreen').style.display = 'flex';
     }
   },
   endCall(){ clearInterval(this.callTimer); let cs=document.getElementById('callScreen'); if(cs) cs.style.display='none'; },
-  showNoCoins(){ alert('⚠️ Insufficient Coins\nChat: 10 coins/msg\nPhoto: 20 coins/photo\nVoice message: 30 coins\nVoice: 50 coins/min\nVideo: 100 coins/min\nPlease recharge.'); },
+  showNoCoins(){ showToast('Insufficient Coins - Chat: 10/msg, Voice: 50/min, Video: 100/min. Please recharge.'); },
   openGallery(userName){ let input=document.getElementById('photoGalleryInput_' + userName); if(input){input.value='';input.click();} },
   openCamera(userName){ let input=document.getElementById('photoCameraInput_' + userName); if(input){input.value='';input.click();} },
   handlePhotoSelected(file,userName){
     if(!file) return;
-    if(!file.type.startsWith('image/')){alert('Please select a photo.');return;}
+    if(!file.type.startsWith('image/')){showToast('Please select a photo.');return;}
     if(myProfile.coins < 20){ this.showNoCoins(); return; }
     let reader=new FileReader();
     reader.onload=(event)=>{
@@ -244,23 +272,24 @@ const ChatManager = {
   },
   sendPhoto(userName,photoData){
     if(myProfile.coins < 20){ this.showNoCoins(); return false; }
-    if(!confirm('Send this photo for 20 coins?')) return false;
-    let chatKey='patanisha_chat_'+myProfile.id+'_'+userName;
-    let chatData=JSON.parse(localStorage.getItem(chatKey))||{messages:[],msgCount:0};
-    chatData.messages.push({from:'me',type:'photo',photo:photoData,text:'📷 Photo',time:new Date().toLocaleTimeString()});
-    localStorage.setItem(chatKey, JSON.stringify(chatData));
-    myProfile.coins-=20;
-    if(!myProfile.usage) myProfile.usage=[];
-    myProfile.usage.unshift({coins:20,to:userName,reason:'Photo message',date:new Date().toLocaleString()});
-    saveMyProfile();
-    if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText=myProfile.coins;
-    this.renderChat(userName);
+    showConfirm('Send photo?','Send this photo for 20 coins to '+shortName(userName)+'?', 'Send', ()=>{
+      let chatKey='patanisha_chat_'+myProfile.id+'_'+userName;
+      let chatData=JSON.parse(localStorage.getItem(chatKey))||{messages:[],msgCount:0};
+      chatData.messages.push({from:'me',type:'photo',photo:photoData,text:'📷 Photo',time:new Date().toLocaleTimeString()});
+      localStorage.setItem(chatKey, JSON.stringify(chatData));
+      myProfile.coins-=20;
+      if(!myProfile.usage) myProfile.usage=[];
+      myProfile.usage.unshift({coins:20,to:shortName(userName),reason:'Photo message',date:new Date().toLocaleString()});
+      saveMyProfile();
+      if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText=myProfile.coins;
+      this.renderChat(userName);
+    });
     return true;
   },
   mediaRecorder:null,audioChunks:[],recordingUser:null,recordingStartTime:null,
   startVoiceMessage(userName){
     if(myProfile.coins < 30){ this.showNoCoins(); return false; }
-    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){alert('Voice recording is not supported by this browser.');return false;}
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){showToast('Voice recording not supported');return false;}
     if(this.mediaRecorder && this.mediaRecorder.state==='recording'){this.stopVoiceMessage();return true;}
     navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
       this.audioChunks=[];this.recordingUser=userName;this.recordingStartTime=Date.now();
@@ -272,7 +301,7 @@ const ChatManager = {
         this.finishVoiceMessage(userName,audioBlob);
       };
       this.mediaRecorder.start(); this.showRecordingState(userName,true);
-    }).catch(error=>{console.error(error);alert('Microphone permission is required to record a voice message.');});
+    }).catch(error=>{console.error(error);showToast('Microphone permission required');});
     return true;
   },
   stopVoiceMessage(){ if(this.mediaRecorder && this.mediaRecorder.state==='recording'){this.mediaRecorder.stop();this.showRecordingState(this.recordingUser,false);} },
@@ -283,10 +312,10 @@ const ChatManager = {
     if(status){status.style.display=isRecording?'block':'none';if(isRecording) status.innerText='🔴 Recording... tap 🎤 to send';}
   },
   finishVoiceMessage(userName,audioBlob){
-    if(!audioBlob||audioBlob.size===0){alert('No voice recording was captured.');return;}
+    if(!audioBlob||audioBlob.size===0){showToast('No voice recording captured.');return;}
     if(myProfile.coins<30){this.showNoCoins();return;}
     let reader=new FileReader();
-    reader.onload=event=>{let audioData=event.target.result;if(!confirm('Send this voice message for 30 coins?')) return; this.sendVoiceMessage(userName,audioData);};
+    reader.onload=event=>{let audioData=event.target.result; showConfirm('Send voice?','Send this voice message for 30 coins to '+shortName(userName)+'?','Send',()=> this.sendVoiceMessage(userName,audioData)); };
     reader.readAsDataURL(audioBlob);
   },
   sendVoiceMessage(userName,audioData){
@@ -297,7 +326,7 @@ const ChatManager = {
     localStorage.setItem(chatKey, JSON.stringify(chatData));
     myProfile.coins-=30;
     if(!myProfile.usage) myProfile.usage=[];
-    myProfile.usage.unshift({coins:30,to:userName,reason:'Voice message',date:new Date().toLocaleString()});
+    myProfile.usage.unshift({coins:30,to:shortName(userName),reason:'Voice message',date:new Date().toLocaleString()});
     saveMyProfile();
     if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText=myProfile.coins;
     this.renderChat(userName);
@@ -307,19 +336,18 @@ const ChatManager = {
   openGiftPanel(user){
     let giftId='giftPanelPopup';
     if(document.getElementById(giftId)) document.getElementById(giftId).remove();
-    let giftHtml=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#211f32;color:#fff;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Gift</div><button type="button" onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#3b394d;color:#fff;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((gift,index)=>`<button type="button" onclick="ChatManager.selectGift(${index},'${user.name}','${giftId}')" style="min-height:180px;border:1px solid transparent;border-radius:18px;background:#151421;color:#fff;cursor:pointer;padding:8px 5px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center"><div style="font-size:60px">${gift.icon}</div><div style="font-size:20px;font-weight:600">🪙 ${gift.coins}</div><div style="margin-top:5px;font-size:14px">${gift.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #393747;color:#aaa;font-size:13px;text-align:center">Sending gift to <strong style="color:#fff">${user.name}</strong></div></div></div>`;
+    let giftHtml=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#211f32;color:#fff;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Gift</div><button type="button" onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#3b394d;color:#fff;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((gift,index)=>`<button type="button" onclick="ChatManager.selectGift(${index},'${user.name}','${giftId}')" style="min-height:180px;border:1px solid transparent;border-radius:18px;background:#151421;color:#fff;cursor:pointer;padding:8px 5px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center"><div style="font-size:60px">${gift.icon}</div><div style="font-size:20px;font-weight:600">🪙 ${gift.coins}</div><div style="margin-top:5px;font-size:14px">${gift.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #393747;color:#aaa;font-size:13px;text-align:center">Sending gift to <strong style="color:#fff">${shortName(user.name)}</strong></div></div></div>`;
     document.body.insertAdjacentHTML('beforeend', giftHtml);
   },
   selectGift(index,receiverName,giftPanelId){
     let gift=this.giftList[index]; if(!gift) return;
-    if(myProfile.coins < gift.coins){ alert('⚠️ Insufficient Coins\n\nGift: '+gift.name+'\nCost: '+gift.coins+' coins\nYour balance: '+myProfile.coins+' coins'); return; }
-    if(!confirm('Send '+gift.name+' to '+receiverName+' for '+gift.coins+' coins?')) return;
-    this.sendGift(gift,receiverName,giftPanelId);
+    if(myProfile.coins < gift.coins){ showToast('Insufficient Coins - '+gift.name+' costs '+gift.coins+', you have '+myProfile.coins); return; }
+    showConfirm('Send '+gift.name+'?','Send to '+shortName(receiverName)+' for '+gift.coins+' coins?','Send',()=> this.sendGift(gift,receiverName,giftPanelId));
   },
   sendGift(gift,receiverName,giftPanelId){
     myProfile.coins -= gift.coins;
     if(!myProfile.usage) myProfile.usage=[];
-    myProfile.usage.unshift({coins:gift.coins,to:receiverName,reason:'Gift: '+gift.name,date:new Date().toLocaleString()});
+    myProfile.usage.unshift({coins:gift.coins,to:shortName(receiverName),reason:'Gift: '+gift.name,date:new Date().toLocaleString()});
     saveMyProfile();
     if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText=myProfile.coins;
     let chatKey='patanisha_chat_'+myProfile.id+'_'+receiverName;
@@ -328,6 +356,6 @@ const ChatManager = {
     localStorage.setItem(chatKey, JSON.stringify(chatData));
     if(document.getElementById(giftPanelId)) document.getElementById(giftPanelId).remove();
     this.renderChat(receiverName);
-    alert('🎁 Gift sent!');
+    showToast('🎁 Gift sent!');
   }
 };
