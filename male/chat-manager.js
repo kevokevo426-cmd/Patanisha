@@ -1,4 +1,5 @@
 // ===== UNIFIED CHAT MANAGER - Works for BOTH Male & Female =====
+// Chats / Calls tabs + Back only in Chats header + No test text
 function getMyProfileKey(){
   if(typeof myProfile !== 'undefined' && myProfile && myProfile.gender){
     return myProfile.gender === 'Male' ? 'patanisha_myProfile_male' : 'patanisha_myProfile_female';
@@ -35,30 +36,65 @@ function getOppositeUsers(){
 
 const ChatManager = {
   getChatUsers(){ return getOppositeUsers(); },
+
+  // ===== INBOX - BACK ONLY, CHATS / CALLS TABS =====
   openInbox(){
     let users = this.getChatUsers();
     let isMale = (typeof myProfile !== 'undefined' && myProfile && myProfile.gender === 'Male') || window.location.pathname.includes('/male/');
-    let title = isMale ? '💬 Chats - Ladies' : '💬 Chats - Boys';
+    let title = isMale ? 'Chats - Ladies' : 'Chats - Boys';
     let old = document.getElementById('chatInboxPopup');
     if(old) old.remove();
     let html = `
     <div id="chatInboxPopup" style="position:fixed;inset:0;background:#0D1117;z-index:99999;overflow-y:auto;color:#fff">
       <div style="display:flex;align-items:center;gap:10px;padding:15px;background:#161B22;position:sticky;top:0">
         <button onclick="ChatManager.closeInbox()" style="background:#2196F3;color:#fff;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button>
-        <h3 style="flex:1;margin:0">${title}</h3>
-        <button onclick="ChatManager.logoutUser()" style="background:#FF5252;color:#fff;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">🚪 Log Out</button>
+        <h3 style="flex:1;margin:0">💬 ${title}</h3>
       </div>
-      <div style="padding:15px">
-        ${users.length === 0 ? `<div style="text-align:center;padding:40px;color:#888">${isMale ? 'No ladies found yet' : 'No boys found yet'}<br><span style="font-size:12px">Register an opposite-gender account to test</span><br><br><button onclick="ChatManager.closeInbox()" style="background:#2196F3;color:#fff;border:none;padding:12px 20px;border-radius:12px;font-weight:700">← Back to Home</button></div>` : ''}
-        ${users.map((u,i)=>`
-          <div onclick="ChatManager.openChatByIndex(${i})" style="display:flex;align-items:center;gap:12px;background:#161B22;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer">
-            <img src="${u.avatar}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #2196F3">
-            <div style="flex:1"><b>${u.name} ${isMale ? '♀' : '♂'}</b><div style="font-size:12px;color:#888">📍 ${u.city || 'Ruiru'} • Tap to chat</div></div>
-            <span style="font-size:22px">💬</span>
-          </div>`).join('')}
+      <div style="display:flex;background:#161B22;margin:10px;border-radius:12px;padding:4px">
+        <button id="tabChatsBtn" onclick="ChatManager.switchInboxTab('chats')" style="flex:1;padding:12px;border:none;border-radius:10px;background:#2196F3;color:#fff;font-weight:700;cursor:pointer">💬 Chats</button>
+        <button id="tabCallsBtn" onclick="ChatManager.switchInboxTab('calls')" style="flex:1;padding:12px;border:none;border-radius:10px;background:transparent;color:#888;font-weight:700;cursor:pointer">📞 Calls</button>
       </div>
+      <div id="inboxContent" style="padding:0 15px 15px"></div>
     </div>`;
     document.body.insertAdjacentHTML('beforeend', html);
+    this.switchInboxTab('chats');
+  },
+  switchInboxTab(tab){
+    let users = this.getChatUsers();
+    let isMale = (typeof myProfile !== 'undefined' && myProfile && myProfile.gender === 'Male') || window.location.pathname.includes('/male/');
+    let content = document.getElementById('inboxContent');
+    if(!content) return;
+    let chatsBtn = document.getElementById('tabChatsBtn');
+    let callsBtn = document.getElementById('tabCallsBtn');
+    if(chatsBtn && callsBtn){
+      if(tab === 'chats'){
+        chatsBtn.style.background = '#2196F3'; chatsBtn.style.color = '#fff';
+        callsBtn.style.background = 'transparent'; callsBtn.style.color = '#888';
+      } else {
+        callsBtn.style.background = '#2196F3'; callsBtn.style.color = '#fff';
+        chatsBtn.style.background = 'transparent'; chatsBtn.style.color = '#888';
+      }
+    }
+    if(users.length === 0){
+      content.innerHTML = `<div style="text-align:center;padding:40px;color:#888">${isMale ? 'No ladies yet' : 'No boys yet'}</div>`;
+      return;
+    }
+    if(tab === 'chats'){
+      content.innerHTML = users.map((u,i)=>`
+        <div onclick="ChatManager.openChatByIndex(${i})" style="display:flex;align-items:center;gap:12px;background:#161B22;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer">
+          <img src="${u.avatar}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #2196F3">
+          <div style="flex:1"><b>${u.name} ${isMale ? '♀' : '♂'}</b><div style="font-size:12px;color:#888">📍 ${u.city || 'Ruiru'} • Tap to chat</div></div>
+          <span style="font-size:22px">💬</span>
+        </div>`).join('');
+    } else {
+      content.innerHTML = users.map((u,i)=>`
+        <div style="display:flex;align-items:center;gap:12px;background:#161B22;padding:12px;border-radius:12px;margin-bottom:10px">
+          <img src="${u.avatar}" onclick="ChatManager.openChatByIndex(${i})" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #2196F3;cursor:pointer">
+          <div style="flex:1" onclick="ChatManager.openChatByIndex(${i})"><b>${u.name} ${isMale ? '♀' : '♂'}</b><div style="font-size:12px;color:#888">📍 ${u.city || 'Ruiru'}</div></div>
+          <button onclick="ChatManager.startVoiceCall(ChatManager.getChatUsers()[${i}])" style="background:#F59E0B;border:none;padding:10px;border-radius:50%;cursor:pointer;font-size:18px">📞</button>
+          <button onclick="ChatManager.startVideoCall(ChatManager.getChatUsers()[${i}])" style="background:#2196F3;border:none;padding:10px;border-radius:50%;cursor:pointer;font-size:18px">📹</button>
+        </div>`).join('');
+    }
   },
   closeInbox(){ let el=document.getElementById('chatInboxPopup'); if(el) el.remove(); },
   openChatByIndex(idx){ let users=this.getChatUsers(); let user=users[idx]; if(user) this.openChat(user); },
