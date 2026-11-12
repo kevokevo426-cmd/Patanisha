@@ -17,14 +17,15 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .banner-text p{font-size:12px;color:#333}
 .banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:10px 25px;border-radius:20px;font-weight:bold;cursor:pointer}
 .tabs-wrapper{position:sticky;top:0;background:#f5f5f5;z-index:10}
-.tabs{display:flex;gap:25px;padding:15px 10px;border-bottom:2px solid #eee;overflow-x:auto;background:white;scroll-behavior:smooth}
-.tab{color:#666;font-weight:500;font-size:16px;padding-bottom:8px;cursor:pointer;white-space:nowrap;position:relative}
+.tabs{display:flex;gap:8px;padding:12px 10px;border-bottom:2px solid #eee;overflow-x:auto;background:white;scroll-behavior:smooth;align-items:center}
+.tab{color:#666;font-weight:500;font-size:16px;padding:8px 12px;cursor:pointer;white-space:nowrap;position:relative;border:none;background:transparent}
 .tab.active{color:#000;font-weight:bold;font-size:17px}
 .tab.active::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:3px;background:#FFD700;border-radius:2px}
+.search-btn{margin-left:auto;background:#FF8C00;color:#fff;border:none;padding:9px 14px;border-radius:20px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:13px}
 #userList{display:grid;grid-template-columns:1fr;gap:0;touch-action:pan-y}
 @media(min-width:768px){#userList{grid-template-columns:1fr 1fr;padding:0 10px}.banner{margin:20px}.tabs{border-radius:12px;margin:10px}}
 @media(min-width:1024px){#userList{grid-template-columns:1fr 1fr 1fr}}
-.card{display:flex;background:white;margin:10px;padding:15px;border-radius:12px;align-items:flex-start;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
+.card{display:flex;background:white;margin:10px;padding:15px;border-radius:12px;align-items:flex-start;box-shadow:0 2px 5px rgba(0,0,0,0.05);cursor:pointer}
 .avatar{width:70px;height:70px;border-radius:50%;border:3px solid #FFD700;position:relative;margin-right:12px;cursor:pointer;flex-shrink:0}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .online{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid white}
@@ -79,13 +80,33 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 <body>
 <div class="wrapper">
 <div class="banner"><div class="banner-text"><b>Set up 3 Say hi texts</b><p>The other user is more likely to reply to you</p></div><button class="banner-btn" onclick="openHiSetup()">Go</button></div>
-<div class="tabs-wrapper"><div class="tabs" id="tabs"><span class="tab" onclick="switchTab('recommend', this)">Recommend</span><span class="tab" onclick="switchTab('newcomer', this)">Newcomer</span><span class="tab active" onclick="switchTab('nearby', this)">Nearby</span><span class="tab" onclick="switchTab('top', this)">🏆 Top</span><span class="tab" onclick="switchTab('search', this)">🔍 Search</span></div></div>
-<div id="searchBox" style="display:none;text-align:center"><input type="text" class="search-box" id="searchInput" placeholder="Search name..." onkeyup="searchUsers()"></div>
+<div class="tabs-wrapper">
+  <div class="tabs" id="tabs">
+    <button class="tab" onclick="switchTab('recommend', this)">Recommend</button>
+    <button class="tab active" onclick="switchTab('nearby', this)">Nearby</button>
+    <button class="tab" onclick="switchTab('top', this)">🏆 Top</button>
+    <button class="search-btn" onclick="openSearchById()">🔍 Search</button>
+  </div>
+  <div id="searchByIdBar" style="display:none;padding:8px 10px;background:white">
+    <div style="display:flex;gap:8px;background:#f5f5f5;padding:8px;border-radius:25px">
+      <input id="searchIdInput" placeholder="Search by ID e.g. PT585065" style="flex:1;padding:10px;border:none;background:transparent;outline:none">
+      <button onclick="searchUserById()" style="background:#FF8C00;color:#fff;border:none;padding:10px 18px;border-radius:20px;font-weight:700;cursor:pointer">Search</button>
+      <button onclick="closeSearchById()" style="background:#666;color:#fff;border:none;padding:10px 14px;border-radius:20px;cursor:pointer">✕</button>
+    </div>
+  </div>
+</div>
 <div id="userList"></div>
 </div>
 <div class="nav"><div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div><div class="nav-item" onclick="window.location='about.html'"><span class="nav-icon">ℹ️</span>About</div><div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span></div><div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div></div>
 <div class="popup" id="profilePopup">...</div>
-<div class="popup" id="mePopup"><span class="close-btn" onclick="closePopup('mePopup')">×</span><div class="popup-content" style="text-align:left; padding:0"><div class="me-header"><div style="display:flex;align-items:center;gap:15px"><img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover"><div><h2 id="meName" style="color:#000;margin:0">Name</h2><div style="display:flex;gap:8px;margin-top:5px"><span id="meVIP" style="background:#8B5CF6;color:white;padding:3px 8px;border-radius:12px;font-size:12px">VIP0</span><span id="meLevel" style="background:#4CAF50;color:white;padding:3px 8px;border-radius:12px;font-size:12px">Lv 1</span></div><p id="meID" style="color:#333;font-size:12px;margin-top:5px">ID:123456</p></div></div></div><div class="me-stats"><div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div><div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div><div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div><div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div></div><div class="me-cards"><div class="me-card coin-card" onclick="openIncomeHistory()"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div></div><div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()"><b>Withdraw</b></div></div><div style="padding:0 15px 80px"><div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div><div class="menu-item" onclick="openAccountSettings()">🏦 Receiving Account</div><div class="menu-item" onclick="window.location='about.html'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='about.html'">🔒 Privacy Policy</div><button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button></div></div></div>
+<!-- ME POPUP - TOP BACK + BOTTOM LOGOUT -->
+<div class="popup" id="mePopup"><div class="popup-content" style="text-align:left; padding:0">
+<div style="display:flex;align-items:center;gap:10px;padding:12px 15px;background:#FFA500;border-radius:15px 15px 0 0;position:sticky;top:0;z-index:10">
+  <button onclick="closePopup('mePopup')" style="background:#fff;color:#000;border:none;padding:10px 16px;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer">← Back</button>
+  <span style="color:#fff;font-weight:700;font-size:16px">My Profile</span>
+  <button onclick="closePopup('mePopup')" style="margin-left:auto;width:38px;height:38px;border:none;border-radius:50%;background:#fff;color:#000;font-size:22px;font-weight:900;cursor:pointer">✕</button>
+</div>
+<div class="me-header"><div style="display:flex;align-items:center;gap:15px"><img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover"><div><h2 id="meName" style="color:#000;margin:0">Name</h2><div style="display:flex;gap:8px;margin-top:5px"><span id="meVIP" style="background:#8B5CF6;color:white;padding:3px 8px;border-radius:12px;font-size:12px">VIP0</span><span id="meLevel" style="background:#4CAF50;color:white;padding:3px 8px;border-radius:12px;font-size:12px">Lv 1</span></div><p id="meID" style="color:#333;font-size:12px;margin-top:5px">ID:123456</p></div></div></div><div class="me-stats"><div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div><div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div><div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div><div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div></div><div class="me-cards"><div class="me-card coin-card" onclick="openIncomeHistory()"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div></div><div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()"><b>Withdraw</b></div></div><div style="padding:0 15px 20px"><div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div><div class="menu-item" onclick="openAccountSettings()">🏦 Receiving Account</div><div class="menu-item" onclick="window.location='about.html'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='about.html'">🔒 Privacy Policy</div><button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button><button onclick="logoutUser()" style="width:100%;margin-top:10px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
 <div class="popup" id="withdrawFormPopup"><span class="close-btn" onclick="closePopup('withdrawFormPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Request Withdrawal</h3><div class="form-group"><label>Receiving M-Pesa Number</label><input type="text" id="withdrawMpesa" placeholder="07XXXXXXXX"></div><div class="form-group"><label>Withdrawal PIN</label><input type="password" id="withdrawPin" placeholder="Enter 4-6 digit PIN"></div><p style="font-size:12px;color:#888;padding:0 20px">Min 100 Coins = KES 100. Fee: KES 5</p><button class="btn" onclick="submitWithdraw()">Submit Request</button></div></div>
 <div class="popup" id="accountSettingsPopup"><span class="close-btn" onclick="closePopup('accountSettingsPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Receiving Account</h3><div class="form-group"><label>M-Pesa Number</label><input type="text" id="settingMpesa" placeholder="07XXXXXXXX"></div><div class="form-group"><label>Set Withdrawal PIN</label><input type="password" id="settingPin" placeholder="4-6 digits"></div><button class="btn" onclick="saveAccountSettings()">Save</button></div></div>
 <div class="popup" id="withdrawPopup"><span class="close-btn" onclick="closePopup('withdrawPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Withdrawal history</h3><div id="withdrawList" style="margin-top:15px"></div></div></div>
@@ -95,30 +116,38 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
 let isOnRegisterPage = window.location.pathname.includes('register');
 if(!myProfile && !isOnRegisterPage){ window.location.href = 'register/index.html'; }
-const tabsOrder = ['recommend','newcomer','nearby','top','search'];
+const tabsOrder = ['recommend','nearby','top'];
 let currentTab = 'nearby';
 let currentChatUser = '';
-let userCity = 'Ruiru';
+let userCity = (myProfile && myProfile.city) ? myProfile.city : 'Ruiru';
 let chats = JSON.parse(localStorage.getItem('patanishaChats')) || {};
-let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || {};
+let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || [];
+if(!Array.isArray(blocked)) blocked = Object.keys(blocked);
 let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
-  {name:"Lawi Lonyama", gender:"Male", avatar:"https://i.pravatar.cc/100?img=11", friends:[], following:[], followers:[], level:16, distance:"42.8km", age:20, city:"Ruiru"},
-  {name:"Prince Kolawole", gender:"Male", avatar:"https://i.pravatar.cc/100?img=5", friends:[], following:[], followers:[], level:12, distance:"5.8km", age:22, city:"Ruiru"},
-  {name:"Leonard EA", gender:"Male", avatar:"https://i.pravatar.cc/100?img=13", friends:[], following:[], followers:[], level:8, distance:"12.3km", age:21, city:"Ruiru", desc:"VIP User"}
+  {name:"Lawi Lonyama", gender:"Male", avatar:"https://i.pravatar.cc/100?img=11", friends:[], following:[], followers:[], level:16, distance:"42.8km", age:20, city:"Ruiru", id:"PT585065", activityScore:12},
+  {name:"Prince Kolawole", gender:"Male", avatar:"https://i.pravatar.cc/100?img=5", friends:[], following:[], followers:[], level:12, distance:"5.8km", age:22, city:"Ruiru", id:"PT585066", activityScore:30},
+  {name:"Leonard EA", gender:"Male", avatar:"https://i.pravatar.cc/100?img=13", friends:[], following:[], followers:[], level:8, distance:"12.3km", age:21, city:"Ruiru", desc:"VIP User", id:"PT585067", activityScore:5}
 ];
 function getVIPLevel(friends){if(friends >= 50) return 5;if(friends >= 40) return 4;if(friends >= 30) return 3;if(friends >= 20) return 2;if(friends >= 10) return 1;return 0;}
 function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
-function switchTab(tab, el){ currentTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); document.getElementById('searchBox').style.display = tab==='search'? 'block' : 'none'; loadUsers(); }
+function switchTab(tab, el){ currentTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); loadUsers(); }
 function filterUsers(){
-  let filtered = users.filter(u =>!blocked.includes(u.name));
+  let filtered = users.filter(u => !blocked.includes(u.name));
   if(myProfile) filtered = filtered.filter(u => u.name!== myProfile.name);
-  // FEMALE APP: Show ONLY Males
-  filtered = filtered.filter(u => {
-    if(!u.gender) return false;
-    return u.gender.toLowerCase().trim() === 'male';
-  });
-  if(currentTab === 'nearby') return filtered.filter(u => u.city === userCity);
-  return filtered;
+  filtered = filtered.filter(u => u.gender && u.gender.toLowerCase().trim() === 'male');
+  if(currentTab === 'nearby'){
+    let myTown = (myProfile && myProfile.city ? myProfile.city : userCity).trim().toLowerCase();
+    return filtered.filter(u => (u.city||'').trim().toLowerCase() === myTown);
+  }
+  if(currentTab === 'top'){
+    return [...filtered].sort((a,b)=>{
+      let sa = (a.activityScore||0) + (a.msgCount||0)*2 + (a.giftsReceived||0)*5 + (a.loginCount||0);
+      let sb = (b.activityScore||0) + (b.msgCount||0)*2 + (b.giftsReceived||0)*5 + (b.loginCount||0);
+      if(sa===0 && sb===0) return (b.coins||0)-(a.coins||0);
+      return sb-sa;
+    });
+  }
+  return filtered; // recommend = all boys
 }
 function loadUsers(){let filtered = filterUsers();renderUsers(filtered);}
 function renderUsers(filtered){
@@ -127,14 +156,26 @@ function renderUsers(filtered){
   filtered.forEach(u=>{
     let vipLevel = getVIPLevel(u.friends.length);
     let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';
-    html += `<div class="card"><div class="avatar"><img src="${u.avatar}"><div class="online"></div>${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}</div><div class="card-info"><h3>${u.name} ♂</h3><div class="friends-count">${u.friends.length} friends • ${u.gender}</div><div class="badges">${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}<span class="badge badge-level">Lv${u.level}</span></div><div class="badges"><span class="badge badge-distance">${u.distance}</span><span class="badge badge-age">♂ ${u.age}</span></div>${u.desc?`<p class="desc">${u.desc}</p>`:''}</div></div>`
+    html += `<div class="card" onclick="openChatForUser('${u.id}')"><div class="avatar"><img src="${u.avatar}"><div class="online"></div>${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}</div><div class="card-info"><h3>${u.name} ♂</h3><div class="friends-count">${u.friends.length} friends • ${u.gender} • ID:${u.id||''}</div><div class="badges">${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}<span class="badge badge-level">Lv${u.level}</span></div><div class="badges"><span class="badge badge-distance">${u.distance||''}</span><span class="badge badge-age">♂ ${u.age}</span></div>${u.desc?`<p class="desc">${u.desc}</p>`:''}</div></div>`
   });
   document.getElementById('userList').innerHTML = html;
 }
-function searchUsers(){
-  let q = document.getElementById('searchInput').value.toLowerCase();
-  let filtered = filterUsers().filter(u => u.name.toLowerCase().includes(q));
-  renderUsers(filtered);
+function openChatForUser(id){
+  let u = users.find(x=> x.id===id);
+  if(!u) return;
+  if(window.ChatManager && ChatManager.openChat) ChatManager.openChat(u);
+  else alert('Chat with '+u.name);
+}
+// ===== SEARCH BY ID =====
+function openSearchById(){ document.getElementById('searchByIdBar').style.display='block'; let i=document.getElementById('searchIdInput'); if(i) i.focus(); }
+function closeSearchById(){ document.getElementById('searchByIdBar').style.display='none'; loadUsers(); }
+function searchUserById(){
+  let q = document.getElementById('searchIdInput').value.trim().toUpperCase();
+  if(!q){ alert('Enter ID e.g. PT585065'); return; }
+  let all = users.filter(u=>u.gender && u.gender.toLowerCase().trim()==='male');
+  let found = all.find(u => (u.id && u.id.toUpperCase()===q) || (u.id && u.id.toUpperCase().includes(q)) || (u.name && u.name.toUpperCase().includes(q)));
+  if(!found){ alert('No user found with ID: '+q); return; }
+  renderUsers([found]);
 }
 function openMe(){
   if(!myProfile){alert('Please complete your profile first');window.location='register/index.html';return;}
@@ -142,13 +183,14 @@ function openMe(){
   document.getElementById('meName').innerText = myProfile.name;
   document.getElementById('meID').innerText = 'ID:' + myProfile.id;
   document.getElementById('meVIP').innerText = 'VIP' + getVIPLevel(myProfile.friends?.length || 0);
-  document.getElementById('meLevel').innerText = 'Lv ' + myProfile.level;
+  document.getElementById('meLevel').innerText = 'Lv ' + (myProfile.level||1);
   document.getElementById('meCoins').innerText = myProfile.coins || 20;
   document.getElementById('meFriends').innerText = myProfile.friends?.length || 0;
   document.getElementById('meFollowing').innerText = myProfile.following?.length || 0;
   document.getElementById('meFollowers').innerText = myProfile.followers?.length || 0;
   document.getElementById('meVisitors').innerText = myProfile.visitors?.length || 0;
   document.getElementById('mePopup').style.display = 'block';
+  history.pushState({popup:'mePopup'}, '', location.pathname + '#me');
 }
 function openAccountSettings(){
   document.getElementById('settingMpesa').value = myProfile.mpesa || '';
@@ -206,9 +248,24 @@ function renderIncome(){
 }
 function openInfo(){alert('Patanisha v1.0')}
 function goHome(){switchTab('nearby');window.scrollTo(0,0)}
-function openChatList(){alert('Chat feature')}
+function openChatList(){ if(window.ChatManager) ChatManager.openInbox(); else alert('Chat feature'); }
 function closePopup(id){document.getElementById(id).style.display = 'none';}
 function openHiSetup(){alert('Hi setup')}
+function logoutUser(){
+  if(!confirm('Log out?')) return;
+  localStorage.removeItem('patanisha_myProfile');
+  localStorage.removeItem('patanisha_myProfile_female');
+  window.location.replace('register/index.html');
+}
+// ===== PHONE BACK BUTTON -> HOME, NEVER REGISTER =====
+history.replaceState({page:'home'}, '', window.location.pathname);
+window.addEventListener('popstate', function(e){
+  let anyOpen=false;
+  document.querySelectorAll('.popup').forEach(p=>{ if(p.style.display==='block'){ p.style.display='none'; anyOpen=true; } });
+  let inbox=document.getElementById('chatInboxPopup'); if(inbox){ inbox.remove(); anyOpen=true; }
+  let chat=document.getElementById('chatPopup'); if(chat){ chat.remove(); anyOpen=true; }
+  history.pushState({page:'home'}, '', window.location.pathname);
+});
 loadUsers();
 </script>
 </body>
