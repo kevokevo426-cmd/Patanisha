@@ -7,16 +7,21 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 .wrapper{max-width:1200px;margin:0 auto}
-.banner{background:linear-gradient(135deg,#2196F3,#1976D2);margin:10px;border-radius:15px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
-.banner-text b{font-size:16px;display:block;margin-bottom:5px;color:#fff}
-.banner-text p{font-size:12px;color:#BBDEFB}
-.banner-btn{background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;border:none;padding:10px 25px;border-radius:20px;font-weight:bold;cursor:pointer}
-.tabs-wrapper{position:sticky;top:0;background:#0D1117;z-index:10}
-.tabs{display:flex;gap:8px;padding:12px 10px;border-bottom:2px solid #1E293B;overflow-x:auto;background:#161B22;scroll-behavior:smooth;align-items:center}
-.tab{color:#8B949E;font-weight:500;font-size:16px;padding:8px 12px;cursor:pointer;white-space:nowrap;position:relative;border:none;background:transparent}
-.tab.active{color:#fff;font-weight:bold;font-size:17px}
+.banner{background:linear-gradient(135deg,#2196F3,#1976D2);margin:10px;padding:12px 14px;border-radius:15px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.banner-text{flex:1;min-width:0}
+.banner-text b{font-size:14px;display:block;margin-bottom:5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.banner-text p{font-size:11px;color:#BBDEFB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.banner-btn{background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;border:none;padding:9px 16px;border-radius:20px;font-weight:bold;cursor:pointer;flex-shrink:0;font-size:13px}
+/* ALIGNED TOP BAR - FITS ALL */
+.tabs-wrapper{position:sticky;top:0;background:#0D1117;z-index:10;width:100%;overflow:hidden}
+.tabs{display:flex;gap:4px;padding:10px 8px;border-bottom:2px solid #1E293B;overflow-x:auto;background:#161B22;scroll-behavior:smooth;align-items:center;white-space:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{color:#8B949E;font-weight:600;font-size:14px;padding:8px 10px;cursor:pointer;white-space:nowrap;position:relative;border:none;background:transparent;flex-shrink:0}
+.tab.active{color:#fff;font-weight:800;font-size:14px}
 .tab.active::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:3px;background:#2196F3;border-radius:2px}
-.search-btn{margin-left:auto;background:#2196F3;color:#fff;border:none;padding:9px 14px;border-radius:20px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:13px}
+.search-btn{margin-left:auto;background:#2196F3;color:#fff;border:none;padding:8px 12px;border-radius:20px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:13px;flex-shrink:0}
+#searchByIdBar{width:100%;box-sizing:border-box}
+#searchIdInput{min-width:0;flex:1;font-size:14px}
 #userList{display:grid;grid-template-columns:1fr;gap:0;touch-action:pan-y}
 @media(min-width:768px){#userList{grid-template-columns:1fr 1fr;padding:0 10px}.banner{margin:20px}.tabs{border-radius:12px;margin:10px}}
 @media(min-width:1024px){#userList{grid-template-columns:1fr 1fr 1fr}}
@@ -25,7 +30,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .online{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid #161B22}
 .card-info{flex:1;cursor:pointer;min-width:0}
-.card-info h3{font-size:16px;margin-bottom:2px;color:#fff}
+.card-info h3{font-size:16px;margin-bottom:2px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .friends-count{font-size:11px;color:#8B949E;margin-bottom:4px}
 .btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .hi-btn,.call-btn{background:linear-gradient(135deg,#2196F3,#1976D2);border:none;border-radius:20px;padding:8px 12px;color:white;font-weight:bold;font-size:12px;cursor:pointer}
@@ -57,7 +62,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 .profile-cover img{width:100%;height:100%;object-fit:cover}
 .profile-avatar-big{width:100px;height:100px;border-radius:50%;border:4px solid #161B22;position:absolute;bottom:-50px;left:20px;object-fit:cover}
 .profile-info{padding:70px 20px 20px}
-.profile-name{font-size:22px;font-weight:800;color:#fff}
+.profile-name{font-size:22px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .profile-city{color:#8B949E;font-size:14px;margin:5px 0 15px}
 .profile-bio{background:#21262D;padding:15px;border-radius:12px;color:#C9D1D9;line-height:1.6}
 .profile-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:15px 0}
@@ -72,9 +77,11 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 .call-screen-name{font-size:24px;font-weight:700}
 .call-screen-status{color:#aaa;margin:10px 0 40px}
 .call-end-btn{width:70px;height:70px;background:red;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer}
+#appToast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;z-index:999999;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:90%;text-align:center;display:none}
 </style>
 </head>
 <body>
+<div id="appToast"></div>
 <div class="wrapper">
 <div class="banner"><div class="banner-text"><b>Set up 3 Say hi texts</b><p>Get more replies from ladies</p></div><button class="banner-btn" onclick="openInfoRates()">Go</button></div>
 <div class="tabs-wrapper">
@@ -87,8 +94,8 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   <div id="searchByIdBar" style="display:none;padding:8px 10px;background:#161B22">
     <div style="display:flex;gap:8px;background:#0D1117;padding:8px;border-radius:25px">
       <input id="searchIdInput" placeholder="Search by ID e.g. PT585065" style="flex:1;padding:10px;border:none;background:transparent;color:#fff;outline:none">
-      <button onclick="searchUserById()" style="background:#2196F3;color:#fff;border:none;padding:10px 18px;border-radius:20px;font-weight:700;cursor:pointer">Search</button>
-      <button onclick="closeSearchById()" style="background:#333;color:#fff;border:none;padding:10px 14px;border-radius:20px;cursor:pointer">✕</button>
+      <button onclick="searchUserById()" style="background:#2196F3;color:#fff;border:none;padding:10px 18px;border-radius:20px;font-weight:700;cursor:pointer;flex-shrink:0">Search</button>
+      <button onclick="closeSearchById()" style="background:#333;color:#fff;border:none;padding:10px 14px;border-radius:20px;cursor:pointer;flex-shrink:0">✕</button>
     </div>
   </div>
 </div>
@@ -102,19 +109,20 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 </div>
 <div class="popup" id="profilePopup"><span class="close-btn" onclick="closeProfile()">×</span><div class="popup-content profile-popup-body"><div class="profile-cover"><img id="profileCover" src=""><img id="profileAvatarBig" class="profile-avatar-big" src=""></div><div class="profile-info"><div class="profile-name" id="profileName"></div><div class="profile-city" id="profileCity"></div><div class="profile-bio" id="profileBio"></div><h3 style="margin:20px 0 10px;color:#fff">Photos</h3><div class="profile-photos" id="profilePhotos"></div><div class="action-btns"><button class="action-btn btn-chat" onclick="startChat()">💬 Chat</button><button class="action-btn btn-voice" onclick="startCall('voice')">📞 Voice</button><button class="action-btn btn-video" onclick="startCall('video')">📹 Video</button></div></div></div></div>
 <div class="call-screen" id="callScreen"><img id="callScreenAvatar" class="call-screen-avatar" src=""><div class="call-screen-name" id="callScreenName"></div><div class="call-screen-status" id="callScreenStatus">Calling...</div><div class="call-end-btn" onclick="endCall()">📞</div></div>
-<!-- ME POPUP - TOP BACK + BOTTOM LOGOUT -->
 <div class="popup" id="mePopup"><div class="popup-content" style="text-align:left; padding:0">
 <div style="display:flex;align-items:center;gap:10px;padding:12px 15px;background:#2196F3;border-radius:15px 15px 0 0;position:sticky;top:0;z-index:10">
   <button onclick="closePopup('mePopup')" style="background:#fff;color:#000;border:none;padding:10px 16px;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer">← Back</button>
   <span style="color:#fff;font-weight:700;font-size:16px">My Profile</span>
   <button onclick="closePopup('mePopup')" style="margin-left:auto;width:38px;height:38px;border:none;border-radius:50%;background:#fff;color:#000;font-size:22px;font-weight:900;cursor:pointer">✕</button>
 </div>
-<div class="me-header"><div style="display:flex;align-items:center;gap:15px"><img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover"><div><h2 id="meName" style="color:#fff;margin:0">Name</h2><p id="meID" style="color:#BBDEFB;font-size:12px;margin-top:5px">ID:123456</p></div></div></div><div class="me-stats"><div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div><div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div><div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div><div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div></div><div class="me-cards"><div class="me-card coin-card" onclick="openUsageHistory()"><span style="background:#000;color:#F59E0B;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#000">My Coins</div><b id="meCoins">0</b></div></div><div class="me-card" style="background:linear-gradient(135deg,#2196F3,#1976D2);color:white;justify-content:center;cursor:pointer;font-weight:bold" onclick="openRecharge()">Recharge</div></div><div style="padding:0 0 20px"><div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div><div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div><div class="menu-item" onclick="window.location='../about.html'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='../about.html'">🔒 Privacy Policy</div><button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button><button onclick="logoutUser()" style="width:calc(100% - 30px);margin:0 15px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
+<div class="me-header"><div style="display:flex;align-items:center;gap:15px"><img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover"><div><h2 id="meName" style="color:#fff;margin:0">Name</h2><p id="meID" style="color:#BBDEFB;font-size:12px;margin-top:5px">ID:123456</p></div></div></div><div class="me-stats"><div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div><div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div><div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div><div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div></div><div class="me-cards"><div class="me-card coin-card" onclick="openUsageHistory()"><span style="background:#000;color:#F59E0B;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#000">My Coins</div><b id="meCoins">0</b></div></div><div class="me-card" style="background:linear-gradient(135deg,#2196F3,#1976D2);color:white;justify-content:center;cursor:pointer;font-weight:bold" onclick="openRecharge()">Recharge</div></div><div style="padding:0 0 20px"><div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div><div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div><div class="menu-item" onclick="window.location='../about.html'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='../about.html'">🔒 Privacy Policy</div><button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button><button onclick="askLogout()" style="width:calc(100% - 30px);margin:0 15px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
 <div class="popup" id="infoPopup"><span class="close-btn" onclick="closePopup('infoPopup')">×</span><div class="popup-content" style="text-align:left;padding:25px"><h3 style="text-align:center;margin-bottom:20px;color:#2196F3">Coin Rates</h3><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Chat</b><p style="color:#8B949E;font-size:13px">1st message FREE, then 10 Coins per message</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📞 Voice Call</b><p style="color:#8B949E;font-size:13px">50 Coins per minute</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📹 Video Call</b><p style="color:#8B949E;font-size:13px">100 Coins per minute</p></div><div style="background:#21262D;padding:15px;border-radius:12px"><b>🔄 Recharge Rate</b><p style="color:#8B949E;font-size:13px">KES 100 = 1000 Coins</p></div></div></div>
 <div class="popup" id="rechargePopup"><span class="close-btn" onclick="closePopup('rechargePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Recharge Coins</h3><p style="font-size:12px;color:#8B949E;margin-bottom:10px">Rate: KES 100 = 1000 Coins</p><div class="form-group"><label>Send M-Pesa to:</label><input type="text" id="adminMpesa" value="0718422377" readonly style="font-weight:bold;color:#4CAF50"></div><div class="form-group"><label>Enter Amount KES</label><input type="number" id="rechargeAmount" placeholder="100" onkeyup="calcCoins()"></div><div class="form-group"><label>You will get</label><input type="text" id="rechargeCoins" readonly style="background:#21262D"></div><div class="form-group"><label>Your M-Pesa Number</label><input type="text" id="rechargeMpesa" placeholder="07XXXXXXXX"></div><button class="btn" onclick="submitRecharge()">I Have Sent</button></div></div>
 <div class="popup" id="usagePopup"><span class="close-btn" onclick="closePopup('usagePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Coin Usage</h3><div id="usageList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="rechargeHistoryPopup"><span class="close-btn" onclick="closePopup('rechargeHistoryPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Recharge History</h3><div id="rechargeList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="adminChatPopup"><span class="close-btn" onclick="closePopup('adminChatPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Contact Admin</h3><p style="font-size:12px;color:#8B949E">For recharge issues or account help</p><div class="form-group"><label>Your Message</label><textarea id="adminMessage" style="width:100%;height:100px;background:#21262D;border:1px solid #30363D;color:#C9D1D9;border-radius:12px;padding:10px"></textarea></div><button class="btn" onclick="sendToAdmin()">Send to Admin</button></div></div>
+<!-- LOGOUT CONFIRM - NO BROWSER POPUP -->
+<div id="logoutConfirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999999;align-items:center;justify-content:center"><div style="background:#161B22;padding:25px;border-radius:20px;text-align:center;width:85%;max-width:300px;color:#fff"><h3>Log out?</h3><p style="color:#888;font-size:13px;margin:8px 0 18px">You will need to sign in again.</p><div style="display:flex;gap:10px"><button onclick="closeLogoutConfirm()" style="flex:1;padding:14px;border:none;border-radius:12px;background:#333;color:#fff;font-weight:700;cursor:pointer">Cancel</button><button onclick="logoutUser()" style="flex:1;padding:14px;border:none;border-radius:12px;background:#FF5252;color:#fff;font-weight:700;cursor:pointer">Log Out</button></div></div></div>
 <script>
 let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_male')) || {name:"Male User",id:"M1001",avatar:"https://i.pravatar.cc/100?img=51",coins:100,city:"Ruiru",friends:[],following:[],followers:[],visitors:[],recharges:[],usage:[]};
 let users = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [
@@ -125,6 +133,8 @@ let users = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [
 let currentProfile = {};
 let filteredUsers = [];
 let currentHomeTab = 'recommend';
+function showToast(msg){ let t=document.getElementById('appToast'); t.innerText=msg; t.style.display='block'; clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.display='none',2500); }
+function shortName(name){ if(!name) return 'User'; let n = name.split(' ')[0]; if(n.length>12) n=n.substring(0,12)+'...'; return n; }
 function getFilteredUsers(){
   let base = users.filter(u => u.gender && u.gender.toLowerCase().trim() === 'female');
   if(currentHomeTab === 'nearby'){
@@ -139,22 +149,22 @@ function getFilteredUsers(){
       return sb-sa;
     });
   }
-  return base; // recommend = all
+  return base;
 }
-function openProfile(idx){ currentProfile = filteredUsers[idx]; document.getElementById('profileCover').src = currentProfile.avatar; document.getElementById('profileAvatarBig').src = currentProfile.avatar; document.getElementById('profileName').innerText = currentProfile.name; document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown') + ' • ID:' + (currentProfile.id||''); document.getElementById('profileBio').innerText = currentProfile.bio || 'No bio yet'; let photosHtml = ''; if(currentProfile.photos) currentProfile.photos.forEach(p=>{photosHtml += `<img src="${p}">`}); document.getElementById('profilePhotos').innerHTML = photosHtml; document.getElementById('profilePopup').style.display = 'block'; }
+function openProfile(idx){ currentProfile = filteredUsers[idx]; document.getElementById('profileCover').src = currentProfile.avatar; document.getElementById('profileAvatarBig').src = currentProfile.avatar; document.getElementById('profileName').innerText = shortName(currentProfile.name); document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown') + ' • ID:' + (currentProfile.id||''); document.getElementById('profileBio').innerText = currentProfile.bio || 'No bio yet'; let photosHtml = ''; if(currentProfile.photos) currentProfile.photos.forEach(p=>{photosHtml += `<img src="${p}">`}); document.getElementById('profilePhotos').innerHTML = photosHtml; document.getElementById('profilePopup').style.display = 'block'; }
 function closeProfile(){ document.getElementById('profilePopup').style.display = 'none'; }
 function startChat(){ closeProfile(); ChatManager.openChat(currentProfile); }
 function startCall(type){ closeProfile(); if(type === 'voice') ChatManager.startVoiceCall(currentProfile); if(type === 'video') ChatManager.startVideoCall(currentProfile); }
 function endCall(){ ChatManager.endCall(); }
-function openMe(){ document.getElementById('meAvatar').src = myProfile.avatar; document.getElementById('meName').innerText = myProfile.name; document.getElementById('meID').innerText = 'ID:' + myProfile.id; document.getElementById('meCoins').innerText = myProfile.coins || 0; document.getElementById('meFriends').innerText = myProfile.friends?.length || 0; document.getElementById('meFollowing').innerText = myProfile.following?.length || 0; document.getElementById('meFollowers').innerText = myProfile.followers?.length || 0; document.getElementById('meVisitors').innerText = myProfile.visitors?.length || 0; document.getElementById('mePopup').style.display = 'block'; history.pushState({popup:'mePopup'}, '', location.pathname + '#me'); }
+function openMe(){ document.getElementById('meAvatar').src = myProfile.avatar; document.getElementById('meName').innerText = shortName(myProfile.name); document.getElementById('meID').innerText = 'ID:' + myProfile.id; document.getElementById('meCoins').innerText = myProfile.coins || 0; document.getElementById('meFriends').innerText = myProfile.friends?.length || 0; document.getElementById('meFollowing').innerText = myProfile.following?.length || 0; document.getElementById('meFollowers').innerText = myProfile.followers?.length || 0; document.getElementById('meVisitors').innerText = myProfile.visitors?.length || 0; document.getElementById('mePopup').style.display = 'block'; history.pushState({popup:'mePopup'}, '', location.pathname + '#me'); }
 function openInfoRates(){ document.getElementById('infoPopup').style.display = 'block'; }
 function openRecharge(){ document.getElementById('rechargeAmount').value = 100; calcCoins(); document.getElementById('rechargePopup').style.display = 'block'; }
 function calcCoins(){ let kes = document.getElementById('rechargeAmount').value || 0; let coins = kes * 10; document.getElementById('rechargeCoins').value = coins + ' Coins'; }
-function submitRecharge(){ let kes = parseInt(document.getElementById('rechargeAmount').value); let mpesa = document.getElementById('rechargeMpesa').value; if(kes < 100){alert('Minimum KES 100');return;} if(mpesa.length < 10){alert('Enter valid M-Pesa');return;} let coins = kes * 10; myProfile.coins += coins; if(!myProfile.recharges) myProfile.recharges = []; myProfile.recharges.unshift({amount: kes, coins: coins, mpesa: mpesa, date: new Date().toLocaleString(), status: "Success"}); localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile)); document.getElementById('meCoins').innerText = myProfile.coins; closePopup('rechargePopup'); alert(`✅ +${coins} Coins added!`); renderRechargeHistory(); }
+function submitRecharge(){ let kes = parseInt(document.getElementById('rechargeAmount').value); let mpesa = document.getElementById('rechargeMpesa').value; if(kes < 100){showToast('Minimum KES 100');return;} if(mpesa.length < 10){showToast('Enter valid M-Pesa');return;} let coins = kes * 10; myProfile.coins += coins; if(!myProfile.recharges) myProfile.recharges = []; myProfile.recharges.unshift({amount: kes, coins: coins, mpesa: mpesa, date: new Date().toLocaleString(), status: "Success"}); localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile)); document.getElementById('meCoins').innerText = myProfile.coins; closePopup('rechargePopup'); showToast(`✅ +${coins} Coins added!`); renderRechargeHistory(); }
 function openUsageHistory(){ renderUsageHistory(); document.getElementById('usagePopup').style.display = 'block'; }
-function renderUsageHistory(){ let list = document.getElementById('usageList'); if(!myProfile.usage || myProfile.usage.length === 0){ list.innerHTML = '<div class="empty">No coins spent yet</div>'; return; } let html = ''; myProfile.usage.forEach(u=>{ html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:#FF5252">-${u.coins} Coins</b> to ${u.to}<div style="font-size:12px;color:#888">${u.reason} • ${u.date}</div></div>`; }); list.innerHTML = html; }
+function renderUsageHistory(){ let list = document.getElementById('usageList'); if(!myProfile.usage || myProfile.usage.length === 0){ list.innerHTML = '<div class="empty">No coins spent yet</div>'; return; } let html = ''; myProfile.usage.forEach(u=>{ html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:#FF5252">-${u.coins} Coins</b> to ${shortName(u.to)}<div style="font-size:12px;color:#888">${u.reason} • ${u.date}</div></div>`; }); list.innerHTML = html; }
 function openAdminChat(){ document.getElementById('adminChatPopup').style.display = 'block'; }
-function sendToAdmin(){ let msg = document.getElementById('adminMessage').value; if(msg.trim() === ''){alert('Type message');return;} if(!myProfile.adminMessages) myProfile.adminMessages = []; myProfile.adminMessages.push({msg:msg, date:new Date().toLocaleString()}); localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile)); alert('Message sent to Admin'); document.getElementById('adminMessage').value = ''; closePopup('adminChatPopup'); }
+function sendToAdmin(){ let msg = document.getElementById('adminMessage').value; if(msg.trim() === ''){showToast('Type message');return;} if(!myProfile.adminMessages) myProfile.adminMessages = []; myProfile.adminMessages.push({msg:msg, date:new Date().toLocaleString()}); localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile)); showToast('Message sent to Admin'); document.getElementById('adminMessage').value = ''; closePopup('adminChatPopup'); }
 function openRechargeHistory(){ renderRechargeHistory(); document.getElementById('rechargeHistoryPopup').style.display = 'block'; }
 function renderRechargeHistory(){ let list = document.getElementById('rechargeList'); if(!myProfile.recharges || myProfile.recharges.length === 0){ list.innerHTML = '<div class="empty">No recharges yet</div>'; return; } let html = ''; myProfile.recharges.forEach(r=>{ html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:#4CAF50">KES ${r.amount}</b> → ${r.coins} Coins<div style="font-size:12px;color:#888">${r.mpesa} • ${r.date}</div></div>`; }); list.innerHTML = html; }
 function loadUsers(){
@@ -164,44 +174,36 @@ function loadUsers(){
     document.getElementById('userList').innerHTML = `<div class="empty">No ladies found yet<br><span style="font-size:12px">${msg}</span></div>`; return;
   }
   let html = '';
-  filteredUsers.forEach((u, idx)=>{ html += `<div class="card"><div class="avatar" onclick="openProfile(${idx})"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info" onclick="openProfile(${idx})"><h3>${u.name} ♀</h3><div class="friends-count">${(u.friends||[]).length} friends • 📍 ${u.city} • ID:${u.id||''}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation(); ChatManager.openChat(filteredUsers[${idx}])">💬 Hi 5s</button></div></div></div>` });
+  filteredUsers.forEach((u, idx)=>{ html += `<div class="card"><div class="avatar" onclick="openProfile(${idx})"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info" onclick="openProfile(${idx})"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">${(u.friends||[]).length} friends • 📍 ${u.city} • ID:${u.id||''}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation(); ChatManager.openChat(filteredUsers[${idx}])">💬 Hi 5s</button></div></div></div>` });
   document.getElementById('userList').innerHTML = html;
 }
 function switchTab(tab, el){ currentHomeTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); loadUsers(); }
-// ===== SEARCH BY ID =====
 function openSearchById(){ document.getElementById('searchByIdBar').style.display='block'; let i=document.getElementById('searchIdInput'); if(i) i.focus(); }
 function closeSearchById(){ document.getElementById('searchByIdBar').style.display='none'; loadUsers(); }
 function searchUserById(){
   let q = document.getElementById('searchIdInput').value.trim().toUpperCase();
-  if(!q){ alert('Enter ID e.g. PT585065'); return; }
+  if(!q){ showToast('Enter ID e.g. PT585065'); return; }
   let all = users.filter(u=>u.gender && u.gender.toLowerCase().trim()==='female');
   let foundIdx = all.findIndex(u => (u.id && u.id.toUpperCase()===q) || (u.id && u.id.toUpperCase().includes(q)) || (u.name && u.name.toUpperCase().includes(q)));
-  if(foundIdx===-1){ alert('No user found with ID: '+q); return; }
+  if(foundIdx===-1){ showToast('No user found with ID: '+q); return; }
   let found = all[foundIdx];
-  // Show only that user in list, then open profile
   filteredUsers = [found];
-  let idxInFiltered = 0;
-  document.getElementById('userList').innerHTML = `<div class="card"><div class="avatar" onclick="openProfile(0)"><img src="${found.avatar}"><div class="online"></div></div><div class="card-info" onclick="openProfile(0)"><h3>${found.name} ♀</h3><div class="friends-count">📍 ${found.city} • ID:${found.id}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation(); ChatManager.openChat(filteredUsers[0])">💬 Chat</button></div></div></div>`;
-  // Also directly open profile for speed
-  // openProfile(0);
+  document.getElementById('userList').innerHTML = `<div class="card"><div class="avatar" onclick="openProfile(0)"><img src="${found.avatar}"><div class="online"></div></div><div class="card-info" onclick="openProfile(0)"><h3>${shortName(found.name)} ♀</h3><div class="friends-count">📍 ${found.city} • ID:${found.id}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation(); ChatManager.openChat(filteredUsers[0])">💬 Chat</button></div></div></div>`;
 }
 function goHome(){window.scrollTo(0,0)}
 function closePopup(id){document.getElementById(id).style.display = 'none';}
-// ===== LOGOUT =====
+function askLogout(){ document.getElementById('logoutConfirm').style.display='flex'; }
+function closeLogoutConfirm(){ document.getElementById('logoutConfirm').style.display='none'; }
 function logoutUser(){
-  if(!confirm('Log out?')) return;
   localStorage.removeItem('patanisha_myProfile_male');
   localStorage.removeItem('patanisha_myProfile');
   window.location.replace('../register/index.html');
 }
-// ===== PHONE BACK BUTTON -> HOME, NEVER REGISTER =====
 history.replaceState({page:'home'}, '', window.location.pathname);
 window.addEventListener('popstate', function(e){
-  let anyOpen=false;
-  document.querySelectorAll('.popup').forEach(p=>{ if(p.style.display==='block'){ p.style.display='none'; anyOpen=true; } });
-  let inbox=document.getElementById('chatInboxPopup'); if(inbox){ inbox.remove(); anyOpen=true; }
-  let chat=document.getElementById('chatPopup'); if(chat){ chat.remove(); anyOpen=true; }
-  // Always stay on Home
+  document.querySelectorAll('.popup').forEach(p=>{ if(p.style.display==='block'){ p.style.display='none'; } });
+  let inbox=document.getElementById('chatInboxPopup'); if(inbox){ inbox.remove(); }
+  let chat=document.getElementById('chatPopup'); if(chat){ chat.remove(); }
   history.pushState({page:'home'}, '', window.location.pathname);
 });
 loadUsers();
