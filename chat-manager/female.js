@@ -1,6 +1,49 @@
-// ===== chat-manager/female.js - FEMALE FREE - NO PAYMENT =====
+// ===== chat-manager/female.js - FEMALE FREE - NO PAYMENT - COLLECTS MALE COINS =====
 // Female: Chat / Calls / Photo / Voice / Gifts = ALL FREE
-// Male file is separate: male/chat-manager.js = PAID, don't touch
+// Male pays -> payFemale() writes to patanisha_earnings -> Female collects here
+
+// ===== ★★★ COLLECT EARNINGS FROM MALE ★★★ =====
+function loadFemaleEarnings(){
+  if(typeof myProfile==='undefined'||!myProfile) return;
+  let ledger=[];
+  try{ ledger=JSON.parse(localStorage.getItem('patanisha_earnings')||'[]'); }catch(e){}
+  // Only MY earnings - match by name OR id if Male used id
+  let mine=ledger.filter(e=> e.to===myProfile.name || e.toId===myProfile.id);
+  let total=mine.reduce((s,e)=> s+(e.amount||0),0);
+  let claimed=parseInt(localStorage.getItem('patanisha_earnings_claimed_'+myProfile.id)||'0');
+  // Also support old key for backwards compat
+  if(claimed===0){ claimed=parseInt(localStorage.getItem('patanisha_earnings_claimed')||'0'); }
+  if(total>claimed){
+    let add = total - claimed;
+    myProfile.coins=(myProfile.coins||0)+add;
+    localStorage.setItem('patanisha_earnings_claimed_'+myProfile.id, String(total));
+    localStorage.setItem('patanisha_earnings_claimed', String(total));
+    if(!myProfile.income) myProfile.income=[];
+    mine.forEach(m=>{
+      if(!myProfile.income.find(x=> x.date===m.date && x.amount===m.amount && x.from===m.from)){
+        myProfile.income.unshift({amount:m.amount, from:m.from||'Male', reason:m.reason||'Chat', date:m.date});
+      }
+    });
+    saveMyProfileFemale();
+    if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText = myProfile.coins;
+    // Show once so she knows she earned
+    if(add>0 && typeof showToast!=='undefined') showToast('💰 +'+add+' coins earned!');
+  } else {
+    // Even if no new coins, make sure income list is synced
+    if(!myProfile.income) myProfile.income=[];
+    let changed=false;
+    mine.forEach(m=>{
+      if(!myProfile.income.find(x=> x.date===m.date && x.amount===m.amount)){
+        myProfile.income.unshift({amount:m.amount, from:m.from||'Male', reason:m.reason||'Chat', date:m.date});
+        changed=true;
+      }
+    });
+    if(changed) saveMyProfileFemale();
+  }
+}
+// Run on load + every 5 sec while Female is on app (so she sees money live)
+try{ loadFemaleEarnings(); }catch(e){}
+setInterval(()=>{ try{ loadFemaleEarnings(); }catch(e){} }, 5000);
 
 function getFemaleChatUsers(){
   let list = [];
@@ -32,6 +75,7 @@ function saveMyProfileFemale(){
 const ChatManager = {
   getChatUsers(){ return getFemaleChatUsers(); },
   openInbox(){
+    loadFemaleEarnings(); // ★ Collect before showing chats
     let usersList = this.getChatUsers();
     let old=document.getElementById('chatInboxPopup'); if(old) old.remove();
     let html=`<div id="chatInboxPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;overflow-y:auto;color:#000"><div style="display:flex;align-items:center;gap:10px;padding:15px;background:#FFA500;position:sticky;top:0"><button onclick="ChatManager.closeInbox()" style="background:#fff;color:#000;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><h3 style="flex:1;margin:0;color:#fff">💬 Chats - Boys</h3></div><div style="display:flex;background:#fff;margin:10px;border-radius:12px;padding:4px"><button id="tabChatsBtn" onclick="ChatManager.switchInboxTab('chats')" style="flex:1;padding:12px;border:none;border-radius:10px;background:#FF8C00;color:#fff;font-weight:700;cursor:pointer">💬 Chats</button><button id="tabCallsBtn" onclick="ChatManager.switchInboxTab('calls')" style="flex:1;padding:12px;border:none;border-radius:10px;background:transparent;color:#888;font-weight:700;cursor:pointer">📞 Calls</button></div><div id="inboxContent" style="padding:0 15px 15px"></div></div>`;
@@ -57,6 +101,7 @@ const ChatManager = {
   openChatByIndex(idx){ let u=this.getChatUsers()[idx]; if(u) this.openChat(u); },
   currentChatUser:null,
   openChat(user){
+    loadFemaleEarnings();
     this.currentChatUser=user; this.closeInbox();
     let old=document.getElementById('chatPopup'); if(old) old.remove();
     let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;display:flex;flex-direction:column;color:#000"><div style="display:flex;align-items:center;gap:10px;padding:12px;background:#FFA500"><button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><img src="${user.avatar}" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(user.name)}</b><div style="font-size:11px;color:#2E7D32">● Online • FREE</div></div><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📞</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📹</button></div><div id="chatMessages" style="flex:1;overflow-y:auto;padding:15px;background:#f5f5f5"></div><div style="display:flex;gap:8px;padding:10px;background:#fff;align-items:center"><button onclick="ChatManager.openGiftPanel(ChatManager.currentChatUser)" style="background:none;border:none;font-size:22px;cursor:pointer">🎁</button><button onclick="ChatManager.startVoiceMessage(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:22px;cursor:pointer">🎤</button><input id="chatInput" placeholder="Type message... FREE" style="flex:1;min-width:0;padding:12px;border-radius:20px;border:none;background:#f0f0f0;color:#000"><button onclick="ChatManager.sendChatMessage()" style="background:#FF8C00;color:#fff;border:none;padding:12px 18px;border-radius:20px;font-weight:700;cursor:pointer;flex-shrink:0">Send</button></div><div style="text-align:center;padding:0 0 10px;background:#fff"><button onclick="ChatManager.closeChat()" style="background:#eee;color:#000;border:none;padding:8px 20px;border-radius:20px;cursor:pointer">← Back to Chats</button></div></div>`;
