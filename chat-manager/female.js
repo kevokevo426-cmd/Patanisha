@@ -7,11 +7,9 @@ function loadFemaleEarnings(){
   if(typeof myProfile==='undefined'||!myProfile) return;
   let ledger=[];
   try{ ledger=JSON.parse(localStorage.getItem('patanisha_earnings')||'[]'); }catch(e){}
-  // Only MY earnings - match by name OR id if Male used id
   let mine=ledger.filter(e=> e.to===myProfile.name || e.toId===myProfile.id);
   let total=mine.reduce((s,e)=> s+(e.amount||0),0);
   let claimed=parseInt(localStorage.getItem('patanisha_earnings_claimed_'+myProfile.id)||'0');
-  // Also support old key for backwards compat
   if(claimed===0){ claimed=parseInt(localStorage.getItem('patanisha_earnings_claimed')||'0'); }
   if(total>claimed){
     let add = total - claimed;
@@ -26,10 +24,8 @@ function loadFemaleEarnings(){
     });
     saveMyProfileFemale();
     if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText = myProfile.coins;
-    // Show once so she knows she earned
     if(add>0 && typeof showToast!=='undefined') showToast('💰 +'+add+' coins earned!');
   } else {
-    // Even if no new coins, make sure income list is synced
     if(!myProfile.income) myProfile.income=[];
     let changed=false;
     mine.forEach(m=>{
@@ -41,14 +37,13 @@ function loadFemaleEarnings(){
     if(changed) saveMyProfileFemale();
   }
 }
-// Run on load + every 5 sec while Female is on app (so she sees money live)
 try{ loadFemaleEarnings(); }catch(e){}
 setInterval(()=>{ try{ loadFemaleEarnings(); }catch(e){} }, 5000);
 
 function getFemaleChatUsers(){
   let list = [];
-  try{ list = JSON.parse(localStorage.getItem('patanishaUsers')) || []; }catch(e){ list=[]; }
-  if(list.length===0){ try{ list = JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); }catch(e){} }
+  try{ list = JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); }catch(e){ list=[]; }
+  if(list.length===0){ try{ list = JSON.parse(localStorage.getItem('patanishaUsers')||'[]'); }catch(e){} }
   try{
     let pageUsers = (typeof users !== 'undefined' ? users : []);
     pageUsers.forEach(pu=>{
@@ -75,7 +70,7 @@ function saveMyProfileFemale(){
 const ChatManager = {
   getChatUsers(){ return getFemaleChatUsers(); },
   openInbox(){
-    loadFemaleEarnings(); // ★ Collect before showing chats
+    loadFemaleEarnings();
     let usersList = this.getChatUsers();
     let old=document.getElementById('chatInboxPopup'); if(old) old.remove();
     let html=`<div id="chatInboxPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;overflow-y:auto;color:#000"><div style="display:flex;align-items:center;gap:10px;padding:15px;background:#FFA500;position:sticky;top:0"><button onclick="ChatManager.closeInbox()" style="background:#fff;color:#000;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><h3 style="flex:1;margin:0;color:#fff">💬 Chats - Boys</h3></div><div style="display:flex;background:#fff;margin:10px;border-radius:12px;padding:4px"><button id="tabChatsBtn" onclick="ChatManager.switchInboxTab('chats')" style="flex:1;padding:12px;border:none;border-radius:10px;background:#FF8C00;color:#fff;font-weight:700;cursor:pointer">💬 Chats</button><button id="tabCallsBtn" onclick="ChatManager.switchInboxTab('calls')" style="flex:1;padding:12px;border:none;border-radius:10px;background:transparent;color:#888;font-weight:700;cursor:pointer">📞 Calls</button></div><div id="inboxContent" style="padding:0 15px 15px"></div></div>`;
@@ -124,12 +119,13 @@ const ChatManager = {
   },
   sendMessage(to,message){
     if(!message.trim()) return false;
+    if(typeof myProfile==='undefined'||!myProfile) return false;
     let chatKey='patanisha_chat_'+myProfile.id+'_'+to;
     let chatData=JSON.parse(localStorage.getItem(chatKey))||{messages:[],msgCount:0};
     chatData.messages.push({from:'me',text:message,time:new Date().toLocaleTimeString()});
     chatData.msgCount+=1; localStorage.setItem(chatKey,JSON.stringify(chatData)); return true;
   },
-  loadChat(to){ let chatKey='patanisha_chat_'+myProfile.id+'_'+to; return JSON.parse(localStorage.getItem(chatKey))||{messages:[],msgCount:0}; },
+  loadChat(to){ if(typeof myProfile==='undefined'||!myProfile) return {messages:[],msgCount:0}; let chatKey='patanisha_chat_'+myProfile.id+'_'+to; return JSON.parse(localStorage.getItem(chatKey))||{messages:[],msgCount:0}; },
   startVoiceCall(user){ this.showCallScreen(user,'Voice calling... FREE'); return true; },
   startVideoCall(user){ this.showCallScreen(user,'Video calling... FREE'); return true; },
   showCallScreen(user,status){
@@ -146,6 +142,7 @@ const ChatManager = {
     reader.readAsDataURL(file);
   },
   sendPhoto(userName,photoData){
+    if(typeof myProfile==='undefined'||!myProfile) return false;
     let chatKey='patanisha_chat_'+myProfile.id+'_'+userName;
     let chatData=JSON.parse(localStorage.getItem(chatKey))||{messages:[],msgCount:0};
     chatData.messages.push({from:'me',type:'photo',photo:photoData,text:'📷 Photo',time:new Date().toLocaleTimeString()});
@@ -178,6 +175,7 @@ const ChatManager = {
     reader.readAsDataURL(audioBlob);
   },
   sendVoiceMessage(userName,audioData){
+    if(typeof myProfile==='undefined'||!myProfile) return false;
     let chatKey='patanisha_chat_'+myProfile.id+'_'+userName;
     let chatData=JSON.parse(localStorage.getItem(chatKey))||{messages:[],msgCount:0};
     chatData.messages.push({from:'me',type:'voice',audio:audioData,text:'🎤 Voice message',time:new Date().toLocaleTimeString()});
@@ -191,6 +189,7 @@ const ChatManager = {
   },
   selectGift(index,receiverName,giftPanelId){ let gift=this.giftList[index]; if(!gift) return; this.sendGift(gift,receiverName,giftPanelId); },
   sendGift(gift,receiverName,giftPanelId){
+    if(typeof myProfile==='undefined'||!myProfile) return false;
     let chatKey='patanisha_chat_'+myProfile.id+'_'+receiverName;
     let chatData=JSON.parse(localStorage.getItem(chatKey))||{messages:[],msgCount:0};
     chatData.messages.push({from:'me',text:gift.icon+' Sent '+gift.name+' gift',time:new Date().toLocaleTimeString()});
@@ -199,3 +198,7 @@ const ChatManager = {
     this.renderChat(receiverName); showToast('🎁 Gift sent! FREE');
   }
 };
+
+// ★★★ FIX: const does NOT create window.ChatManager, so index.html could never see it ★★★
+window.ChatManager = ChatManager;
+window.chatsLoading = false;
