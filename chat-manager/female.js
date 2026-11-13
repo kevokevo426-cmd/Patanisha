@@ -56,16 +56,35 @@ function getFemaleChatUsers(){
 
 const ChatManager = {
   getChatUsers(){ return getFemaleChatUsers(); },
+  // ★★★ FIX 1: INBOX = ONLY TALKED-TO ★★★
   openInbox(){
     loadFemaleEarnings();
-    let usersList=this.getChatUsers();
     let old=document.getElementById('chatInboxPopup'); if(old) old.remove();
     let html=`<div id="chatInboxPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;overflow-y:auto;color:#000"><div style="display:flex;align-items:center;gap:10px;padding:15px;background:#FFA500;position:sticky;top:0"><button onclick="ChatManager.closeInbox()" style="background:#fff;color:#000;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><h3 style="flex:1;margin:0;color:#fff">💬 Chats - Boys</h3></div><div id="inboxContent" style="padding:15px"></div></div>`;
     document.body.insertAdjacentHTML('beforeend', html);
     let content=document.getElementById('inboxContent');
-    if(usersList.length===0){ content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">No boys yet<br><span style="font-size:12px">Boys will appear after they sign up</span></div>`; return; }
-    content.innerHTML=usersList.map((u,i)=>`<div onclick="ChatManager.openChatByIndex(${i})" style="display:flex;align-items:center;gap:12px;background:#fff;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05)"><img src="${u.avatar||'https://via.placeholder.com/80'}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(u.name)} ♂</b><div style="font-size:12px;color:#888">📍 ${u.city||'Ruiru'} • Tap to chat • FREE</div></div><span style="font-size:22px">💬</span></div>`).join('');
+    content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">Loading chats... ⏳</div>`;
+    let db=getDB();
+    if(!db || !myProfile || !myProfile.id){ content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">No chats yet<br><span style="font-size:12px">Tap a boy on Home → Chat to start</span></div>`; return; }
+    db.ref('chats').once('value').then(snap=>{
+      let list=[];
+      snap.forEach(c=>{
+        let v=c.val()||{}; let meta=v.meta||{};
+        let otherId=null, otherName=null;
+        if(meta.aId===myProfile.id){ otherId=meta.bId; otherName=meta.bName; }
+        else if(meta.bId===myProfile.id){ otherId=meta.aId; otherName=meta.aName; }
+        else return;
+        if(!otherId) return;
+        let u=this.getChatUsers().find(x=>x.id===otherId) || {};
+        list.push({id:otherId, name:otherName||u.name||'User', avatar:u.avatar||'https://via.placeholder.com/80', city:u.city||'', lastMsg:meta.lastMsg||'', lastTs:meta.lastTs||0});
+      });
+      list.sort((a,b)=>b.lastTs-a.lastTs);
+      if(list.length===0){ content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">No chats yet<br><span style="font-size:12px">Tap a boy on Home → Chat to start</span></div>`; return; }
+      this._inboxList=list;
+      content.innerHTML=list.map((u,i)=>`<div onclick="ChatManager.openInboxChat(${i})" style="display:flex;align-items:center;gap:12px;background:#fff;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05)"><img src="${u.avatar}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(u.name)} ♂</b><div style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.lastMsg ? u.lastMsg.replace(/</g,'&lt;') : '📍 '+(u.city||'Ruiru')}</div></div><span style="font-size:22px">💬</span></div>`).join('');
+    });
   },
+  openInboxChat(idx){ let u=this._inboxList && this._inboxList[idx]; if(u) this.openChat(u); },
   closeInbox(){ let el=document.getElementById('chatInboxPopup'); if(el) el.remove(); },
   openChatByIndex(idx){ let u=this.getChatUsers()[idx]; if(u) this.openChat(u); },
   currentChatUser:null, currentChatId:null, _listener:null, _msgs:[],
@@ -75,7 +94,8 @@ const ChatManager = {
     let old=document.getElementById('chatPopup'); if(old) old.remove();
     if(this._listener && this.currentChatId){ try{ getDB().ref('chats/'+this.currentChatId+'/messages').off('value', this._listener); }catch(e){} }
     this.currentChatId=getChatId(myProfile.id, user.id);
-    let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;display:flex;flex-direction:column;color:#000"><div style="display:flex;align-items:center;gap:10px;padding:12px;background:#FFA500"><button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><img src="${user.avatar||''}" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(user.name)}</b><div style="font-size:11px;color:#2E7D32">● Online • FREE • You earn</div></div><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📞</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📹</button></div><div id="chatMessages" style="flex:1;overflow-y:auto;padding:15px;background:#f5f5f5"></div><div style="display:flex;gap:8px;padding:10px;background:#fff;align-items:center"><button onclick="ChatManager.openGiftPanel(ChatManager.currentChatUser)" style="background:none;border:none;font-size:22px;cursor:pointer">🎁</button><button onclick="ChatManager.startVoiceMessage(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:22px;cursor:pointer">🎤</button><input id="chatInput" placeholder="Type message... FREE" style="flex:1;min-width:0;padding:12px;border-radius:20px;border:none;background:#f0f0f0;color:#000"><button onclick="ChatManager.sendChatMessage()" style="background:#FF8C00;color:#fff;border:none;padding:12px 18px;border-radius:20px;font-weight:700;cursor:pointer;flex-shrink:0">Send</button></div><div style="text-align:center;padding:0 0 10px;background:#fff"><button onclick="ChatManager.closeChat()" style="background:#eee;color:#000;border:none;padding:8px 20px;border-radius:20px;cursor:pointer">← Back to Chats</button></div></div>`;
+    // ★★★ FIX 2: BOTTOM = 🎁 📷 🖼️ 🎤 ★★★
+    let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;display:flex;flex-direction:column;color:#000"><div style="display:flex;align-items:center;gap:10px;padding:12px;background:#FFA500"><button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><img src="${user.avatar||''}" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(user.name)}</b><div style="font-size:11px;color:#2E7D32">● Online • FREE • You earn</div></div><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📞</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📹</button></div><div id="chatMessages" style="flex:1;overflow-y:auto;padding:15px;background:#f5f5f5"></div><div style="display:flex;gap:6px;padding:10px;background:#fff;align-items:center"><button onclick="ChatManager.openGiftPanel(ChatManager.currentChatUser)" style="background:none;border:none;font-size:24px;cursor:pointer" title="Gift">🎁</button><button onclick="ChatManager.openCamera(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:24px;cursor:pointer" title="Camera">📷</button><button onclick="ChatManager.openGallery(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:24px;cursor:pointer" title="Upload">🖼️</button><button onclick="ChatManager.startVoiceMessage(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:24px;cursor:pointer" title="Voice">🎤</button><input id="chatInput" placeholder="Type message... FREE" style="flex:1;min-width:0;padding:12px;border-radius:20px;border:none;background:#f0f0f0;color:#000"><button onclick="ChatManager.sendChatMessage()" style="background:#FF8C00;color:#fff;border:none;padding:12px 18px;border-radius:20px;font-weight:700;cursor:pointer;flex-shrink:0">Send</button></div><div style="text-align:center;padding:0 0 10px;background:#fff"><button onclick="ChatManager.closeChat()" style="background:#eee;color:#000;border:none;padding:8px 20px;border-radius:20px;cursor:pointer">← Back to Chats</button></div></div><input type="file" id="photoCameraInput_${user.name}" accept="image/*" capture="environment" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')"><input type="file" id="photoGalleryInput_${user.name}" accept="image/*" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')">`;
     document.body.insertAdjacentHTML('beforeend', html);
     this.startListening();
     let inp=document.getElementById('chatInput'); if(inp) inp.addEventListener('keydown',e=>{if(e.key==='Enter') ChatManager.sendChatMessage();});
@@ -108,7 +128,6 @@ const ChatManager = {
     let msg=inp.value; if(!msg.trim()) return;
     let ok=this.sendMessage(this.currentChatUser,msg); if(ok) inp.value='';
   },
-  // ★★★ FEMALE SEND - FREE - Firebase ★★★
   sendMessage(toUser, message){
     if(!message.trim()) return false;
     let to=(typeof toUser==='string')?{name:toUser,id:toUser}:toUser;
@@ -128,6 +147,33 @@ const ChatManager = {
     cs.style.display='flex';
   },
   endCall(){ let cs=document.getElementById('callScreen'); if(cs) cs.style.display='none'; },
+  // ★★★ FIX 3: CAMERA / UPLOAD / PHOTO - FREE ★★★
+  openGallery(userName){ let i=document.getElementById('photoGalleryInput_'+userName); if(i){i.value='';i.click();} },
+  openCamera(userName){ let i=document.getElementById('photoCameraInput_'+userName); if(i){i.value='';i.click();} },
+  handlePhotoSelected(file,userName){
+    if(!file) return;
+    if(!file.type.startsWith('image/')){showToast('Please select a photo.');return;}
+    let reader=new FileReader();
+    reader.onload=(e)=>{
+      let img=new Image();
+      img.onload=()=>{
+        let maxW=1000,maxH=1000,w=img.width,h=img.height;
+        if(w>maxW){h=h*(maxW/w);w=maxW;} if(h>maxH){w=w*(maxH/h);h=maxH;}
+        let c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        this.sendPhoto(this.currentChatUser, c.toDataURL('image/jpeg',0.7));
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  },
+  sendPhoto(toUser, photoData){
+    if(!myProfile) return false;
+    let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
+    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:'📷 Photo',lastTs:Date.now()});
+    db.ref('chats/'+chatId+'/messages').push({fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,type:'photo',photo:photoData,text:'📷 Photo',time:new Date().toLocaleTimeString(),ts:Date.now()});
+    return true;
+  },
   mediaRecorder:null,audioChunks:[],recordingUser:null,
   startVoiceMessage(userName){
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){showToast('Voice recording not supported');return false;}
@@ -149,6 +195,7 @@ const ChatManager = {
   sendVoiceMessage(toUser,audioData){
     if(typeof myProfile==='undefined'||!myProfile) return false;
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
+    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:'🎤 Voice message',lastTs:Date.now()});
     db.ref('chats/'+chatId+'/messages').push({fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,type:'voice',audio:audioData,text:'🎤 Voice',time:new Date().toLocaleTimeString(),ts:Date.now()});
     return true;
   },
@@ -162,6 +209,7 @@ const ChatManager = {
   sendGift(gift,toUser,giftPanelId){
     if(typeof myProfile==='undefined'||!myProfile) return false;
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
+    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:gift.icon+' Gift',lastTs:Date.now()});
     db.ref('chats/'+chatId+'/messages').push({fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,text:gift.icon+' Sent '+gift.name+' gift',type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()});
     if(document.getElementById(giftPanelId)) document.getElementById(giftPanelId).remove();
     showToast('🎁 Gift sent! FREE');
