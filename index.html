@@ -80,6 +80,21 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .btn{width:100%;padding:16px;background:linear-gradient(135deg,#BA55D3,#9370DB);color:#fff;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px}
 #successToast{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#E8F5E9;color:#2E7D32;padding:12px 20px;border-radius:12px;font-weight:600;z-index:1001;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
 #appToast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;z-index:999999;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:90%;text-align:center;display:none}
+.profile-popup-body{padding:0;text-align:left}
+.profile-cover{height:250px;position:relative}
+.profile-cover img{width:100%;height:100%;object-fit:cover}
+.profile-avatar-big{width:100px;height:100px;border-radius:50%;border:4px solid #fff;position:absolute;bottom:-50px;left:20px;object-fit:cover;background:#fff}
+.profile-info{padding:70px 20px 20px}
+.profile-name{font-size:22px;font-weight:800;color:#000}
+.profile-city{color:#888;font-size:14px;margin:5px 0 15px}
+.profile-bio{background:#f5f5f5;padding:15px;border-radius:12px;color:#333;line-height:1.6}
+.profile-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:15px 0}
+.profile-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.action-btns{display:flex;gap:10px;margin-top:20px}
+.action-btn{flex:1;padding:14px;border-radius:12px;border:none;font-weight:700;font-size:14px;cursor:pointer}
+.btn-chat{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff}
+.btn-voice{background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff}
+.btn-video{background:linear-gradient(135deg,#2196F3,#1976D2);color:#fff}
 </style>
 </head>
 <body>
@@ -104,7 +119,8 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 <div id="userList"></div>
 </div>
 <div class="nav"><div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div><div class="nav-item" onclick="window.location='about.html'"><span class="nav-icon">ℹ️</span>About</div><div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span></div><div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div></div>
-<div class="popup" id="profilePopup">...</div>
+<!-- ★★★ PROFILE POPUP - FIXED ★★★ -->
+<div class="popup" id="profilePopup"><span class="close-btn" onclick="closePopup('profilePopup')">×</span><div class="popup-content profile-popup-body"><div class="profile-cover"><img id="profileCover" src=""><img id="profileAvatarBig" class="profile-avatar-big" src=""></div><div class="profile-info"><div class="profile-name" id="profileName"></div><div class="profile-city" id="profileCity"></div><div class="profile-bio" id="profileBio"></div><h3 style="margin:20px 0 10px;color:#000">Photos</h3><div class="profile-photos" id="profilePhotos"></div><div class="action-btns"><button class="action-btn btn-chat" onclick="startChatFromProfile()">💬 Chat</button><button class="action-btn btn-voice" onclick="startVoiceFromProfile()">📞 Voice</button><button class="action-btn btn-video" onclick="startVideoFromProfile()">📹 Video</button></div></div></div></div>
 <div class="popup" id="mePopup"><div class="popup-content" style="text-align:left; padding:0">
 <div style="display:flex;align-items:center;gap:10px;padding:12px 15px;background:#FFA500;border-radius:15px 15px 0 0;position:sticky;top:0;z-index:10">
   <button onclick="closePopup('mePopup')" style="background:#fff;color:#000;border:none;padding:10px 16px;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer">← Back</button>
@@ -125,6 +141,7 @@ if(!myProfile && !isOnRegisterPage){ window.location.href = 'register/index.html
 const tabsOrder = ['recommend','nearby','top'];
 let currentTab = 'nearby';
 let currentChatUser = '';
+let currentProfileUser = null;
 let userCity = (myProfile && myProfile.city) ? myProfile.city : 'Ruiru';
 let chats = JSON.parse(localStorage.getItem('patanishaChats')) || {};
 let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || [];
@@ -164,15 +181,42 @@ function renderUsers(filtered){
   filtered.forEach(u=>{
     let vipLevel = getVIPLevel(u.friends.length);
     let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';
-    html += `<div class="card" onclick="openChatForUser('${u.id}')"><div class="avatar"><img src="${u.avatar}"><div class="online"></div>${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}</div><div class="card-info"><h3>${shortName(u.name)} ♂</h3><div class="friends-count">${u.friends.length} friends • ID:${u.id||''}</div><div class="badges">${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}<span class="badge badge-level">Lv${u.level}</span></div><div class="badges"><span class="badge badge-distance">${u.distance||''}</span><span class="badge badge-age">♂ ${u.age}</span></div>${u.desc?`<p class="desc">${u.desc}</p>`:''}</div></div>`
+    html += `<div class="card" onclick="openProfileById('${u.id}')"><div class="avatar"><img src="${u.avatar}"><div class="online"></div>${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}</div><div class="card-info"><h3>${shortName(u.name)} ♂</h3><div class="friends-count">${u.friends.length} friends • ID:${u.id||''}</div><div class="badges">${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}<span class="badge badge-level">Lv${u.level}</span></div><div class="badges"><span class="badge badge-distance">${u.distance||''}</span><span class="badge badge-age">♂ ${u.age}</span></div>${u.desc?`<p class="desc">${u.desc}</p>`:''}</div></div>`
   });
   document.getElementById('userList').innerHTML = html;
 }
-function openChatForUser(id){
+// ★★★ PROFILE - TAP USER → SEE PROFILE + PHOTOS ★★★
+function openProfileById(id){
   let u = users.find(x=> x.id===id);
   if(!u) return;
-  if(window.ChatManager && ChatManager.openChat) ChatManager.openChat(u);
-  else showToast('Chat loading... please wait, refreshing');
+  currentProfileUser = u;
+  document.getElementById('profileCover').src = u.avatar || 'https://via.placeholder.com/400';
+  document.getElementById('profileAvatarBig').src = u.avatar || 'https://via.placeholder.com/100';
+  document.getElementById('profileName').innerText = shortName(u.name) + ' ♂';
+  document.getElementById('profileCity').innerText = '📍 ' + (u.city || 'Ruiru') + ' • ID:' + (u.id||'') + ' • Lv' + (u.level||1) + (u.age ? ' • ♂ ' + u.age : '');
+  document.getElementById('profileBio').innerText = u.bio || u.desc || 'No bio yet';
+  let photos = (u.photos && u.photos.length) ? u.photos : [u.avatar];
+  document.getElementById('profilePhotos').innerHTML = photos.map(p=>`<img src="${p}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px">`).join('');
+  document.getElementById('profilePopup').style.display = 'block';
+}
+function openChatForUser(id){ openProfileById(id); }
+function startChatFromProfile(){
+  if(!currentProfileUser) return;
+  closePopup('profilePopup');
+  if(window.ChatManager && ChatManager.openChat) ChatManager.openChat(currentProfileUser);
+  else showToast('Chat loading... tap again');
+}
+function startVoiceFromProfile(){
+  if(!currentProfileUser) return;
+  closePopup('profilePopup');
+  if(window.ChatManager && ChatManager.startVoiceCall) ChatManager.startVoiceCall(currentProfileUser);
+  else showToast('Chat loading... tap again');
+}
+function startVideoFromProfile(){
+  if(!currentProfileUser) return;
+  closePopup('profilePopup');
+  if(window.ChatManager && ChatManager.startVideoCall) ChatManager.startVideoCall(currentProfileUser);
+  else showToast('Chat loading... tap again');
 }
 function openSearchById(){ document.getElementById('searchByIdBar').style.display='block'; let i=document.getElementById('searchIdInput'); if(i) i.focus(); }
 function closeSearchById(){ document.getElementById('searchByIdBar').style.display='none'; loadUsers(); }
