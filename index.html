@@ -89,7 +89,7 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .profile-city{color:#888;font-size:14px;margin:5px 0 15px}
 .profile-bio{background:#f5f5f5;padding:15px;border-radius:12px;color:#333;line-height:1.6}
 .profile-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:15px 0}
-.profile-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.profile-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;cursor:pointer}
 .action-btns{display:flex;gap:10px;margin-top:20px}
 .action-btn{flex:1;padding:14px;border-radius:12px;border:none;font-weight:700;font-size:14px;cursor:pointer}
 .btn-chat{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff}
@@ -119,16 +119,22 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 <div id="userList"></div>
 </div>
 <div class="nav"><div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div><div class="nav-item" onclick="window.location='about.html'"><span class="nav-icon">ℹ️</span>About</div><div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span></div><div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div></div>
-<!-- ★★★ PROFILE POPUP - FIXED ★★★ -->
-<div class="popup" id="profilePopup"><span class="close-btn" onclick="closePopup('profilePopup')">×</span><div class="popup-content profile-popup-body"><div class="profile-cover"><img id="profileCover" src=""><img id="profileAvatarBig" class="profile-avatar-big" src=""></div><div class="profile-info"><div class="profile-name" id="profileName"></div><div class="profile-city" id="profileCity"></div><div class="profile-bio" id="profileBio"></div><h3 style="margin:20px 0 10px;color:#000">Photos</h3><div class="profile-photos" id="profilePhotos"></div><div class="action-btns"><button class="action-btn btn-chat" onclick="startChatFromProfile()">💬 Chat</button><button class="action-btn btn-voice" onclick="startVoiceFromProfile()">📞 Voice</button><button class="action-btn btn-video" onclick="startVideoFromProfile()">📹 Video</button></div></div></div></div>
+<div class="popup" id="profilePopup"><span class="close-btn" onclick="closePopup('profilePopup')">×</span><div class="popup-content profile-popup-body"><div class="profile-cover"><img id="profileCover" src=""><img id="profileAvatarBig" class="profile-avatar-big" src=""></div><div class="profile-info"><div class="profile-name" id="profileName"></div><div class="profile-city" id="profileCity"></div><div class="profile-bio" id="profileBio"></div><h3 style="margin:20px 0 10px;color:#000">Photos</h3><div class="profile-photos" id="profilePhotos"></div><p style="font-size:12px;color:#888;text-align:center">Tap a photo to view</p><div class="action-btns"><button class="action-btn btn-chat" onclick="startChatFromProfile()">💬 Chat</button><button class="action-btn btn-voice" onclick="startVoiceFromProfile()">📞 Voice</button><button class="action-btn btn-video" onclick="startVideoFromProfile()">📹 Video</button></div></div></div></div>
 <div class="popup" id="mePopup"><div class="popup-content" style="text-align:left; padding:0">
 <div style="display:flex;align-items:center;gap:10px;padding:12px 15px;background:#FFA500;border-radius:15px 15px 0 0;position:sticky;top:0;z-index:10">
   <button onclick="closePopup('mePopup')" style="background:#fff;color:#000;border:none;padding:10px 16px;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer">← Back</button>
   <span style="color:#fff;font-weight:700;font-size:16px">My Profile</span>
   <button onclick="closePopup('mePopup')" style="margin-left:auto;width:38px;height:38px;border:none;border-radius:50%;background:#fff;color:#000;font-size:22px;font-weight:900;cursor:pointer">✕</button>
 </div>
-<div class="me-header"><div style="display:flex;align-items:center;gap:15px"><img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover"><div><h2 id="meName" style="color:#000;margin:0">Name</h2><div style="display:flex;gap:8px;margin-top:5px"><span id="meVIP" style="background:#8B5CF6;color:white;padding:3px 8px;border-radius:12px;font-size:12px">VIP0</span><span id="meLevel" style="background:#4CAF50;color:white;padding:3px 8px;border-radius:12px;font-size:12px">Lv 1</span></div><p id="meID" style="color:#333;font-size:12px;margin-top:5px">ID:123456</p></div></div></div><div class="me-stats"><div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div><div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div><div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div><div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div></div><div class="me-cards"><div class="me-card coin-card" onclick="openIncomeHistory()"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div></div><div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()"><b>Withdraw</b></div></div><div style="padding:0 15px 20px"><div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div><div class="menu-item" onclick="openAccountSettings()">🏦 Receiving Account</div><div class="menu-item" onclick="window.location='about.html'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='about.html'">🔒 Privacy Policy</div><button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button><button onclick="askLogout()" style="width:100%;margin-top:10px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
-<div class="popup" id="withdrawFormPopup"><span class="close-btn" onclick="closePopup('withdrawFormPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Request Withdrawal</h3><div class="form-group"><label>Receiving M-Pesa Number</label><input type="text" id="withdrawMpesa" placeholder="07XXXXXXXX"></div><div class="form-group"><label>Withdrawal PIN</label><input type="password" id="withdrawPin" placeholder="Enter 4-6 digit PIN"></div><p style="font-size:12px;color:#888;padding:0 20px">Min 100 Coins = KES 100. Fee: KES 5</p><button class="btn" onclick="submitWithdraw()">Submit Request</button></div></div>
+<div class="me-header"><div style="display:flex;align-items:center;gap:15px"><img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover"><div><h2 id="meName" style="color:#000;margin:0">Name</h2><div style="display:flex;gap:8px;margin-top:5px"><span id="meVIP" style="background:#8B5CF6;color:white;padding:3px 8px;border-radius:12px;font-size:12px">VIP0</span><span id="meLevel" style="background:#4CAF50;color:white;padding:3px 8px;border-radius:12px;font-size:12px">Lv 1</span></div><p id="meID" style="color:#333;font-size:12px;margin-top:5px">ID:123456</p></div></div></div><div class="me-stats"><div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div><div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div><div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div><div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div></div><div class="me-cards"><div class="me-card coin-card" onclick="openIncomeHistory()"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div></div><div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()"><b>Withdraw</b></div></div>
+<div style="padding:0 15px 15px"><b>My Photos (at least 3)</b><div style="display:flex;gap:8px;margin-top:8px">
+<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],0)"><img id="addPhoto0" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt0" style="font-size:28px">+</span></label>
+<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],1)"><img id="addPhoto1" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt1" style="font-size:28px">+</span></label>
+<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],2)"><img id="addPhoto2" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt2" style="font-size:28px">+</span></label>
+<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],3)"><img id="addPhoto3" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt3" style="font-size:28px">+</span></label>
+</div><div id="addPhotoHint" style="font-size:12px;color:#888;margin-top:6px">Tap + to add photo. Boys will see these on your profile.</div></div>
+<div style="padding:0 15px 20px"><div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div><div class="menu-item" onclick="openAccountSettings()">🏦 Receiving Account</div><div class="menu-item" onclick="window.location='about.html'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='about.html'">🔒 Privacy Policy</div><button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button><button onclick="askLogout()" style="width:100%;margin-top:10px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
+<div class="popup" id="withdrawFormPopup"><span class="close-btn" onclick="closePopup('withdrawFormPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Request Withdrawal</h3><div class="form-group"><label>Receiving M-Pesa Number</label><input type="text" id="withdrawMpesa" placeholder="07XXXXXXXX"></div><div class="form-group"><label>Coins to Withdraw</label><input type="number" id="withdrawCoins" placeholder="Min 5000 coins" oninput="updateWdPreview()"></div><div id="wdPreview" style="font-size:12px;color:#888;padding:0 20px">Min 5000 Coins = KES 1500 - Fee KES 250 = You get KES 1250</div><div class="form-group"><label>Withdrawal PIN</label><input type="password" id="withdrawPin" placeholder="Enter 4-6 digit PIN"></div><p style="font-size:12px;color:#888;padding:0 20px">100 Coins = KES 30. Fee: 100 Coins = KES 5. Min 5000 Coins.</p><button class="btn" onclick="submitWithdraw()">Submit Request</button></div></div>
 <div class="popup" id="accountSettingsPopup"><span class="close-btn" onclick="closePopup('accountSettingsPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Receiving Account</h3><div class="form-group"><label>M-Pesa Number</label><input type="text" id="settingMpesa" placeholder="07XXXXXXXX"></div><div class="form-group"><label>Set Withdrawal PIN</label><input type="password" id="settingPin" placeholder="4-6 digits"></div><button class="btn" onclick="saveAccountSettings()">Save</button></div></div>
 <div class="popup" id="withdrawPopup"><span class="close-btn" onclick="closePopup('withdrawPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Withdrawal history</h3><div id="withdrawList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="incomePopup"><span class="close-btn" onclick="closePopup('incomePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>💰 Income History</h3><div id="incomeList" style="margin-top:15px"></div></div></div>
@@ -185,7 +191,66 @@ function renderUsers(filtered){
   });
   document.getElementById('userList').innerHTML = html;
 }
-// ★★★ PROFILE - TAP USER → SEE PROFILE + PHOTOS ★★★
+// ★★★ ADDITIONAL PHOTOS - MIN 3 - SHOWN ON OTHER PERSON'S PROFILE ★★★
+function handleAdditionalPhoto(file, idx){
+  if(!file) return;
+  let r=new FileReader();
+  r.onload=(e)=>{
+    let img=new Image();
+    img.onload=()=>{
+      let maxW=800, w=img.width, h=img.height;
+      if(w>maxW){ h=h*(maxW/w); w=maxW; }
+      let c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      let data=c.toDataURL('image/jpeg',0.7);
+      if(!myProfile.photos) myProfile.photos=[];
+      myProfile.photos[idx]=data;
+      let im=document.getElementById('addPhoto'+idx);
+      let tx=document.getElementById('addPhotoTxt'+idx);
+      if(im){ im.src=data; im.style.display='block'; }
+      if(tx) tx.style.display='none';
+      localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+      localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile));
+      try{ let db=window.PatanishaDB; if(db && myProfile.id) db.ref('users/'+myProfile.id+'/photos').set(myProfile.photos); }catch(e){}
+      let cnt=myProfile.photos.filter(Boolean).length;
+      document.getElementById('addPhotoHint').innerText = cnt>=3 ? '✅ '+cnt+' photos saved - boys can view them' : 'Add at least 3 photos ('+cnt+'/3)';
+      showToast('Photo '+(idx+1)+' saved ✅');
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+function loadAddPhotoPreviews(){
+  if(!myProfile || !myProfile.photos) return;
+  myProfile.photos.forEach((p,i)=>{
+    let im=document.getElementById('addPhoto'+i); let tx=document.getElementById('addPhotoTxt'+i);
+    if(im && p){ im.src=p; im.style.display='block'; if(tx) tx.style.display='none'; }
+  });
+  let cnt=myProfile.photos.filter(Boolean).length;
+  let h=document.getElementById('addPhotoHint'); if(h) h.innerText = cnt>=3 ? '✅ '+cnt+' photos saved - boys can view them' : 'Add at least 3 photos ('+cnt+'/3)';
+}
+function openPhotoViewer(photos, startIdx){
+  let idx=startIdx||0;
+  let old=document.getElementById('photoViewer'); if(old) old.remove();
+  let html=`<div id="photoViewer" style="position:fixed;inset:0;background:#000;z-index:999999;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;color:#fff">
+      <button onclick="document.getElementById('photoViewer').remove()" style="background:#333;color:#fff;border:none;padding:10px 16px;border-radius:20px;font-weight:700;cursor:pointer">← Back</button>
+      <b id="pvCount">${idx+1} / ${photos.length}</b><span style="width:70px"></span>
+    </div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative">
+      <button onclick="photoViewerPrev()" style="position:absolute;left:10px;background:rgba(255,255,255,0.2);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;z-index:2">‹</button>
+      <img id="pvImg" src="${photos[idx]}" style="max-width:100%;max-height:100%;object-fit:contain">
+      <button onclick="photoViewerNext()" style="position:absolute;right:10px;background:rgba(255,255,255,0.2);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;z-index:2">›</button>
+    </div>
+    <div style="display:flex;gap:6px;justify-content:center;padding:12px;overflow-x:auto">${photos.map((p,i)=>`<img src="${p}" onclick="photoViewerGo(${i})" style="width:50px;height:50px;object-fit:cover;border-radius:8px;border:${i===idx?'3px solid #FF8C00':'2px solid #333'};cursor:pointer">`).join('')}</div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  window._pvPhotos=photos; window._pvIdx=idx;
+}
+function photoViewerGo(i){ window._pvIdx=i; let im=document.getElementById('pvImg'); if(im) im.src=window._pvPhotos[i]; let c=document.getElementById('pvCount'); if(c) c.innerText=(i+1)+' / '+window._pvPhotos.length; }
+function photoViewerNext(){ photoViewerGo((window._pvIdx+1)%window._pvPhotos.length); }
+function photoViewerPrev(){ photoViewerGo((window._pvIdx-1+window._pvPhotos.length)%window._pvPhotos.length); }
+// ★★★ PROFILE - TAP USER → SEE *THEIR* 3+ PHOTOS ★★★
 function openProfileById(id){
   let u = users.find(x=> x.id===id);
   if(!u) return;
@@ -195,8 +260,9 @@ function openProfileById(id){
   document.getElementById('profileName').innerText = shortName(u.name) + ' ♂';
   document.getElementById('profileCity').innerText = '📍 ' + (u.city || 'Ruiru') + ' • ID:' + (u.id||'') + ' • Lv' + (u.level||1) + (u.age ? ' • ♂ ' + u.age : '');
   document.getElementById('profileBio').innerText = u.bio || u.desc || 'No bio yet';
-  let photos = (u.photos && u.photos.length) ? u.photos : [u.avatar];
-  document.getElementById('profilePhotos').innerHTML = photos.map(p=>`<img src="${p}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px">`).join('');
+  let photos = (u.photos && u.photos.length) ? u.photos.filter(Boolean) : [u.avatar];
+  window._currentProfilePhotos = photos;
+  document.getElementById('profilePhotos').innerHTML = photos.map((p,i)=>`<img src="${p}" onclick="openPhotoViewer(window._currentProfilePhotos,${i})" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px">`).join('');
   document.getElementById('profilePopup').style.display = 'block';
 }
 function openChatForUser(id){ openProfileById(id); }
@@ -242,6 +308,7 @@ function openMe(){
   document.getElementById('meFollowers').innerText = myProfile.followers?.length || 0;
   document.getElementById('meVisitors').innerText = myProfile.visitors?.length || 0;
   document.getElementById('mePopup').style.display = 'block';
+  loadAddPhotoPreviews();
   history.pushState({popup:'mePopup'}, '', location.pathname + '#me');
 }
 function openAccountSettings(){
@@ -262,19 +329,37 @@ function saveAccountSettings(){
 function openWithdrawForm(){
   document.getElementById('withdrawMpesa').value = myProfile.mpesa || '';
   document.getElementById('withdrawPin').value = '';
+  document.getElementById('withdrawCoins').value = '';
+  document.getElementById('wdPreview').innerText = 'Min 5000 Coins = KES 1500 - Fee KES 250 = You get KES 1250';
   document.getElementById('withdrawFormPopup').style.display = 'block';
 }
+// ★★★ WITHDRAWAL: 100 coins = KES 30 gross, 100 coins = KES 5 fee, Min 5000 ★★★
+function updateWdPreview(){
+  let c=parseInt(document.getElementById('withdrawCoins').value||'0');
+  let el=document.getElementById('wdPreview'); if(!el) return;
+  if(!c){ el.innerText='Min 5000 Coins = KES 1500 - Fee KES 250 = You get KES 1250'; return; }
+  let gross=Math.floor(c/100*30);
+  let fee=Math.floor(c/100*5);
+  let net=gross-fee;
+  el.innerText=c+' coins = KES '+gross+' - Fee KES '+fee+' = You get KES '+net;
+}
 function submitWithdraw(){
-  if((myProfile.coins || 0) < 100){showToast('Minimum 100 coins = KES 100');return;}
+  let coins=parseInt(document.getElementById('withdrawCoins').value||'0');
   let mpesa = document.getElementById('withdrawMpesa').value;
   let pin = document.getElementById('withdrawPin').value;
+  if(!coins || coins<5000){showToast('Minimum withdrawal is 5000 coins');return;}
+  if((myProfile.coins||0)<coins){showToast('Insufficient coins. You have '+(myProfile.coins||0));return;}
   if(mpesa.length < 10){showToast("Enter valid M-Pesa");return;}
   if(pin!== myProfile.withdrawPin){showToast("Wrong Withdrawal PIN");return;}
-  myProfile.coins -= 100;
+  let gross=Math.floor(coins/100*30);
+  let fee=Math.floor(coins/100*5);
+  let net=gross-fee;
+  myProfile.coins -= coins;
   if(!myProfile.withdrawals) myProfile.withdrawals = [];
-  myProfile.withdrawals.unshift({requested: 100, net: 95, mpesa: mpesa,date: new Date().toLocaleString('en-KE'),status: "pending"});
+  myProfile.withdrawals.unshift({requested: coins, gross:gross, fee:fee, net: net, mpesa: mpesa, date: new Date().toLocaleString('en-KE'), status: "pending"});
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
   localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile));
+  try{ let db=window.PatanishaDB; if(db) db.ref('withdrawals').push({userId:myProfile.id,name:myProfile.name,phone:mpesa,coins:coins,gross:gross,fee:fee,net:net,status:'pending',date:new Date().toLocaleString(),ts:Date.now()}); }catch(e){}
   document.getElementById('meCoins').innerText = myProfile.coins;
   closePopup('withdrawFormPopup');
   document.getElementById('successToast').style.display = 'block';
@@ -286,7 +371,7 @@ function renderWithdrawals(){
   let list = document.getElementById('withdrawList');
   if(!myProfile.withdrawals || myProfile.withdrawals.length === 0){list.innerHTML = '<div class="empty">No withdrawals yet</div>';return;}
   let html = '';
-  myProfile.withdrawals.forEach(w=>{html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:white">KES ${w.requested}</b> <span style="color:#aaa;font-size:12px">net KES ${w.net}</span><div style="font-size:12px;color:#888">${w.mpesa} • ${w.date}</div></div>`;});
+  myProfile.withdrawals.forEach(w=>{html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:white">KES ${w.net||w.requested}</b> <span style="color:#aaa;font-size:12px">${w.coins? w.coins+' coins':''} • Fee KES ${w.fee||''}</span><div style="font-size:12px;color:#888">${w.mpesa} • ${w.date}</div></div>`;});
   list.innerHTML = html;
 }
 function openIncomeHistory(){renderIncome();document.getElementById('incomePopup').style.display = 'block';}
@@ -322,7 +407,6 @@ window.addEventListener('popstate', function(e){
 });
 loadUsers();
 </script>
-<!-- ★★★ FIREBASE - STEP 4 ★★★ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
@@ -340,7 +424,6 @@ loadUsers();
   window.PatanishaDB = firebase.database();
   window.PatanishaDBType = 'rtdb';
 </script>
-<!-- ★★★ END FIREBASE ★★★ -->
-<script src="chat-manager/female.js"></script>
+<script src="chat-manager/female.js?v=1002"></script>
 </body>
 </html>
