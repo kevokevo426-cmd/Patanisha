@@ -250,7 +250,7 @@ function openPhotoViewer(photos, startIdx){
 function photoViewerGo(i){ window._pvIdx=i; let im=document.getElementById('pvImg'); if(im) im.src=window._pvPhotos[i]; let c=document.getElementById('pvCount'); if(c) c.innerText=(i+1)+' / '+window._pvPhotos.length; }
 function photoViewerNext(){ photoViewerGo((window._pvIdx+1)%window._pvPhotos.length); }
 function photoViewerPrev(){ photoViewerGo((window._pvIdx-1+window._pvPhotos.length)%window._pvPhotos.length); }
-// ★★★ PROFILE - TAP USER → SEE *THEIR* 3+ PHOTOS ★★★
+// ★★★ PROFILE - TAP USER → FETCH HIS REAL 3+ PHOTOS FROM FIREBASE ★★★
 function openProfileById(id){
   let u = users.find(x=> x.id===id);
   if(!u) return;
@@ -264,13 +264,40 @@ function openProfileById(id){
   window._currentProfilePhotos = photos;
   document.getElementById('profilePhotos').innerHTML = photos.map((p,i)=>`<img src="${p}" onclick="openPhotoViewer(window._currentProfilePhotos,${i})" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px">`).join('');
   document.getElementById('profilePopup').style.display = 'block';
+  try{
+    let db = window.PatanishaDB;
+    if(db && u.id){
+      db.ref('users/'+u.id+'/photos').once('value').then(snap=>{
+        let fbPhotos = snap.val();
+        if(fbPhotos && fbPhotos.length){
+          let p2 = fbPhotos.filter(Boolean);
+          if(p2.length===0) return;
+          window._currentProfilePhotos = p2;
+          u.photos = p2;
+          document.getElementById('profilePhotos').innerHTML = p2.map((p,i)=>`<img src="${p}" onclick="openPhotoViewer(window._currentProfilePhotos,${i})" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px">`).join('');
+        }
+      });
+      db.ref('users/'+u.id).once('value').then(snap=>{
+        let v=snap.val(); if(!v) return;
+        if(v.bio) document.getElementById('profileBio').innerText=v.bio;
+        if(v.avatar){ document.getElementById('profileCover').src=v.avatar; document.getElementById('profileAvatarBig').src=v.avatar; }
+      });
+    }
+  }catch(e){}
 }
 function openChatForUser(id){ openProfileById(id); }
 function startChatFromProfile(){
   if(!currentProfileUser) return;
   closePopup('profilePopup');
-  if(window.ChatManager && ChatManager.openChat) ChatManager.openChat(currentProfileUser);
-  else showToast('Chat loading... tap again');
+  try{
+    let k='patanisha_talkedTo_'+myProfile.id;
+    let arr=JSON.parse(localStorage.getItem(k)||'[]');
+    if(!arr.find(x=>x.id===currentProfileUser.id)) arr.unshift({id:currentProfileUser.id,name:currentProfileUser.name,avatar:currentProfileUser.avatar||'',lastTs:Date.now()});
+    localStorage.setItem(k, JSON.stringify(arr.slice(0,100)));
+  }catch(e){}
+  if(window.ChatManager && ChatManager.openChat){ ChatManager.openChat(currentProfileUser); return; }
+  showToast('Chat loading... tap Chat again');
+  setTimeout(()=>{ if(window.ChatManager && ChatManager.openChat) ChatManager.openChat(currentProfileUser); },1000);
 }
 function startVoiceFromProfile(){
   if(!currentProfileUser) return;
@@ -423,7 +450,22 @@ loadUsers();
   firebase.initializeApp(firebaseConfig);
   window.PatanishaDB = firebase.database();
   window.PatanishaDBType = 'rtdb';
+  // ★★★ Load real boys from Firebase (without photos in list) ★★★
+  try{
+    window.PatanishaDB.ref('users').once('value').then(snap=>{
+      let changed=false;
+      snap.forEach(c=>{
+        let v=c.val()||{}; if(!v.id) v.id=c.key;
+        if(!v.gender || v.gender.toLowerCase().trim()!=='male') return;
+        if(myProfile && v.id===myProfile.id) return;
+        let ex=users.find(x=>x.id===v.id);
+        if(ex){ ex.name=v.name||ex.name; ex.avatar=v.avatar||ex.avatar; ex.city=v.city||ex.city; ex.bio=v.bio||ex.bio; }
+        else { users.push({name:v.name||'User',gender:'Male',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:[],friends:[],following:[],followers:[],level:v.level||1,age:v.age||'',distance:'',id:v.id,activityScore:v.activityScore||0}); changed=true; }
+      });
+      if(changed) loadUsers();
+    });
+  }catch(e){}
 </script>
-<script src="chat-manager/female.js?v=1002"></script>
+<script src="chat-manager/female.js?v=1004"></script>
 </body>
 </html>
