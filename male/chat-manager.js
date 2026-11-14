@@ -1,6 +1,7 @@
 // ===== chat-manager/female.js - FEMALE FREE - FIREBASE REAL CHAT =====
 // Female: Chat / Photo / Voice / Gifts = ALL FREE
 // Fix: NEVER download db.ref('chats') - only load meta for people you talked to
+// Fix: startListening shows chat INSTANTLY - never stuck on Loading
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileFemale(){
@@ -163,16 +164,20 @@ const ChatManager = {
   toggleEmojiPanel(){ let p=document.getElementById('emojiPanel'); if(!p) return; p.style.display=(p.style.display==='none'||!p.style.display)?'flex':'none'; },
   closeEmojiPanel(){ let p=document.getElementById('emojiPanel'); if(p) p.style.display='none'; },
   insertEmoji(e){ let inp=document.getElementById('chatInput'); if(inp){ inp.value+=e; inp.focus(); } },
+  // ★★★ FIXED: Show chat INSTANTLY, never stuck on Loading ★★★
   startListening(){
     let db=getDB(); if(!db || !this.currentChatId){ this.renderMessages([]); return; }
     let box=document.getElementById('chatMessages');
-    if(box) box.innerHTML='<div style="text-align:center;color:#888;padding:30px">Loading real chat... ⏳</div>';
+    if(box) box.innerHTML='<div style="text-align:center;color:#888;padding:30px">Say Hi to '+shortName(this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">FREE - No coins needed</span></div>';
+    let _got=false;
+    let _t=setTimeout(()=>{ if(_got) return; if(this._msgs && this._msgs.length===0) this.renderMessages([]); },3000);
     let ref=db.ref('chats/'+this.currentChatId+'/messages');
     this._listener=ref.on('value', snap=>{
+      _got=true; clearTimeout(_t);
       let msgs=[]; snap.forEach(c=>{ let v=c.val(); msgs.push(v); });
       msgs.sort((a,b)=>(a.ts||0)-(b.ts||0));
       this._msgs=msgs; this.renderMessages(msgs);
-    });
+    }, (err)=>{ clearTimeout(_t); this.renderMessages(this._msgs||[]); });
   },
   renderMessages(msgs){
     let box=document.getElementById('chatMessages'); if(!box) return;
