@@ -1,4 +1,4 @@
-// ===== male/chat-manager.js - MALE PAID - FULL SCREEN VIDEO + RINGTONE + AUTO-CUT <50 + VOICE RECORDER UI =====
+// ===== male/chat-manager.js - MALE PAID - HD VIDEO 720p + RINGTONE + AUTO-CUT <50 + VOICE RECORDER =====
 // Male: 1st message FREE, then 10 coins/msg, Voice 50/min, Video 100/min
 // FIX: Inbox NEVER waits for Firebase. Shows instantly.
 // FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
@@ -72,7 +72,7 @@ function getMaleChatUsers(){
     return true;
   });
 }
-// ===== REAL CALLS - WebRTC + RINGTONE + FULL SCREEN VIDEO =====
+// ===== REAL CALLS - WebRTC HD + RINGTONE + FULL SCREEN VIDEO =====
 let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false, _callTimer=null, _callSeconds=0;
 let _ringtoneTimer=null, _ringCtx=null;
 function _callDB(){ return getDB(); }
@@ -100,6 +100,27 @@ function _stopRingtone(){
   try{ if(_ringCtx) _ringCtx.close(); }catch(e){}
   _ringCtx=null;
 }
+// HD CAMERA SETTINGS - SHARED
+function _hdConstraints(type){
+  return {
+    audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true},
+    video: type==='video' ? {width:{ideal:1280, max:1920}, height:{ideal:720, max:1080}, frameRate:{ideal:30, max:30}, facingMode:'user'} : false
+  };
+}
+function _applyHDBitrate(){
+  try{
+    _peerConn.getSenders().forEach(function(s){
+      if(s.track && s.track.kind==='video'){
+        let p=s.getParameters();
+        if(!p.encodings) p.encodings=[{}];
+        p.encodings[0].maxBitrate=2500000;
+        p.encodings[0].maxFramerate=30;
+        p.degradationPreference='maintain-resolution';
+        s.setParameters(p).catch(()=>{});
+      }
+    });
+  }catch(e){}
+}
 function _showCallUI(user, status, isIncoming){
   _stopRingtone(); _playRingtone();
   document.querySelectorAll('#callScreen').forEach(function(el){ el.remove(); });
@@ -107,14 +128,14 @@ function _showCallUI(user, status, isIncoming){
   cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;flex-direction:column;color:#fff;overflow:hidden';
   document.body.appendChild(cs);
   cs.innerHTML=`
-  <video id="remoteVideo" autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;display:none"></video>
+  <video id="remoteVideo" autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;display:none;filter:brightness(1.1) contrast(1.05)"></video>
   <div id="callTopInfo" style="position:absolute;top:0;left:0;right:0;padding:18px;text-align:center;z-index:3;background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)">
     <img src="${user.avatar||''}" style="width:80px;height:80px;border-radius:50%;border:3px solid #25D366;object-fit:cover;margin:0 auto">
     <div style="font-size:22px;font-weight:700;margin-top:8px">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div>
     <div id="callStatusText" style="color:#fff;font-size:15px;margin-top:4px">${status}</div>
     <div id="callCoinText" style="color:#F59E0B;font-size:14px;font-weight:700;margin-top:4px">Coins: ${myProfile?myProfile.coins||0:0}</div>
   </div>
-  <video id="localVideo" autoplay muted playsinline style="position:absolute;bottom:110px;right:14px;width:110px;height:150px;object-fit:cover;border-radius:14px;border:2px solid #fff;display:none;z-index:4;background:#222"></video>
+  <video id="localVideo" autoplay muted playsinline style="position:absolute;bottom:110px;right:14px;width:120px;height:170px;object-fit:cover;border-radius:14px;border:2px solid #fff;display:none;z-index:4;background:#222;filter:brightness(1.25) contrast(1.1)"></video>
   <div style="position:absolute;bottom:0;left:0;right:0;padding:18px;display:flex;gap:16px;justify-content:center;z-index:5;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent)">
     ${isIncoming?`<button onclick="ChatManager.acceptCall()" style="width:70px;height:70px;background:green;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button>`:''}
     <button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button>
@@ -158,11 +179,12 @@ async function _startRealCall(user, type){
   _currentCallId=getChatId(myProfile.id, user.id)+'_'+Date.now();
   _showCallUI(user, type==='video'?'📹 Video Calling...':'📞 Voice Calling...', false);
   try{
-    _localStream=await navigator.mediaDevices.getUserMedia({audio:true, video:type==='video'});
+    _localStream=await navigator.mediaDevices.getUserMedia(_hdConstraints(type));
     if(type==='video'){ const lv=document.getElementById('localVideo'); if(lv){ lv.srcObject=_localStream; lv.style.display='block'; } const rv=document.getElementById('remoteVideo'); if(rv) rv.style.display='block'; }
   }catch(e){ if(typeof showToast!=='undefined') showToast('Allow Microphone / Camera to call'); _cleanupCall(); return false; }
   _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
   _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
+  _applyHDBitrate();
   _peerConn.ontrack=e=>{ _stopRingtone(); const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; _startCallBilling(); };
   _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/callerCandidates').push(e.candidate.toJSON()); };
   const offer=await _peerConn.createOffer(); await _peerConn.setLocalDescription(offer);
@@ -324,13 +346,14 @@ const ChatManager = {
     _stopRingtone();
     const db=_callDB(); if(!db||!_currentCallId) return;
     const st=document.getElementById('callStatusText'); if(st) st.textContent='Connecting...';
-    try{ _localStream=await navigator.mediaDevices.getUserMedia({audio:true, video:_currentCallType==='video'}); }
+    try{ _localStream=await navigator.mediaDevices.getUserMedia(_hdConstraints(_currentCallType)); }
     catch(e){ if(typeof showToast!=='undefined') showToast('Allow Mic/Camera'); this.endCall(); return; }
     if(_currentCallType==='video'){ const lv=document.getElementById('localVideo'); if(lv){ lv.srcObject=_localStream; lv.style.display='block'; } }
     const snap=await db.ref('calls/'+_currentCallId).once('value');
     const call=snap.val(); if(!call) return;
     _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
     _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
+    _applyHDBitrate();
     _peerConn.ontrack=e=>{ _stopRingtone(); const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const s=document.getElementById('callStatusText'); if(s) s.textContent='✅ Connected'; _startCallBilling(); };
     _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/calleeCandidates').push(e.candidate.toJSON()); };
     await _peerConn.setRemoteDescription(new RTCSessionDescription(call.offer));
@@ -430,7 +453,7 @@ const ChatManager = {
   giftList:[{name:'Heart',coins:50,icon:'❤️'},{name:'Flower',coins:100,icon:'🌸'},{name:'Butterfly',coins:200,icon:'🦋'},{name:'Star',coins:300,icon:'⭐'},{name:'Diamond',coins:500,icon:'💎'}],
   openGiftPanel(user){
     let giftId='giftPanelPopup'; if(document.getElementById(giftId)) document.getElementById(giftId).remove();
-    let html=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#161B22;color:#fff;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Send Gift 🎁</div><button onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#21262D;color:#fff;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((g,i)=>`<button onclick="ChatManager.selectGift(${i},'${giftId}')" style="min-height:140px;border:1px solid #30363D;border-radius:18px;background:#21262D;color:#fff;cursor:pointer;padding:8px 5px"><div style="font-size:50px">${g.icon}</div><div style="font-size:14px;font-weight:600;color:#F59E0B">${g.coins} coins</div><div style="margin-top:5px;font-size:14px">${g.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #30363D;color:#8B949E;font-size:13px;text-align:center">Sending gift to <strong style="color:#fff">${typeof shortName!=='undefined'?shortName(user.name):user.name}</strong> • Balance: ${myProfile?myProfile.coins||0:0} coins</div></div></div>`;
+    let html=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#161B22;color:#fff;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Send Gift 🎁</div><button onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#21262D;color:#fff;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((g,i)=>`<button onclick="ChatManager.selectGift(${i},'${giftId}')" style="background:#21262D;color:#fff;border:1px solid #30363D;border-radius:18px;min-height:140px;cursor:pointer;padding:8px 5px"><div style="font-size:50px">${g.icon}</div><div style="font-size:14px;font-weight:600;color:#F59E0B">${g.coins} coins</div><div style="margin-top:5px;font-size:14px">${g.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #30363D;color:#8B949E;font-size:13px;text-align:center">Sending gift to <strong style="color:#fff">${typeof shortName!=='undefined'?shortName(user.name):user.name}</strong> • Balance: ${myProfile?myProfile.coins||0:0} coins</div></div></div>`;
     document.body.insertAdjacentHTML('beforeend', html);
   },
   selectGift(index,giftPanelId){ let g=this.giftList[index]; if(!g) return; this.sendGift(g,this.currentChatUser,giftPanelId); },
