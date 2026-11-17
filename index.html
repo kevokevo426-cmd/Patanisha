@@ -15,457 +15,296 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .banner{background:linear-gradient(135deg,#FFD700,#FFA500);margin:10px;padding:12px 14px;border-radius:15px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .banner-text{flex:1;min-width:0}
 .banner-text b{font-size:14px;display:block;margin-bottom:5px;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.banner-text p{font-size:11px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.banner-btn{background:linear-gradient(135deg,#FF5252,#FF1744);color:white;border:none;padding:9px 16px;border-radius:20px;font-weight:bold;cursor:pointer;flex-shrink:0;font-size:13px}
-.tabs-wrapper{position:sticky;top:0;background:#f5f5f5;z-index:10;width:100%;overflow:hidden}
-.tabs{display:flex;gap:4px;padding:10px 8px;border-bottom:2px solid #eee;overflow-x:auto;background:white;scroll-behavior:smooth;align-items:center;white-space:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.tabs::-webkit-scrollbar{display:none}
-.tab{color:#666;font-weight:600;font-size:14px;padding:8px 10px;cursor:pointer;white-space:nowrap;position:relative;border:none;background:transparent;flex-shrink:0}
-.tab.active{color:#000;font-weight:800;font-size:14px}
-.tab.active::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:3px;background:#FFD700;border-radius:2px}
-.search-btn{margin-left:auto;background:#FF8C00;color:#fff;border:none;padding:8px 12px;border-radius:20px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:13px;flex-shrink:0}
-#searchByIdBar{width:100%;box-sizing:border-box}
-#searchIdInput{min-width:0;flex:1;font-size:14px}
-#userList{display:grid;grid-template-columns:1fr;gap:0;touch-action:pan-y}
-@media(min-width:768px){#userList{grid-template-columns:1fr 1fr;padding:0 10px}.banner{margin:20px}.tabs{border-radius:12px;margin:10px}}
-@media(min-width:1024px){#userList{grid-template-columns:1fr 1fr 1fr}}
-.card{display:flex;background:white;margin:10px;padding:15px;border-radius:12px;align-items:flex-start;box-shadow:0 2px 5px rgba(0,0,0,0.05);cursor:pointer}
-.avatar{width:70px;height:70px;border-radius:50%;border:3px solid #FFD700;position:relative;margin-right:12px;cursor:pointer;flex-shrink:0}
-.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-.online{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid white}
-.avatar-badge{position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);background:#8B5CF6;color:white;font-size:10px;padding:2px 6px;border-radius:8px}
-.card-info{flex:1;cursor:pointer;min-width:0}
-.card-info h3{font-size:16px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.friends-count{font-size:11px;color:#888;margin-bottom:4px}
-.badges{display:flex;gap:5px;margin:4px 0;flex-wrap:wrap}
-.badge{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold;color:white}
-.badge-vip{background:linear-gradient(135deg,#BA55D3,#9370DB)}
-.badge-level{background:#00C853}
-.badge-distance{background:#C8E6C9;color:#2E7D32}
-.badge-age{background:#BBDEFB;color:#1565C0}
-.desc{font-size:12px;color:#666;margin-top:4px}
-.btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.hi-btn,.add-btn,.follow-btn{background:linear-gradient(135deg,#FFA500,#FF8C00);border:none;border-radius:20px;padding:8px 16px;color:white;font-weight:bold;font-size:13px;cursor:pointer}
-.add-btn{background:linear-gradient(135deg,#00C853,#00BFA5)}
-.follow-btn{background:#666}
-.follow-btn.following{background:#00C853}
-.nav{position:fixed;bottom:0;left:0;width:100%;background:white;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:99}
-@media(min-width:768px){.nav{max-width:600px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0}}
-.nav-item{text-align:center;font-size:11px;color:#999;cursor:pointer;position:relative;flex:1}
-.nav-item.active{color:#FF8C00}
-.nav-icon{font-size:26px;display:block}
-.notif{position:absolute;background:red;color:white;border-radius:10px;font-size:10px;padding:1px 5px;top:-2px;right:calc(50% - 20px);display:none}
-.popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;overflow-y:auto}
-.popup-content{background:white;margin:5% auto;border-radius:15px;text-align:center;position:relative;max-width:500px;width:90%}
-.close-btn{position:absolute;top:10px;right:20px;font-size:30px;color:#666;cursor:pointer;z-index:10}
-.chat-box{height:300px;overflow-y:auto;background:#f5f5f5;border-radius:10px;padding:10px;margin:10px 0;text-align:left}
-.msg{background:#FFA500;color:white;padding:8px 12px;border-radius:15px;margin:5px 0;max-width:70%;display:inline-block;clear:both;float:left}
-.msg.me{background:#FFD700;color:#000;float:right}
-.empty{text-align:center;padding:40px;color:#999}
-.search-box{width:90%;max-width:500px;margin:10px auto;display:block;padding:12px;border:1px solid #ddd;border-radius:20px;font-size:16px}
-.form-group{margin-bottom:16px;text-align:left;padding:0 20px}
-.form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:14px;color:#333}
-.form-group input{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:15px;background:#f8f8f8}
-.me-header{background:linear-gradient(135deg,#FFD700,#FFA500);padding:25px 20px;border-radius:15px 15px 0 0}
-.me-stats{display:flex;justify-content:space-around;padding:15px 10px;background:white}
-.stat-item{text-align:center;cursor:pointer}
-.stat-num{font-size:20px;font-weight:bold}
-.stat-label{font-size:12px;color:#888}
-.me-cards{display:flex;gap:10px;padding:0 15px 15px}
-.me-card{flex:1;border-radius:12px;padding:15px;display:flex;align-items:center;gap:8px;cursor:pointer}
-.coin-card{background:#FFD700}
-.relation-card{background:#E3F2FD;margin:0 15px 15px;padding:15px;border-radius:12px;text-align:left}
-.menu-item{padding:12px 0;border-bottom:1px solid #eee;text-align:left;display:flex;align-items:center;gap:10px;cursor:pointer}
-.menu-item:hover{background:#f9f9f9}
-.btn{width:100%;padding:16px;background:linear-gradient(135deg,#BA55D3,#9370DB);color:#fff;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px}
-#successToast{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#E8F5E9;color:#2E7D32;padding:12px 20px;border-radius:12px;font-weight:600;z-index:1001;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
-#appToast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;z-index:999999;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:90%;text-align:center;display:none}
-.profile-popup-body{padding:0;text-align:left}
-.profile-cover{height:250px;position:relative}
-.profile-cover img{width:100%;height:100%;object-fit:cover}
-.profile-avatar-big{width:100px;height:100px;border-radius:50%;border:4px solid #fff;position:absolute;bottom:-50px;left:20px;object-fit:cover;background:#fff}
-.profile-info{padding:70px 20px 20px}
-.profile-name{font-size:22px;font-weight:800;color:#000}
-.profile-city{color:#888;font-size:14px;margin:5px 0 15px}
-.profile-bio{background:#f5f5f5;padding:15px;border-radius:12px;color:#333;line-height:1.6}
-.profile-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:15px 0}
-.profile-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;cursor:pointer}
-.action-btns{display:flex;gap:10px;margin-top:20px}
-.action-btn{flex:1;padding:14px;border-radius:12px;border:none;font-weight:700;font-size:14px;cursor:pointer}
-.btn-chat{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff}
-.btn-voice{background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff}
-.btn-video{background:linear-gradient(135deg,#2196F3,#1976D2);color:#fff}
+.banner-text span{font-size:12px;color:#333}
+.banner img{width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0}
+.topbar{background:#FFA4C7;padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.topbar img{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #fff;cursor:pointer}
+.topbar .me{flex:1;min-width:0}
+.topbar .me b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .me span{font-size:12px;color:#333}
+.coin-pill{background:#fff;padding:8px 12px;border-radius:20px;font-weight:800;font-size:13px;white-space:nowrap}
+.tabs{display:flex;gap:8px;padding:10px;overflow-x:auto}
+.tabs button{border:none;background:#fff;padding:10px 16px;border-radius:20px;font-weight:700;cursor:pointer;white-space:nowrap}
+.tabs button.active{background:#FF8C00;color:#fff}
+.card{background:#fff;margin:10px;border-radius:15px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,.05);cursor:pointer}
+.card img{width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700;flex-shrink:0}
+.card .info{flex:1;min-width:0}
+.card .info b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .info span{font-size:12px;color:#888}
+.card .actions{display:flex;gap:6px;flex-shrink:0}
+.btn{border:none;padding:10px 14px;border-radius:20px;font-weight:700;cursor:pointer}
+.btn-orange{background:#FF8C00;color:#fff}
+.btn-pink{background:#FFA4C7;color:#000}
+.btn-green{background:#25D366;color:#fff}
+.btn-grey{background:#eee;color:#000}
+.section{background:#fff;margin:10px;border-radius:15px;padding:16px}
+.section h3{margin-bottom:10px}
+.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+.row b{color:#000}
+input,select{width:100%;padding:13px 14px;border:1px solid #ddd;border-radius:14px;font-size:15px;outline:none;margin-top:6px}
+label{display:block;margin-top:12px;font-weight:700;font-size:14px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #eee;z-index:100}
+.bottom-nav button{flex:1;border:none;background:none;padding:12px 4px;font-size:12px;cursor:pointer}
+.bottom-nav button.active{color:#FF8C00;font-weight:800}
+.notice{background:#FFF3CD;padding:12px;border-radius:12px;font-size:13px;margin:10px}
+.hidden{display:none!important}
 </style>
 </head>
 <body>
-<div id="appToast"></div>
 <div class="wrapper">
-<div class="banner"><div class="banner-text"><b>Set up 3 Say hi texts</b><p>The other user is more likely to reply to you</p></div><button class="banner-btn" onclick="openHiSetup()">Go</button></div>
-<div class="tabs-wrapper">
-  <div class="tabs" id="tabs">
-    <button class="tab" onclick="switchTab('recommend', this)">Recommend</button>
-    <button class="tab active" onclick="switchTab('nearby', this)">Nearby</button>
-    <button class="tab" onclick="switchTab('top', this)">🏆 Top</button>
-    <button class="search-btn" onclick="openSearchById()">🔍 Search</button>
-  </div>
-  <div id="searchByIdBar" style="display:none;padding:8px 10px;background:white">
-    <div style="display:flex;gap:8px;background:#f5f5f5;padding:8px;border-radius:25px">
-      <input id="searchIdInput" placeholder="Search by ID e.g. PT585065" style="flex:1;padding:10px;border:none;background:transparent;outline:none">
-      <button onclick="searchUserById()" style="background:#FF8C00;color:#fff;border:none;padding:10px 18px;border-radius:20px;font-weight:700;cursor:pointer;flex-shrink:0">Search</button>
-      <button onclick="closeSearchById()" style="background:#666;color:#fff;border:none;padding:10px 14px;border-radius:20px;cursor:pointer;flex-shrink:0">✕</button>
+
+<!-- TOP -->
+<div class="topbar">
+  <img id="meAvatar" src="logo-192.png" onclick="showPage('profile')">
+  <div class="me"><b id="meName">Hi, Lady 👋</b><span>Ladies: FREE • You earn coins</span></div>
+  <div class="coin-pill">🪙 <span id="meCoins">0</span></div>
+  <button class="btn btn-orange" onclick="ChatManager.openInbox()">💬</button>
+</div>
+
+<div class="banner">
+  <div class="banner-text"><b>🔥 Chat with boys — FREE for ladies</b><span>Chat • Photo • Voice • Calls • Gifts — All FREE. You earn!</span></div>
+  <img src="logo-192.png">
+</div>
+
+<div class="tabs">
+  <button class="active" onclick="filterGender('all',this)">All Boys</button>
+  <button onclick="filterGender('online',this)">● Online</button>
+  <button onclick="showPage('income')">💰 My Earnings</button>
+  <button onclick="openWithdraw()">🏧 Withdraw</button>
+</div>
+
+<!-- HOME -->
+<div id="page-home">
+  <div class="notice">💡 <b>How you earn:</b> Boys pay to chat you. You get coins. <b>1000 coins = KES 30.</b> Withdraw min 5000 coins. Fee: KES 100 = KES 5.</div>
+  <div id="boysList"></div>
+  <div id="noBoys" class="section hidden" style="text-align:center;color:#888">No boys yet. Pull to refresh.<br><br><button class="btn btn-orange" onclick="location.reload()">↻ Reload</button></div>
+</div>
+
+<!-- INCOME -->
+<div id="page-income" class="hidden">
+  <div class="section">
+    <h3>💰 My Earnings</h3>
+    <div class="row"><span>Balance</span><b>🪙 <span id="incomeBalance">0</span> coins</b></div>
+    <div class="row"><span>Value (1000 = KES 30)</span><b id="incomeValue">KES 0.00</b></div>
+    <div class="row"><span>After 5% fee if you withdraw all</span><b id="incomeNet">KES 0.00</b></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-orange" style="flex:1" onclick="openWithdraw()">🏧 Withdraw</button>
+      <button class="btn btn-grey" style="flex:1" onclick="loadFemaleEarnings()">↻ Refresh</button>
     </div>
+    <p style="font-size:12px;color:#888;margin-top:10px">1000 Coins = KES 30. Fee: KES 100 = KES 5. Min 5000 Coins.</p>
+  </div>
+  <div class="section"><h3>History</h3><div id="incomeList"><p style="color:#888;font-size:13px">No earnings yet.</p></div></div>
+</div>
+
+<!-- PROFILE -->
+<div id="page-profile" class="hidden">
+  <div class="section">
+    <h3>👤 My Profile</h3>
+    <div style="text-align:center"><img id="profileAvatar" src="logo-192.png" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #FFD700"></div>
+    <label>Full Name</label><input id="editName">
+    <label>City / Estate</label><input id="editCity" placeholder="e.g. Ruiru">
+    <label>Age</label><input id="editAge" type="number" placeholder="18+">
+    <label>About Me</label><input id="editBio" placeholder="Tell boys about you...">
+    <label>Receiving M-Pesa Number</label><input id="editMpesa" type="tel" placeholder="07XXXXXXXX">
+    <label>Withdrawal PIN (4-6 digits)</label><input id="editPin" type="password" inputmode="numeric" placeholder="Set your PIN">
+    <div class="row"><span>Receiving Account</span><b id="profileMpesa">Not set</b></div>
+    <div class="row"><span>Coins</span><b id="profileCoins">0</b></div>
+    <div class="row"><span>Value</span><b id="profileValue">KES 0.00</b></div>
+    <button class="btn btn-orange" style="width:100%;margin-top:14px" onclick="saveProfile()">Save Profile</button>
+    <button class="btn btn-grey" style="width:100%;margin-top:8px" onclick="openWithdraw()">🏧 Request Withdrawal</button>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-grey" style="flex:1" onclick="alert('Terms: 18+ only. Be respectful. No sharing private contacts outside app. Patanisha can remove abusive accounts.')">📄 Terms</button>
+      <button class="btn btn-grey" style="flex:1" onclick="alert('Privacy: Your chats are private. We never share your M-Pesa number with other users.')">🔒 Privacy</button>
+    </div>
+    <button class="btn" style="width:100%;margin-top:14px;background:#D32F2F;color:#fff" onclick="logout()">🚪 Log Out</button>
   </div>
 </div>
-<div id="userList"></div>
+
 </div>
-<div class="nav"><div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div><div class="nav-item" onclick="window.location='about.html'"><span class="nav-icon">ℹ️</span>About</div><div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat<span class="notif" id="chatNotif">0</span></div><div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div></div>
-<div class="popup" id="profilePopup"><span class="close-btn" onclick="closePopup('profilePopup')">×</span><div class="popup-content profile-popup-body"><div class="profile-cover"><img id="profileCover" src=""><img id="profileAvatarBig" class="profile-avatar-big" src=""></div><div class="profile-info"><div class="profile-name" id="profileName"></div><div class="profile-city" id="profileCity"></div><div class="profile-bio" id="profileBio"></div><h3 style="margin:20px 0 10px;color:#000">Photos</h3><div class="profile-photos" id="profilePhotos"></div><p style="font-size:12px;color:#888;text-align:center">Tap a photo to view</p><div class="action-btns"><button class="action-btn btn-chat" onclick="startChatFromProfile()">💬 Chat</button><button class="action-btn btn-voice" onclick="startVoiceFromProfile()">📞 Voice</button><button class="action-btn btn-video" onclick="startVideoFromProfile()">📹 Video</button></div></div></div></div>
-<div class="popup" id="mePopup"><div class="popup-content" style="text-align:left; padding:0">
-<div style="display:flex;align-items:center;gap:10px;padding:12px 15px;background:#FFA500;border-radius:15px 15px 0 0;position:sticky;top:0;z-index:10">
-  <button onclick="closePopup('mePopup')" style="background:#fff;color:#000;border:none;padding:10px 16px;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer">← Back</button>
-  <span style="color:#fff;font-weight:700;font-size:16px">My Profile</span>
-  <button onclick="closePopup('mePopup')" style="margin-left:auto;width:38px;height:38px;border:none;border-radius:50%;background:#fff;color:#000;font-size:22px;font-weight:900;cursor:pointer">✕</button>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="active" onclick="showPage('home',this)">🏠<br>Home</button>
+  <button onclick="ChatManager.openInbox()">💬<br>Chats</button>
+  <button onclick="showPage('income',this)">💰<br>Earnings</button>
+  <button onclick="showPage('profile',this)">👤<br>Profile</button>
 </div>
-<div class="me-header"><div style="display:flex;align-items:center;gap:15px"><img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover"><div><h2 id="meName" style="color:#000;margin:0">Name</h2><div style="display:flex;gap:8px;margin-top:5px"><span id="meVIP" style="background:#8B5CF6;color:white;padding:3px 8px;border-radius:12px;font-size:12px">VIP0</span><span id="meLevel" style="background:#4CAF50;color:white;padding:3px 8px;border-radius:12px;font-size:12px">Lv 1</span></div><p id="meID" style="color:#333;font-size:12px;margin-top:5px">ID:123456</p></div></div></div><div class="me-stats"><div class="stat-item"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div><div class="stat-item"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div><div class="stat-item"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div><div class="stat-item"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div></div><div class="me-cards"><div class="me-card coin-card" onclick="openIncomeHistory()"><span style="background:#000;color:#FFD700;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#333">Income</div><b id="meCoins">20</b></div></div><div class="me-card" style="background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;justify-content:center;cursor:pointer" onclick="openWithdrawForm()"><b>Withdraw</b></div></div>
-<div style="padding:0 15px 15px"><b>My Photos (at least 3)</b><div style="display:flex;gap:8px;margin-top:8px">
-<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],0)"><img id="addPhoto0" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt0" style="font-size:28px">+</span></label>
-<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],1)"><img id="addPhoto1" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt1" style="font-size:28px">+</span></label>
-<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],2)"><img id="addPhoto2" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt2" style="font-size:28px">+</span></label>
-<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],3)"><img id="addPhoto3" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt3" style="font-size:28px">+</span></label>
-</div><div id="addPhotoHint" style="font-size:12px;color:#888;margin-top:6px">Tap + to add photo. Boys will see these on your profile.</div></div>
-<div style="padding:0 15px 20px"><div class="menu-item" onclick="openWithdrawHistory()">📜 Withdrawal History</div><div class="menu-item" onclick="openAccountSettings()">🏦 Receiving Account</div><div class="menu-item" onclick="window.location='about.html'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='about.html'">🔒 Privacy Policy</div><button class="hi-btn" onclick="window.location='register/index.html'" style="width:100%;margin-top:15px">Edit Profile</button><button onclick="askLogout()" style="width:100%;margin-top:10px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
-<div class="popup" id="withdrawFormPopup"><span class="close-btn" onclick="closePopup('withdrawFormPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Request Withdrawal</h3><div class="form-group"><label>Receiving M-Pesa Number</label><input type="text" id="withdrawMpesa" placeholder="07XXXXXXXX"></div><div class="form-group"><label>Coins to Withdraw</label><input type="number" id="withdrawCoins" placeholder="Min 5000 coins" oninput="updateWdPreview()"></div><div id="wdPreview" style="font-size:12px;color:#888;padding:0 20px">Min 5000 Coins = KES 1500 - Fee KES 250 = You get KES 1250</div><div class="form-group"><label>Withdrawal PIN</label><input type="password" id="withdrawPin" placeholder="Enter 4-6 digit PIN"></div><p style="font-size:12px;color:#888;padding:0 20px">100 Coins = KES 30. Fee: 100 Coins = KES 5. Min 5000 Coins.</p><button class="btn" onclick="submitWithdraw()">Submit Request</button></div></div>
-<div class="popup" id="accountSettingsPopup"><span class="close-btn" onclick="closePopup('accountSettingsPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Receiving Account</h3><div class="form-group"><label>M-Pesa Number</label><input type="text" id="settingMpesa" placeholder="07XXXXXXXX"></div><div class="form-group"><label>Set Withdrawal PIN</label><input type="password" id="settingPin" placeholder="4-6 digits"></div><button class="btn" onclick="saveAccountSettings()">Save</button></div></div>
-<div class="popup" id="withdrawPopup"><span class="close-btn" onclick="closePopup('withdrawPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Withdrawal history</h3><div id="withdrawList" style="margin-top:15px"></div></div></div>
-<div class="popup" id="incomePopup"><span class="close-btn" onclick="closePopup('incomePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>💰 Income History</h3><div id="incomeList" style="margin-top:15px"></div></div></div>
-<div id="successToast">✅ Withdrawal requested. We'll process it shortly.</div>
-<div id="logoutConfirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999999;align-items:center;justify-content:center"><div style="background:#fff;padding:25px;border-radius:20px;text-align:center;width:85%;max-width:300px;color:#000"><h3>Log out?</h3><p style="color:#888;font-size:13px;margin:8px 0 18px">You will need to sign in again.</p><div style="display:flex;gap:10px"><button onclick="closeLogoutConfirm()" style="flex:1;padding:14px;border:none;border-radius:12px;background:#eee;color:#000;font-weight:700;cursor:pointer">Cancel</button><button onclick="logoutUser()" style="flex:1;padding:14px;border:none;border-radius:12px;background:#FF5252;color:#fff;font-weight:700;cursor:pointer">Log Out</button></div></div></div>
+
+<!-- WITHDRAW POPUP - NEW RATES -->
+<div id="withdrawPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:flex-end;justify-content:center">
+  <div style="width:100%;max-width:650px;background:#fff;border-radius:25px 25px 0 0;padding:20px;max-height:92vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b style="font-size:22px">Request Withdrawal</b>
+      <button onclick="closeWithdraw()" style="border:none;background:none;font-size:30px;cursor:pointer">×</button>
+    </div>
+    <label>Receiving M-Pesa Number</label>
+    <input id="withdrawPhone" type="tel" placeholder="07XXXXXXXX">
+    <label>Coins to Withdraw</label>
+    <input id="withdrawCoins" type="number" min="5000" placeholder="Min 5000 coins" oninput="updateWithdrawPreview()">
+    <div id="withdrawPreview" style="margin:10px 0;color:#666;font-size:14px">Min 5000 Coins = KES 150 - Fee KES 7.50 = You get KES 142.50</div>
+    <label>Withdrawal PIN</label>
+    <input id="withdrawPin" type="password" inputmode="numeric" placeholder="Enter 4-6 digit PIN">
+    <p style="margin:10px 0;color:#888;font-size:13px">1000 Coins = KES 30. Fee: KES 100 = KES 5. Min 5000 Coins.</p>
+    <button onclick="submitWithdraw()" style="width:100%;padding:16px;border:none;border-radius:16px;background:#C86BFF;color:#fff;font-size:18px;font-weight:700;cursor:pointer">Submit Request</button>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script>
-let myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile'));
-let isOnRegisterPage = window.location.pathname.includes('register');
-if(!myProfile && !isOnRegisterPage){ window.location.href = 'register/index.html'; }
-const tabsOrder = ['recommend','nearby','top'];
-let currentTab = 'nearby';
-let currentChatUser = '';
-let currentProfileUser = null;
-let userCity = (myProfile && myProfile.city) ? myProfile.city : 'Ruiru';
-let chats = JSON.parse(localStorage.getItem('patanishaChats')) || {};
-let blocked = JSON.parse(localStorage.getItem('blockedUsers')) || [];
-if(!Array.isArray(blocked)) blocked = Object.keys(blocked);
-let users = JSON.parse(localStorage.getItem('patanishaUsers')) || [
-  {name:"Lawi Lonyama", gender:"Male", avatar:"https://i.pravatar.cc/100?img=11", friends:[], following:[], followers:[], level:16, distance:"42.8km", age:20, city:"Ruiru", id:"PT585065", activityScore:12},
-  {name:"Prince Kolawole", gender:"Male", avatar:"https://i.pravatar.cc/100?img=5", friends:[], following:[], followers:[], level:12, distance:"5.8km", age:22, city:"Ruiru", id:"PT585066", activityScore:30},
-  {name:"Leonard EA", gender:"Male", avatar:"https://i.pravatar.cc/100?img=13", friends:[], following:[], followers:[], level:8, distance:"12.3km", age:21, city:"Ruiru", desc:"VIP User", id:"PT585067", activityScore:5}
-];
-function showToast(msg){ let t=document.getElementById('appToast'); t.innerText=msg; t.style.display='block'; clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.display='none',2500); }
-function shortName(name){ if(!name) return 'User'; let n=name.split(' ')[0]; if(n.length>12) n=n.substring(0,12)+'...'; return n; }
-function getVIPLevel(friends){if(friends >= 50) return 5;if(friends >= 40) return 4;if(friends >= 30) return 3;if(friends >= 20) return 2;if(friends >= 10) return 1;return 0;}
-function saveUsers(){localStorage.setItem('patanishaUsers', JSON.stringify(users))}
-function switchTab(tab, el){ currentTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); loadUsers(); }
-function filterUsers(){
-  let filtered = users.filter(u => !blocked.includes(u.name));
-  if(myProfile) filtered = filtered.filter(u => u.name!== myProfile.name);
-  filtered = filtered.filter(u => u.gender && u.gender.toLowerCase().trim() === 'male');
-  if(currentTab === 'nearby'){
-    let myTown = (myProfile && myProfile.city ? myProfile.city : userCity).trim().toLowerCase();
-    return filtered.filter(u => (u.city||'').trim().toLowerCase() === myTown);
-  }
-  if(currentTab === 'top'){
-    return [...filtered].sort((a,b)=>{
-      let sa = (a.activityScore||0) + (a.msgCount||0)*2 + (a.giftsReceived||0)*5 + (a.loginCount||0);
-      let sb = (b.activityScore||0) + (b.msgCount||0)*2 + (b.giftsReceived||0)*5 + (b.loginCount||0);
-      if(sa===0 && sb===0) return (b.coins||0)-(a.coins||0);
-      return sb-sa;
-    });
-  }
-  return filtered;
+const firebaseConfig = {
+  apiKey: "AIzaSyDUMMY-REPLACE-WITH-YOURS",
+  authDomain: "patanisha.firebaseapp.com",
+  databaseURL: "https://patanisha-default-rtdb.firebaseio.com",
+  projectId: "patanisha",
+  storageBucket: "patanisha.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};
+try{ firebase.initializeApp(firebaseConfig); window.PatanishaDB = firebase.database(); }catch(e){ console.log('Firebase init',e); }
+</script>
+<script src="chat-manager/female.js"></script>
+<script>
+// ===== NEW RATES - SINGLE SOURCE OF TRUTH =====
+const KES_PER_1000_COINS = 30; // 1000 coins = KES 30
+const FEE_RATE = 0.05;         // KES 100 = KES 5 fee
+const MIN_WITHDRAW_COINS = 5000;
+function coinsToKES(c){ return (Number(c||0)*KES_PER_1000_COINS/1000); }
+function withdrawFeeKES(c){ return coinsToKES(c)*FEE_RATE; }
+function withdrawNetKES(c){ return coinsToKES(c)-withdrawFeeKES(c); }
+function shortName(n){ if(!n) return 'User'; let p=String(n).trim().split(' '); return p.length>1 ? p[0]+' '+p[1][0]+'.' : p[0]; }
+function showToast(m){ let t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:12px 18px;border-radius:20px;z-index:999999;font-size:14px;max-width:90%;text-align:center'; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
+
+// ===== PROFILE =====
+let myProfile = null, users = [], currentFilter='all';
+try{ myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_female')||localStorage.getItem('patanisha_myProfile')||'null'); }catch(e){}
+if(!myProfile){ location.href='register/index.html'; }
+let myPin = localStorage.getItem('patanisha_pin_'+(myProfile&&myProfile.id))||'';
+function refreshMe(){
+  if(!myProfile) return;
+  document.getElementById('meName').textContent = 'Hi, '+shortName(myProfile.name)+' 👋';
+  document.getElementById('meCoins').textContent = myProfile.coins||0;
+  document.getElementById('meAvatar').src = myProfile.avatar||'logo-192.png';
+  document.getElementById('profileAvatar').src = myProfile.avatar||'logo-192.png';
+  document.getElementById('profileCoins').textContent = myProfile.coins||0;
+  document.getElementById('profileValue').textContent = 'KES '+coinsToKES(myProfile.coins||0).toFixed(2);
+  document.getElementById('incomeBalance').textContent = myProfile.coins||0;
+  document.getElementById('incomeValue').textContent = 'KES '+coinsToKES(myProfile.coins||0).toFixed(2);
+  document.getElementById('incomeNet').textContent = 'KES '+withdrawNetKES(myProfile.coins||0).toFixed(2);
+  document.getElementById('editName').value = myProfile.name||'';
+  document.getElementById('editCity').value = myProfile.city||'';
+  document.getElementById('editAge').value = myProfile.age||'';
+  document.getElementById('editBio').value = myProfile.bio||'';
+  document.getElementById('editMpesa').value = myProfile.mpesa||'';
+  document.getElementById('editPin').value = myPin||'';
+  document.getElementById('profileMpesa').textContent = myProfile.mpesa||'Not set';
+  document.getElementById('withdrawPhone').value = myProfile.mpesa||'';
 }
-function loadUsers(){let filtered = filterUsers();renderUsers(filtered);}
-function renderUsers(filtered){
-  if(filtered.length === 0){document.getElementById('userList').innerHTML = '<div class="empty" style="grid-column:1/-1">No boys found yet<br><span style="font-size:12px">No Male users in '+userCity+' yet</span></div>';return;}
-  let html = '';
-  filtered.forEach(u=>{
-    let vipLevel = getVIPLevel(u.friends.length);
-    let vipBadge = vipLevel > 0? 'VIP' + vipLevel : '';
-    html += `<div class="card" onclick="openProfileById('${u.id}')"><div class="avatar"><img src="${u.avatar}"><div class="online"></div>${vipBadge?`<div class="avatar-badge">${vipBadge}</div>`:''}</div><div class="card-info"><h3>${shortName(u.name)} ♂</h3><div class="friends-count">${u.friends.length} friends • ID:${u.id||''}</div><div class="badges">${vipBadge?`<span class="badge badge-vip">${vipBadge}</span>`:''}<span class="badge badge-level">Lv${u.level}</span></div><div class="badges"><span class="badge badge-distance">${u.distance||''}</span><span class="badge badge-age">♂ ${u.age}</span></div>${u.desc?`<p class="desc">${u.desc}</p>`:''}</div></div>`
-  });
-  document.getElementById('userList').innerHTML = html;
-}
-// ★★★ ADDITIONAL PHOTOS - MIN 3 - SHOWN ON OTHER PERSON'S PROFILE ★★★
-function handleAdditionalPhoto(file, idx){
-  if(!file) return;
-  let r=new FileReader();
-  r.onload=(e)=>{
-    let img=new Image();
-    img.onload=()=>{
-      let maxW=800, w=img.width, h=img.height;
-      if(w>maxW){ h=h*(maxW/w); w=maxW; }
-      let c=document.createElement('canvas'); c.width=w; c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      let data=c.toDataURL('image/jpeg',0.7);
-      if(!myProfile.photos) myProfile.photos=[];
-      myProfile.photos[idx]=data;
-      let im=document.getElementById('addPhoto'+idx);
-      let tx=document.getElementById('addPhotoTxt'+idx);
-      if(im){ im.src=data; im.style.display='block'; }
-      if(tx) tx.style.display='none';
-      localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
-      localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile));
-      try{ let db=window.PatanishaDB; if(db && myProfile.id) db.ref('users/'+myProfile.id+'/photos').set(myProfile.photos); }catch(e){}
-      let cnt=myProfile.photos.filter(Boolean).length;
-      document.getElementById('addPhotoHint').innerText = cnt>=3 ? '✅ '+cnt+' photos saved - boys can view them' : 'Add at least 3 photos ('+cnt+'/3)';
-      showToast('Photo '+(idx+1)+' saved ✅');
-    };
-    img.src=e.target.result;
-  };
-  r.readAsDataURL(file);
-}
-function loadAddPhotoPreviews(){
-  if(!myProfile || !myProfile.photos) return;
-  myProfile.photos.forEach((p,i)=>{
-    let im=document.getElementById('addPhoto'+i); let tx=document.getElementById('addPhotoTxt'+i);
-    if(im && p){ im.src=p; im.style.display='block'; if(tx) tx.style.display='none'; }
-  });
-  let cnt=myProfile.photos.filter(Boolean).length;
-  let h=document.getElementById('addPhotoHint'); if(h) h.innerText = cnt>=3 ? '✅ '+cnt+' photos saved - boys can view them' : 'Add at least 3 photos ('+cnt+'/3)';
-}
-function openPhotoViewer(photos, startIdx){
-  let idx=startIdx||0;
-  let old=document.getElementById('photoViewer'); if(old) old.remove();
-  let html=`<div id="photoViewer" style="position:fixed;inset:0;background:#000;z-index:999999;display:flex;flex-direction:column">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;color:#fff">
-      <button onclick="document.getElementById('photoViewer').remove()" style="background:#333;color:#fff;border:none;padding:10px 16px;border-radius:20px;font-weight:700;cursor:pointer">← Back</button>
-      <b id="pvCount">${idx+1} / ${photos.length}</b><span style="width:70px"></span>
-    </div>
-    <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative">
-      <button onclick="photoViewerPrev()" style="position:absolute;left:10px;background:rgba(255,255,255,0.2);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;z-index:2">‹</button>
-      <img id="pvImg" src="${photos[idx]}" style="max-width:100%;max-height:100%;object-fit:contain">
-      <button onclick="photoViewerNext()" style="position:absolute;right:10px;background:rgba(255,255,255,0.2);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;z-index:2">›</button>
-    </div>
-    <div style="display:flex;gap:6px;justify-content:center;padding:12px;overflow-x:auto">${photos.map((p,i)=>`<img src="${p}" onclick="photoViewerGo(${i})" style="width:50px;height:50px;object-fit:cover;border-radius:8px;border:${i===idx?'3px solid #FF8C00':'2px solid #333'};cursor:pointer">`).join('')}</div>
-  </div>`;
-  document.body.insertAdjacentHTML('beforeend', html);
-  window._pvPhotos=photos; window._pvIdx=idx;
-}
-function photoViewerGo(i){ window._pvIdx=i; let im=document.getElementById('pvImg'); if(im) im.src=window._pvPhotos[i]; let c=document.getElementById('pvCount'); if(c) c.innerText=(i+1)+' / '+window._pvPhotos.length; }
-function photoViewerNext(){ photoViewerGo((window._pvIdx+1)%window._pvPhotos.length); }
-function photoViewerPrev(){ photoViewerGo((window._pvIdx-1+window._pvPhotos.length)%window._pvPhotos.length); }
-// ★★★ PROFILE - TAP USER → FETCH HIS REAL 3+ PHOTOS FROM FIREBASE ★★★
-function openProfileById(id){
-  let u = users.find(x=> x.id===id);
-  if(!u) return;
-  currentProfileUser = u;
-  document.getElementById('profileCover').src = u.avatar || 'https://via.placeholder.com/400';
-  document.getElementById('profileAvatarBig').src = u.avatar || 'https://via.placeholder.com/100';
-  document.getElementById('profileName').innerText = shortName(u.name) + ' ♂';
-  document.getElementById('profileCity').innerText = '📍 ' + (u.city || 'Ruiru') + ' • ID:' + (u.id||'') + ' • Lv' + (u.level||1) + (u.age ? ' • ♂ ' + u.age : '');
-  document.getElementById('profileBio').innerText = u.bio || u.desc || 'No bio yet';
-  let photos = (u.photos && u.photos.length) ? u.photos.filter(Boolean) : [u.avatar];
-  window._currentProfilePhotos = photos;
-  document.getElementById('profilePhotos').innerHTML = photos.map((p,i)=>`<img src="${p}" onclick="openPhotoViewer(window._currentProfilePhotos,${i})" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px">`).join('');
-  document.getElementById('profilePopup').style.display = 'block';
-  try{
-    let db = window.PatanishaDB;
-    if(db && u.id){
-      db.ref('users/'+u.id+'/photos').once('value').then(snap=>{
-        let fbPhotos = snap.val();
-        if(fbPhotos && fbPhotos.length){
-          let p2 = fbPhotos.filter(Boolean);
-          if(p2.length===0) return;
-          window._currentProfilePhotos = p2;
-          u.photos = p2;
-          document.getElementById('profilePhotos').innerHTML = p2.map((p,i)=>`<img src="${p}" onclick="openPhotoViewer(window._currentProfilePhotos,${i})" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px">`).join('');
-        }
-      });
-      db.ref('users/'+u.id).once('value').then(snap=>{
-        let v=snap.val(); if(!v) return;
-        if(v.bio) document.getElementById('profileBio').innerText=v.bio;
-        if(v.avatar){ document.getElementById('profileCover').src=v.avatar; document.getElementById('profileAvatarBig').src=v.avatar; }
-      });
-    }
-  }catch(e){}
-}
-function openChatForUser(id){ openProfileById(id); }
-function startChatFromProfile(){
-  if(!currentProfileUser) return;
-  closePopup('profilePopup');
-  try{
-    let k='patanisha_talkedTo_'+myProfile.id;
-    let arr=JSON.parse(localStorage.getItem(k)||'[]');
-    if(!arr.find(x=>x.id===currentProfileUser.id)) arr.unshift({id:currentProfileUser.id,name:currentProfileUser.name,avatar:currentProfileUser.avatar||'',lastTs:Date.now()});
-    localStorage.setItem(k, JSON.stringify(arr.slice(0,100)));
-  }catch(e){}
-  if(window.ChatManager && ChatManager.openChat){ ChatManager.openChat(currentProfileUser); return; }
-  showToast('Chat loading... tap Chat again');
-  setTimeout(()=>{ if(window.ChatManager && ChatManager.openChat) ChatManager.openChat(currentProfileUser); },1000);
-}
-function startVoiceFromProfile(){
-  if(!currentProfileUser) return;
-  closePopup('profilePopup');
-  if(window.ChatManager && ChatManager.startVoiceCall) ChatManager.startVoiceCall(currentProfileUser);
-  else showToast('Chat loading... tap again');
-}
-function startVideoFromProfile(){
-  if(!currentProfileUser) return;
-  closePopup('profilePopup');
-  if(window.ChatManager && ChatManager.startVideoCall) ChatManager.startVideoCall(currentProfileUser);
-  else showToast('Chat loading... tap again');
-}
-function openSearchById(){ document.getElementById('searchByIdBar').style.display='block'; let i=document.getElementById('searchIdInput'); if(i) i.focus(); }
-function closeSearchById(){ document.getElementById('searchByIdBar').style.display='none'; loadUsers(); }
-function searchUserById(){
-  let q = document.getElementById('searchIdInput').value.trim().toUpperCase();
-  if(!q){ showToast('Enter ID e.g. PT585065'); return; }
-  let all = users.filter(u=>u.gender && u.gender.toLowerCase().trim()==='male');
-  let found = all.find(u => (u.id && u.id.toUpperCase()===q) || (u.id && u.id.toUpperCase().includes(q)) || (u.name && u.name.toUpperCase().includes(q)));
-  if(!found){ showToast('No user found with ID: '+q); return; }
-  renderUsers([found]);
-}
-function openMe(){
-  if(typeof loadFemaleEarnings === 'function') loadFemaleEarnings();
-  if(!myProfile){showToast('Please complete your profile first');window.location='register/index.html';return;}
-  document.getElementById('meAvatar').src = myProfile.avatar;
-  document.getElementById('meName').innerText = shortName(myProfile.name);
-  document.getElementById('meID').innerText = 'ID:' + myProfile.id;
-  document.getElementById('meVIP').innerText = 'VIP' + getVIPLevel(myProfile.friends?.length || 0);
-  document.getElementById('meLevel').innerText = 'Lv ' + (myProfile.level||1);
-  document.getElementById('meCoins').innerText = myProfile.coins || 20;
-  document.getElementById('meFriends').innerText = myProfile.friends?.length || 0;
-  document.getElementById('meFollowing').innerText = myProfile.following?.length || 0;
-  document.getElementById('meFollowers').innerText = myProfile.followers?.length || 0;
-  document.getElementById('meVisitors').innerText = myProfile.visitors?.length || 0;
-  document.getElementById('mePopup').style.display = 'block';
-  loadAddPhotoPreviews();
-  history.pushState({popup:'mePopup'}, '', location.pathname + '#me');
-}
-function openAccountSettings(){
-  document.getElementById('settingMpesa').value = myProfile.mpesa || '';
-  document.getElementById('settingPin').value = myProfile.withdrawPin || '';
-  document.getElementById('accountSettingsPopup').style.display = 'block';
-}
-function saveAccountSettings(){
-  let mpesa = document.getElementById('settingMpesa').value;
-  let pin = document.getElementById('settingPin').value;
-  if(mpesa.length < 10){showToast("Enter valid M-Pesa");return;}
-  if(pin.length < 4){showToast("PIN must be 4-6 digits");return;}
-  myProfile.mpesa = mpesa;myProfile.withdrawPin = pin;
-  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+function saveProfile(){
+  myProfile.name=document.getElementById('editName').value.trim()||myProfile.name;
+  myProfile.city=document.getElementById('editCity').value.trim();
+  myProfile.age=document.getElementById('editAge').value;
+  myProfile.bio=document.getElementById('editBio').value.trim();
+  myProfile.mpesa=document.getElementById('editMpesa').value.trim();
+  let pin=document.getElementById('editPin').value.trim();
+  if(pin){ if(pin.length<4||pin.length>6){ alert('PIN must be 4-6 digits'); return; } myPin=pin; localStorage.setItem('patanisha_pin_'+myProfile.id, pin); }
   localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile));
-  showToast("Account saved!");closePopup('accountSettingsPopup');
-}
-function openWithdrawForm(){
-  document.getElementById('withdrawMpesa').value = myProfile.mpesa || '';
-  document.getElementById('withdrawPin').value = '';
-  document.getElementById('withdrawCoins').value = '';
-  document.getElementById('wdPreview').innerText = 'Min 5000 Coins = KES 1500 - Fee KES 250 = You get KES 1250';
-  document.getElementById('withdrawFormPopup').style.display = 'block';
-}
-// ★★★ WITHDRAWAL: 100 coins = KES 30 gross, 100 coins = KES 5 fee, Min 5000 ★★★
-function updateWdPreview(){
-  let c=parseInt(document.getElementById('withdrawCoins').value||'0');
-  let el=document.getElementById('wdPreview'); if(!el) return;
-  if(!c){ el.innerText='Min 5000 Coins = KES 1500 - Fee KES 250 = You get KES 1250'; return; }
-  let gross=Math.floor(c/100*30);
-  let fee=Math.floor(c/100*5);
-  let net=gross-fee;
-  el.innerText=c+' coins = KES '+gross+' - Fee KES '+fee+' = You get KES '+net;
-}
-function submitWithdraw(){
-  let coins=parseInt(document.getElementById('withdrawCoins').value||'0');
-  let mpesa = document.getElementById('withdrawMpesa').value;
-  let pin = document.getElementById('withdrawPin').value;
-  if(!coins || coins<5000){showToast('Minimum withdrawal is 5000 coins');return;}
-  if((myProfile.coins||0)<coins){showToast('Insufficient coins. You have '+(myProfile.coins||0));return;}
-  if(mpesa.length < 10){showToast("Enter valid M-Pesa");return;}
-  if(pin!== myProfile.withdrawPin){showToast("Wrong Withdrawal PIN");return;}
-  let gross=Math.floor(coins/100*30);
-  let fee=Math.floor(coins/100*5);
-  let net=gross-fee;
-  myProfile.coins -= coins;
-  if(!myProfile.withdrawals) myProfile.withdrawals = [];
-  myProfile.withdrawals.unshift({requested: coins, gross:gross, fee:fee, net: net, mpesa: mpesa, date: new Date().toLocaleString('en-KE'), status: "pending"});
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
-  localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile));
-  try{ let db=window.PatanishaDB; if(db) db.ref('withdrawals').push({userId:myProfile.id,name:myProfile.name,phone:mpesa,coins:coins,gross:gross,fee:fee,net:net,status:'pending',date:new Date().toLocaleString(),ts:Date.now()}); }catch(e){}
-  document.getElementById('meCoins').innerText = myProfile.coins;
-  closePopup('withdrawFormPopup');
-  document.getElementById('successToast').style.display = 'block';
-  setTimeout(()=>document.getElementById('successToast').style.display='none', 3000);
-  renderWithdrawals();
+  if(window.PatanishaDB && myProfile.id){ PatanishaDB.ref('users/'+myProfile.id).update({name:myProfile.name,city:myProfile.city,age:myProfile.age,bio:myProfile.bio,mpesa:myProfile.mpesa}); }
+  refreshMe(); showToast('✅ Profile saved');
 }
-function openWithdrawHistory(){renderWithdrawals();document.getElementById('withdrawPopup').style.display = 'block';}
-function renderWithdrawals(){
-  let list = document.getElementById('withdrawList');
-  if(!myProfile.withdrawals || myProfile.withdrawals.length === 0){list.innerHTML = '<div class="empty">No withdrawals yet</div>';return;}
-  let html = '';
-  myProfile.withdrawals.forEach(w=>{html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><b style="color:white">KES ${w.net||w.requested}</b> <span style="color:#aaa;font-size:12px">${w.coins? w.coins+' coins':''} • Fee KES ${w.fee||''}</span><div style="font-size:12px;color:#888">${w.mpesa} • ${w.date}</div></div>`;});
-  list.innerHTML = html;
+function logout(){ if(confirm('Log out?')){ localStorage.removeItem('patanisha_myProfile'); localStorage.removeItem('patanisha_myProfile_female'); location.href='register/index.html'; } }
+
+// ===== PAGES =====
+function showPage(p,btn){
+  ['home','income','profile'].forEach(x=>document.getElementById('page-'+x).classList.toggle('hidden', x!==p));
+  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(p==='income') renderIncome();
+  window.scrollTo(0,0);
 }
-function openIncomeHistory(){renderIncome();document.getElementById('incomePopup').style.display = 'block';}
+function filterGender(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderBoys();
+}
+
+// ===== BOYS LIST =====
+function loadBoys(){
+  let list=[];
+  try{ list=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); }catch(e){}
+  try{ let u=JSON.parse(localStorage.getItem('patanishaUsers')||'[]'); u.forEach(x=>{ if(!list.find(y=>y.id===x.id)) list.push(x); }); }catch(e){}
+  users = list.filter(u=>u && u.gender && u.gender.toLowerCase()==='male' && u.id!==myProfile.id);
+  if(window.PatanishaDB){
+    PatanishaDB.ref('users').once('value').then(s=>{
+      let arr=[]; s.forEach(c=>{ let v=c.val(); v.id=c.key; arr.push(v); });
+      arr.filter(u=>u.gender && u.gender.toLowerCase()==='male' && u.id!==myProfile.id).forEach(u=>{ if(!users.find(x=>x.id===u.id)) users.push(u); });
+      renderBoys();
+    }).catch(()=>{});
+  }
+  renderBoys();
+}
+function renderBoys(){
+  let box=document.getElementById('boysList');
+  let list = currentFilter==='online' ? users.filter(u=>u.online) : users;
+  if(!list.length){ document.getElementById('noBoys').classList.remove('hidden'); box.innerHTML=''; return; }
+  document.getElementById('noBoys').classList.add('hidden');
+  box.innerHTML = list.map((u,i)=>{
+    let idx = users.findIndex(x=>x.id===u.id);
+    return `<div class="card" onclick="ChatManager.openChatByIndex(${idx})">
+      <img src="${u.avatar||'logo-192.png'}">
+      <div class="info"><b>${shortName(u.name)} ♂ ${u.age||''}</b><span>📍 ${u.city||'Ruiru'} • ${u.online?'● Online':'○ Offline'}<br>${(u.bio||'Say Hi 👋').slice(0,40)}</span></div>
+      <div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div>
+    </div>`;
+  }).join('');
+}
+
+// ===== INCOME =====
 function renderIncome(){
-  if(typeof loadFemaleEarnings === 'function') loadFemaleEarnings();
-  let list = document.getElementById('incomeList');
-  if(!myProfile.income || myProfile.income.length === 0){
-    list.innerHTML = '<div class="empty">No income yet<br><span style="font-size:12px">Chat with boys, they pay, you earn</span></div>';
-    return;
+  refreshMe();
+  let inc = myProfile.income||[];
+  let box=document.getElementById('incomeList');
+  if(!inc.length){ box.innerHTML='<p style="color:#888;font-size:13px">No earnings yet. Chat with boys to earn.</p>'; return; }
+  box.innerHTML = inc.slice(0,30).map(x=>`<div class="row"><span>${x.reason||'Chat'} • ${new Date(x.ts||Date.now()).toLocaleDateString()}</span><b>+${x.amount||0} coins = KES ${coinsToKES(x.amount||0).toFixed(2)}</b></div>`).join('');
+}
+
+// ===== WITHDRAW - NEW RATES =====
+function updateWithdrawPreview(){
+  let coins = Number(document.getElementById('withdrawCoins').value||0);
+  let el=document.getElementById('withdrawPreview');
+  if(!coins){ el.innerHTML='Min 5000 Coins = KES 150 - Fee KES 7.50 = You get KES 142.50'; return; }
+  el.innerHTML = `${coins} Coins = KES ${coinsToKES(coins).toFixed(2)} - Fee KES ${withdrawFeeKES(coins).toFixed(2)} = You get KES ${withdrawNetKES(coins).toFixed(2)}`;
+}
+function openWithdraw(){ document.getElementById('withdrawPopup').style.display='flex'; updateWithdrawPreview(); }
+function closeWithdraw(){ document.getElementById('withdrawPopup').style.display='none'; }
+function submitWithdraw(){
+  let coins = Number(document.getElementById('withdrawCoins').value||0);
+  let phone = document.getElementById('withdrawPhone').value.trim();
+  let pin = document.getElementById('withdrawPin').value.trim();
+  if(!/^0\d{9}$/.test(phone)){ alert('Enter valid M-Pesa number e.g. 0712345678'); return; }
+  if(coins < MIN_WITHDRAW_COINS){ alert('Min 5000 coins to withdraw'); return; }
+  if(coins > (myProfile.coins||0)){ alert('Not enough coins. Balance: '+(myProfile.coins||0)); return; }
+  if(myPin && pin !== myPin){ alert('Wrong PIN'); return; }
+  if(!myPin && (pin.length<4||pin.length>6)){ alert('Set a 4-6 digit PIN in Profile first, then use it here'); return; }
+  if(!myPin){ myPin=pin; localStorage.setItem('patanisha_pin_'+myProfile.id, pin); }
+  let net = withdrawNetKES(coins);
+  if(window.PatanishaDB){
+    PatanishaDB.ref('withdrawals').push({userId:myProfile.id,name:myProfile.name,phone:phone,coins:coins,grossKES:coinsToKES(coins),feeKES:withdrawFeeKES(coins),netKES:net,status:'pending',createdAt:Date.now()});
   }
-  let html = '';
-  myProfile.income.forEach(i=>{html += `<div style="background:#2A2A2A;padding:15px;border-radius:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="color:#4CAF50">+${i.amount} Coins</b><div style="font-size:12px;color:#888;margin-top:4px">From: ${shortName(i.from)} • ${i.reason||''} • ${i.date}</div></div></div></div>`;});
-  list.innerHTML = html;
+  myProfile.coins -= coins;
+  myProfile.mpesa = phone;
+  localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile));
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  refreshMe();
+  alert(`✅ Request sent!\n${coins} coins = KES ${coinsToKES(coins).toFixed(2)}\nFee KES ${withdrawFeeKES(coins).toFixed(2)}\nYou will receive KES ${net.toFixed(2)} to ${phone}`);
+  closeWithdraw();
 }
-function openInfo(){showToast('Patanisha v1.0')}
-function goHome(){switchTab('nearby');window.scrollTo(0,0)}
-function openChatList(){ if(window.ChatManager) ChatManager.openInbox(); else showToast('Chats loading... tap again'); }
-function closePopup(id){document.getElementById(id).style.display = 'none';}
-function openHiSetup(){showToast('Hi setup')}
-function askLogout(){ document.getElementById('logoutConfirm').style.display='flex'; }
-function closeLogoutConfirm(){ document.getElementById('logoutConfirm').style.display='none'; }
-function logoutUser(){
-  localStorage.removeItem('patanisha_myProfile');
-  localStorage.removeItem('patanisha_myProfile_female');
-  window.location.replace('register/index.html');
-}
-history.replaceState({page:'home'}, '', window.location.pathname);
-window.addEventListener('popstate', function(e){
-  document.querySelectorAll('.popup').forEach(p=>{ if(p.style.display==='block'){ p.style.display='none'; } });
-  let inbox=document.getElementById('chatInboxPopup'); if(inbox){ inbox.remove(); }
-  let chat=document.getElementById('chatPopup'); if(chat){ chat.remove(); }
-  history.pushState({page:'home'}, '', window.location.pathname);
-});
-loadUsers();
+
+refreshMe();
+loadBoys();
+if(typeof loadFemaleEarnings==='function'){ try{ loadFemaleEarnings(); }catch(e){} }
 </script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
-    authDomain: "patanisha-49561.firebaseapp.com",
-    databaseURL: "https://patanisha-49561-default-rtdb.firebaseio.com",
-    projectId: "patanisha-49561",
-    storageBucket: "patanisha-49561.firebasestorage.app",
-    messagingSenderId: "363879415134",
-    appId: "1:363879415134:web:81b99ab93290a3e45723cf",
-    measurementId: "G-GLXLGVWLHF"
-  };
-  firebase.initializeApp(firebaseConfig);
-  window.PatanishaDB = firebase.database();
-  window.PatanishaDBType = 'rtdb';
-  // ★★★ Load real boys from Firebase (without photos in list) ★★★
-  try{
-    window.PatanishaDB.ref('users').once('value').then(snap=>{
-      let changed=false;
-      snap.forEach(c=>{
-        let v=c.val()||{}; if(!v.id) v.id=c.key;
-        if(!v.gender || v.gender.toLowerCase().trim()!=='male') return;
-        if(myProfile && v.id===myProfile.id) return;
-        let ex=users.find(x=>x.id===v.id);
-        if(ex){ ex.name=v.name||ex.name; ex.avatar=v.avatar||ex.avatar; ex.city=v.city||ex.city; ex.bio=v.bio||ex.bio; }
-        else { users.push({name:v.name||'User',gender:'Male',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:[],friends:[],following:[],followers:[],level:v.level||1,age:v.age||'',distance:'',id:v.id,activityScore:v.activityScore||0}); changed=true; }
-      });
-      if(changed) loadUsers();
-    });
-  }catch(e){}
-</script>
-<script src="chat-manager/female.js?v=1004"></script>
 </body>
 </html>
