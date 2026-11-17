@@ -1,8 +1,8 @@
-// ===== male/chat-manager.js - MALE PAID - FIXED LOADING + FIXED END CALL =====
+// ===== male/chat-manager.js - MALE PAID - FULL SCREEN VIDEO + RINGTONE + AUTO-CUT <50 + VOICE RECORDER UI =====
 // Male: 1st message FREE, then 10 coins/msg, Voice 50/min, Video 100/min
 // FIX: Inbox NEVER waits for Firebase. Shows instantly.
 // FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
-// FIX: End call removes ALL #callScreen elements, stops tracks
+// FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileMale(){
@@ -72,20 +72,59 @@ function getMaleChatUsers(){
     return true;
   });
 }
-// ===== REAL CALLS - WebRTC =====
+// ===== REAL CALLS - WebRTC + RINGTONE + FULL SCREEN VIDEO =====
 let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false, _callTimer=null, _callSeconds=0;
+let _ringtoneTimer=null, _ringCtx=null;
 function _callDB(){ return getDB(); }
+function _playRingtone(){
+  try{
+    if(_ringCtx) return;
+    _ringCtx = new (window.AudioContext||window.webkitAudioContext)();
+    let i=0;
+    _ringtoneTimer=setInterval(()=>{
+      if(i%2===0){
+        try{
+          let o=_ringCtx.createOscillator(), g=_ringCtx.createGain();
+          o.connect(g); g.connect(_ringCtx.destination);
+          o.frequency.value=880; g.gain.value=0.15;
+          o.start(); o.stop(_ringCtx.currentTime+0.4);
+        }catch(e){}
+      }
+      i++;
+    },800);
+  }catch(e){}
+}
+function _stopRingtone(){
+  try{ if(_ringtoneTimer) clearInterval(_ringtoneTimer); }catch(e){}
+  _ringtoneTimer=null;
+  try{ if(_ringCtx) _ringCtx.close(); }catch(e){}
+  _ringCtx=null;
+}
 function _showCallUI(user, status, isIncoming){
-  // Remove any old call screens first - prevents duplicate #callScreen bug
+  _stopRingtone(); _playRingtone();
   document.querySelectorAll('#callScreen').forEach(function(el){ el.remove(); });
   let cs=document.createElement('div'); cs.id='callScreen';
-  cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:20px';
+  cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;flex-direction:column;color:#fff;overflow:hidden';
   document.body.appendChild(cs);
-  cs.innerHTML=`<img src="${user.avatar||''}" style="width:120px;height:120px;border-radius:50%;margin-bottom:12px;border:4px solid #25D366;object-fit:cover"><div style="font-size:22px;font-weight:700">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div><div id="callStatusText" style="color:#aaa;margin:8px 0 14px">${status}</div><div id="callCoinText" style="color:#F59E0B;font-size:13px">Coins: ${myProfile?myProfile.coins||0:0}</div><video id="remoteVideo" autoplay playsinline style="width:100%;max-width:400px;border-radius:12px;display:none;background:#222"></video><video id="localVideo" autoplay muted playsinline style="width:120px;border-radius:10px;display:none;margin-top:10px"></video><div style="display:flex;gap:16px;margin-top:18px">${isIncoming?`<button onclick="ChatManager.acceptCall()" style="width:70px;height:70px;background:green;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button>`:''}<button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button><button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button></div><div style="font-size:12px;color:#888;margin-top:10px">${_currentCallType==='video'?'Video: 100 coins/min':'Voice: 50 coins/min'}</div>`;
+  cs.innerHTML=`
+  <video id="remoteVideo" autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;display:none"></video>
+  <div id="callTopInfo" style="position:absolute;top:0;left:0;right:0;padding:18px;text-align:center;z-index:3;background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)">
+    <img src="${user.avatar||''}" style="width:80px;height:80px;border-radius:50%;border:3px solid #25D366;object-fit:cover;margin:0 auto">
+    <div style="font-size:22px;font-weight:700;margin-top:8px">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div>
+    <div id="callStatusText" style="color:#fff;font-size:15px;margin-top:4px">${status}</div>
+    <div id="callCoinText" style="color:#F59E0B;font-size:14px;font-weight:700;margin-top:4px">Coins: ${myProfile?myProfile.coins||0:0}</div>
+  </div>
+  <video id="localVideo" autoplay muted playsinline style="position:absolute;bottom:110px;right:14px;width:110px;height:150px;object-fit:cover;border-radius:14px;border:2px solid #fff;display:none;z-index:4;background:#222"></video>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:18px;display:flex;gap:16px;justify-content:center;z-index:5;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent)">
+    ${isIncoming?`<button onclick="ChatManager.acceptCall()" style="width:70px;height:70px;background:green;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button>`:''}
+    <button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button>
+    <button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button>
+  </div>
+  <div style="position:absolute;bottom:96px;left:0;right:0;text-align:center;font-size:12px;color:#ccc;z-index:4">${_currentCallType==='video'?'Video: 100 coins/min • Auto-ends below 50 coins':'Voice: 50 coins/min • Auto-ends below 50 coins'}</div>`;
   cs.style.display='flex';
 }
-// FIXED: Always removes ALL call screens, stops mic/camera
 function _cleanupCall(){
+  _stopRingtone();
   if(_callTimer){ clearInterval(_callTimer); _callTimer=null; }
   if(_peerConn){ try{_peerConn.close();}catch(e){} _peerConn=null; }
   if(_localStream){ try{ _localStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} _localStream=null; }
@@ -97,17 +136,23 @@ function _startCallBilling(){
   if(_callTimer) clearInterval(_callTimer);
   _callTimer=setInterval(()=>{
     _callSeconds++;
+    if(myProfile && (myProfile.coins||0) < 50){
+      if(typeof showToast!=='undefined') showToast('⚠️ Coins below 50 - call ended. Recharge!');
+      ChatManager.endCall();
+      return;
+    }
+    let ct=document.getElementById('callCoinText'); if(ct) ct.textContent='Coins: '+(myProfile?myProfile.coins||0:0);
     if(_callSeconds<=60) return;
     if((_callSeconds-60)%60===0){
       let cost=_currentCallType==='video'?VIDEO_COST_PER_MIN:VOICE_COST_PER_MIN;
       let ok=deductCoins(cost, _currentCallType==='video'?'Video Call':'Voice Call', ChatManager.currentChatUser);
-      let ct=document.getElementById('callCoinText'); if(ct) ct.textContent='Coins: '+(myProfile?myProfile.coins||0:0);
       if(!ok){ if(typeof showToast!=='undefined') showToast('Out of coins - call ended'); ChatManager.endCall(); }
     }
   },1000);
 }
 async function _startRealCall(user, type){
   if(!user || !user.id){ if(typeof showToast!=='undefined') showToast('Select a person first'); return false; }
+  if(myProfile && (myProfile.coins||0) < 50){ if(typeof showToast!=='undefined') showToast('Need at least 50 coins to call. Recharge: KES 100 = 1000 Coins'); if(typeof openRecharge==='function') openRecharge(); return false; }
   _currentCallType=type; _isMuted=false;
   const db=_callDB(); if(!db){ if(typeof showToast!=='undefined') showToast('Firebase not loaded'); return false; }
   _currentCallId=getChatId(myProfile.id, user.id)+'_'+Date.now();
@@ -118,13 +163,13 @@ async function _startRealCall(user, type){
   }catch(e){ if(typeof showToast!=='undefined') showToast('Allow Microphone / Camera to call'); _cleanupCall(); return false; }
   _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
   _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
-  _peerConn.ontrack=e=>{ const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; _startCallBilling(); };
+  _peerConn.ontrack=e=>{ _stopRingtone(); const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; _startCallBilling(); };
   _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/callerCandidates').push(e.candidate.toJSON()); };
   const offer=await _peerConn.createOffer(); await _peerConn.setLocalDescription(offer);
   await db.ref('calls/'+_currentCallId).set({from:myProfile.id,to:user.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',type,offer:{type:offer.type,sdp:offer.sdp},status:'ringing',createdAt:Date.now()});
   db.ref('calls/'+_currentCallId+'/answer').on('value', async snap=>{
     const ans=snap.val(); if(!ans||!_peerConn||_peerConn.signalingState!=='have-local-offer') return;
-    try{ await _peerConn.setRemoteDescription(new RTCSessionDescription(ans)); const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; _startCallBilling(); }catch(e){}
+    try{ _stopRingtone(); await _peerConn.setRemoteDescription(new RTCSessionDescription(ans)); const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; _startCallBilling(); }catch(e){}
   });
   db.ref('calls/'+_currentCallId+'/calleeCandidates').on('child_added', snap=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(snap.val())).catch(()=>{}); });
   db.ref('calls/'+_currentCallId+'/status').on('value', snap=>{ if(snap.val()==='ended') _cleanupCall(); });
@@ -276,6 +321,7 @@ const ChatManager = {
   startVoiceCall(user){ _listenForIncomingCalls(); return _startRealCall(user,'voice'); },
   startVideoCall(user){ _listenForIncomingCalls(); return _startRealCall(user,'video'); },
   async acceptCall(){
+    _stopRingtone();
     const db=_callDB(); if(!db||!_currentCallId) return;
     const st=document.getElementById('callStatusText'); if(st) st.textContent='Connecting...';
     try{ _localStream=await navigator.mediaDevices.getUserMedia({audio:true, video:_currentCallType==='video'}); }
@@ -285,7 +331,7 @@ const ChatManager = {
     const call=snap.val(); if(!call) return;
     _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
     _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
-    _peerConn.ontrack=e=>{ const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const s=document.getElementById('callStatusText'); if(s) s.textContent='✅ Connected'; _startCallBilling(); };
+    _peerConn.ontrack=e=>{ _stopRingtone(); const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const s=document.getElementById('callStatusText'); if(s) s.textContent='✅ Connected'; _startCallBilling(); };
     _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/calleeCandidates').push(e.candidate.toJSON()); };
     await _peerConn.setRemoteDescription(new RTCSessionDescription(call.offer));
     const answer=await _peerConn.createAnswer(); await _peerConn.setLocalDescription(answer);
@@ -293,8 +339,8 @@ const ChatManager = {
     const s2=document.getElementById('callStatusText'); if(s2) s2.textContent='✅ Connected';
     db.ref('calls/'+_currentCallId+'/callerCandidates').on('child_added', s=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}); });
   },
-  // FIXED END CALL - always works, even if _currentCallId is null
   async endCall(){
+    _stopRingtone();
     const db=_callDB();
     if(_currentCallId && db){ try{ await db.ref('calls/'+_currentCallId+'/status').set('ended'); }catch(e){} }
     _cleanupCall();
@@ -336,20 +382,37 @@ const ChatManager = {
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
     return true;
   },
-  mediaRecorder:null,audioChunks:[],recordingUser:null,
+  mediaRecorder:null,audioChunks:[],recordingUser:null,_recTimer:null,
   startVoiceMessage(userName){
+    if(this.mediaRecorder && this.mediaRecorder.state==='recording'){ this.stopVoiceMessage(); return true; }
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){showToast('Voice recording not supported');return false;}
-    if(this.mediaRecorder && this.mediaRecorder.state==='recording'){this.stopVoiceMessage();return true;}
     navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
       this.audioChunks=[];this.recordingUser=userName;
       this.mediaRecorder=new MediaRecorder(stream);
       this.mediaRecorder.ondataavailable=e=>{if(e.data.size>0) this.audioChunks.push(e.data);};
       this.mediaRecorder.onstop=()=>{ let b=new Blob(this.audioChunks,{type:this.mediaRecorder.mimeType||'audio/webm'}); stream.getTracks().forEach(t=>t.stop()); this.finishVoiceMessage(userName,b); };
-      this.mediaRecorder.start(); showToast('🔴 Recording... tap 🎤 again to send');
+      this.mediaRecorder.start();
+      let old=document.getElementById('voiceRecBar'); if(old) old.remove();
+      let bar=document.createElement('div'); bar.id='voiceRecBar';
+      bar.style.cssText='position:fixed;bottom:110px;left:12px;right:12px;background:#D32F2F;color:#fff;padding:14px;border-radius:16px;z-index:999999;display:flex;align-items:center;gap:10px;justify-content:space-between';
+      bar.innerHTML=`<span>🔴 <b>Recording...</b> <span id="voiceRecTime">0:00</span></span><button onclick="ChatManager.stopVoiceMessage()" style="background:#fff;color:#000;border:none;padding:10px 16px;border-radius:20px;font-weight:800;cursor:pointer">✅ Send</button><button onclick="ChatManager.cancelVoiceMessage()" style="background:#333;color:#fff;border:none;padding:10px 14px;border-radius:20px;font-weight:700;cursor:pointer">✕ Cancel</button>`;
+      document.body.appendChild(bar);
+      let sec=0; this._recTimer=setInterval(()=>{ sec++; let el=document.getElementById('voiceRecTime'); if(el) el.textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); if(sec>=60) this.stopVoiceMessage(); },1000);
     }).catch(()=>showToast('Microphone permission required'));
     return true;
   },
-  stopVoiceMessage(){ if(this.mediaRecorder && this.mediaRecorder.state==='recording'){this.mediaRecorder.stop();} },
+  stopVoiceMessage(){
+    if(this._recTimer) clearInterval(this._recTimer); this._recTimer=null;
+    let bar=document.getElementById('voiceRecBar'); if(bar) bar.remove();
+    if(this.mediaRecorder && this.mediaRecorder.state==='recording'){ this.mediaRecorder.stop(); }
+  },
+  cancelVoiceMessage(){
+    if(this._recTimer) clearInterval(this._recTimer); this._recTimer=null;
+    let bar=document.getElementById('voiceRecBar'); if(bar) bar.remove();
+    this.audioChunks=[];
+    if(this.mediaRecorder && this.mediaRecorder.state==='recording'){ this.mediaRecorder.onstop=null; try{ this.mediaRecorder.stop(); }catch(e){} try{ this.mediaRecorder.stream.getTracks().forEach(t=>t.stop()); }catch(e){} }
+    showToast('Voice cancelled');
+  },
   finishVoiceMessage(userName,audioBlob){
     if(!audioBlob||audioBlob.size===0){showToast('No voice recording captured.');return;}
     let reader=new FileReader(); reader.onload=e=>{ this.sendVoiceMessage(this.currentChatUser, e.target.result); }; reader.readAsDataURL(audioBlob);
