@@ -1,8 +1,9 @@
-// ===== chat-manager/female.js - FEMALE FREE - FIXED LOADING + FIXED END CALL =====
+// ===== chat-manager/female.js - FEMALE FREE - HD VIDEO 720p + FULL SCREEN + RINGTONE + VOICE RECORDER =====
 // Female: Chat / Photo / Voice / Gifts = ALL FREE
+// RULE: Lady calls Man = MAN PAYS. If man <50 coins, call is rejected, lady sees "He has insufficient coins"
 // FIX: Inbox NEVER waits for Firebase. Shows instantly.
 // FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
-// FIX: End call removes ALL #callScreen elements, stops tracks
+// FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileFemale(){
@@ -71,19 +72,78 @@ function getFemaleChatUsers(){
     return true;
   });
 }
-// ===== REAL CALLS - WebRTC =====
+// ===== REAL CALLS - WebRTC HD + RINGTONE + FULL SCREEN =====
 let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false;
+let _ringtoneTimer=null, _ringCtx=null;
 function _callDB(){ return getDB(); }
+function _playRingtone(){
+  try{
+    if(_ringCtx) return;
+    _ringCtx = new (window.AudioContext||window.webkitAudioContext)();
+    let i=0;
+    _ringtoneTimer=setInterval(()=>{
+      if(i%2===0){
+        try{
+          let o=_ringCtx.createOscillator(), g=_ringCtx.createGain();
+          o.connect(g); g.connect(_ringCtx.destination);
+          o.frequency.value=880; g.gain.value=0.15;
+          o.start(); o.stop(_ringCtx.currentTime+0.4);
+        }catch(e){}
+      }
+      i++;
+    },800);
+  }catch(e){}
+}
+function _stopRingtone(){
+  try{ if(_ringtoneTimer) clearInterval(_ringtoneTimer); }catch(e){}
+  _ringtoneTimer=null;
+  try{ if(_ringCtx) _ringCtx.close(); }catch(e){}
+  _ringCtx=null;
+}
+function _hdConstraints(type){
+  return {
+    audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true},
+    video: type==='video' ? {width:{ideal:1280, max:1920}, height:{ideal:720, max:1080}, frameRate:{ideal:30, max:30}, facingMode:'user'} : false
+  };
+}
+function _applyHDBitrate(){
+  try{
+    _peerConn.getSenders().forEach(function(s){
+      if(s.track && s.track.kind==='video'){
+        let p=s.getParameters();
+        if(!p.encodings) p.encodings=[{}];
+        p.encodings[0].maxBitrate=2500000;
+        p.encodings[0].maxFramerate=30;
+        p.degradationPreference='maintain-resolution';
+        s.setParameters(p).catch(()=>{});
+      }
+    });
+  }catch(e){}
+}
 function _showCallUI(user, status, isIncoming){
+  _stopRingtone(); _playRingtone();
   document.querySelectorAll('#callScreen').forEach(function(el){ el.remove(); });
   let cs=document.createElement('div'); cs.id='callScreen';
-  cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:20px';
+  cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;flex-direction:column;color:#fff;overflow:hidden';
   document.body.appendChild(cs);
-  cs.innerHTML=`<img src="${user.avatar||''}" style="width:120px;height:120px;border-radius:50%;margin-bottom:12px;border:4px solid #25D366;object-fit:cover"><div style="font-size:22px;font-weight:700">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div><div id="callStatusText" style="color:#aaa;margin:8px 0 14px">${status}</div><video id="remoteVideo" autoplay playsinline style="width:100%;max-width:400px;border-radius:12px;display:none;background:#222"></video><video id="localVideo" autoplay muted playsinline style="width:120px;border-radius:10px;display:none;margin-top:10px"></video><div style="display:flex;gap:16px;margin-top:18px">${isIncoming?`<button onclick="ChatManager.acceptCall()" style="width:70px;height:70px;background:green;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button>`:''}<button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button><button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button></div><div style="font-size:12px;color:#888;margin-top:10px">Ladies: FREE • Men pay</div>`;
+  cs.innerHTML=`
+  <video id="remoteVideo" autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;display:none;filter:brightness(1.1) contrast(1.05)"></video>
+  <div id="callTopInfo" style="position:absolute;top:0;left:0;right:0;padding:18px;text-align:center;z-index:3;background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)">
+    <img src="${user.avatar||''}" style="width:80px;height:80px;border-radius:50%;border:3px solid #25D366;object-fit:cover;margin:0 auto">
+    <div style="font-size:22px;font-weight:700;margin-top:8px">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div>
+    <div id="callStatusText" style="color:#fff;font-size:15px;margin-top:4px">${status}</div>
+  </div>
+  <video id="localVideo" autoplay muted playsinline style="position:absolute;bottom:110px;right:14px;width:120px;height:170px;object-fit:cover;border-radius:14px;border:2px solid #fff;display:none;z-index:4;background:#222;filter:brightness(1.25) contrast(1.1)"></video>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:18px;display:flex;gap:16px;justify-content:center;z-index:5;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent)">
+    ${isIncoming?`<button onclick="ChatManager.acceptCall()" style="width:70px;height:70px;background:green;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button>`:''}
+    <button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button>
+    <button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button>
+  </div>
+  <div style="position:absolute;bottom:96px;left:0;right:0;text-align:center;font-size:12px;color:#ccc;z-index:4">Ladies: FREE • Men pay • HD Video</div>`;
   cs.style.display='flex';
 }
-// FIXED: Always removes ALL call screens, stops mic/camera
 function _cleanupCall(){
+  _stopRingtone();
   if(_peerConn){ try{_peerConn.close();}catch(e){} _peerConn=null; }
   if(_localStream){ try{ _localStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} _localStream=null; }
   document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); });
@@ -96,21 +156,30 @@ async function _startRealCall(user, type){
   _currentCallId=getChatId(myProfile.id, user.id)+'_'+Date.now();
   _showCallUI(user, type==='video'?'📹 Video Calling... FREE':'📞 Voice Calling... FREE', false);
   try{
-    _localStream=await navigator.mediaDevices.getUserMedia({audio:true, video:type==='video'});
+    _localStream=await navigator.mediaDevices.getUserMedia(_hdConstraints(type));
     if(type==='video'){ const lv=document.getElementById('localVideo'); if(lv){ lv.srcObject=_localStream; lv.style.display='block'; } const rv=document.getElementById('remoteVideo'); if(rv) rv.style.display='block'; }
   }catch(e){ if(typeof showToast!=='undefined') showToast('Allow Microphone / Camera to call'); _cleanupCall(); return false; }
   _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
   _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
-  _peerConn.ontrack=e=>{ const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; };
+  _applyHDBitrate();
+  _peerConn.ontrack=e=>{ _stopRingtone(); const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; };
   _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/callerCandidates').push(e.candidate.toJSON()); };
   const offer=await _peerConn.createOffer(); await _peerConn.setLocalDescription(offer);
   await db.ref('calls/'+_currentCallId).set({from:myProfile.id,to:user.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',type,offer:{type:offer.type,sdp:offer.sdp},status:'ringing',createdAt:Date.now()});
   db.ref('calls/'+_currentCallId+'/answer').on('value', async snap=>{
     const ans=snap.val(); if(!ans||!_peerConn||_peerConn.signalingState!=='have-local-offer') return;
-    try{ await _peerConn.setRemoteDescription(new RTCSessionDescription(ans)); const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; }catch(e){}
+    try{ _stopRingtone(); await _peerConn.setRemoteDescription(new RTCSessionDescription(ans)); const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; }catch(e){}
   });
   db.ref('calls/'+_currentCallId+'/calleeCandidates').on('child_added', snap=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(snap.val())).catch(()=>{}); });
-  db.ref('calls/'+_currentCallId+'/status').on('value', snap=>{ if(snap.val()==='ended') _cleanupCall(); });
+  // NEW: If man rejects because he has no coins, tell lady why call cut
+  db.ref('calls/'+_currentCallId+'/status').on('value', snap=>{
+    if(snap.val()==='ended'){
+      db.ref('calls/'+_currentCallId+'/rejectReason').once('value').then(rs=>{
+        if(rs.val()==='insufficient_coins' && typeof showToast!=='undefined') showToast('⚠️ He has insufficient coins (<50) - Ask him to recharge to answer your call');
+      }).catch(()=>{});
+      _cleanupCall();
+    }
+  });
   return true;
 }
 function _listenForIncomingCalls(){
@@ -120,6 +189,7 @@ function _listenForIncomingCalls(){
     db.ref('calls').orderByChild('to').equalTo(myProfile.id).on('child_added', snap=>{
       const call=snap.val(); if(!call||call.status!=='ringing') return;
       if(call.from===myProfile.id) return;
+      // LADY IS FREE - NEVER block incoming call for coins. Man pays.
       _currentCallId=snap.key; _currentCallType=call.type;
       _showCallUI({name:call.fromName||'Someone', avatar:call.fromAvatar||''}, call.type==='video'?'📹 Incoming Video Call... FREE':'📞 Incoming Voice Call... FREE', true);
     });
@@ -220,7 +290,7 @@ const ChatManager = {
   },
   renderMessages(msgs){
     let box=document.getElementById('chatMessages'); if(!box) return;
-    if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#888;padding:30px">Say Hi to '+(typeof shortName!=='undefined'?shortName(this.currentChatUser?this.currentChatUser.name:'him'):this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">FREE - No coins needed</span></div>'; return; }
+    if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#888;padding:30px">Say Hi to '+(typeof shortName!=='undefined'?shortName(this.currentChatUser?this.currentChatUser.name:'him'):this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">Chat FREE • You earn</span></div>'; return; }
     box.innerHTML=msgs.map(m=>{
       let mine=(m.fromId===myProfile.id);
       let inner=m.type==='photo'?`<div style="position:relative;display:inline-block;max-width:200px"><img src="${m.photo}" draggable="false" style="max-width:200px;border-radius:10px;pointer-events:none;user-select:none"><div style="position:absolute;inset:0;background:transparent;z-index:2"></div><div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:2px 6px;border-radius:8px">🔒 Private</div></div>`:m.type==='voice'?`<audio controls controlsList="nodownload noplaybackrate" src="${m.audio}" style="max-width:200px"></audio>`:String(m.text||'').replace(/</g,'&lt;');
@@ -252,16 +322,18 @@ const ChatManager = {
   startVoiceCall(user){ _listenForIncomingCalls(); return _startRealCall(user,'voice'); },
   startVideoCall(user){ _listenForIncomingCalls(); return _startRealCall(user,'video'); },
   async acceptCall(){
+    _stopRingtone();
     const db=_callDB(); if(!db||!_currentCallId) return;
     const st=document.getElementById('callStatusText'); if(st) st.textContent='Connecting...';
-    try{ _localStream=await navigator.mediaDevices.getUserMedia({audio:true, video:_currentCallType==='video'}); }
+    try{ _localStream=await navigator.mediaDevices.getUserMedia(_hdConstraints(_currentCallType)); }
     catch(e){ if(typeof showToast!=='undefined') showToast('Allow Mic/Camera'); this.endCall(); return; }
     if(_currentCallType==='video'){ const lv=document.getElementById('localVideo'); if(lv){ lv.srcObject=_localStream; lv.style.display='block'; } }
     const snap=await db.ref('calls/'+_currentCallId).once('value');
     const call=snap.val(); if(!call) return;
     _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
     _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
-    _peerConn.ontrack=e=>{ const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const s=document.getElementById('callStatusText'); if(s) s.textContent='✅ Connected'; };
+    _applyHDBitrate();
+    _peerConn.ontrack=e=>{ _stopRingtone(); const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const s=document.getElementById('callStatusText'); if(s) s.textContent='✅ Connected'; };
     _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/calleeCandidates').push(e.candidate.toJSON()); };
     await _peerConn.setRemoteDescription(new RTCSessionDescription(call.offer));
     const answer=await _peerConn.createAnswer(); await _peerConn.setLocalDescription(answer);
@@ -269,8 +341,8 @@ const ChatManager = {
     const s2=document.getElementById('callStatusText'); if(s2) s2.textContent='✅ Connected';
     db.ref('calls/'+_currentCallId+'/callerCandidates').on('child_added', s=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}); });
   },
-  // FIXED END CALL - always works, even if _currentCallId is null
   async endCall(){
+    _stopRingtone();
     const db=_callDB();
     if(_currentCallId && db){ try{ await db.ref('calls/'+_currentCallId+'/status').set('ended'); }catch(e){} }
     _cleanupCall();
@@ -312,20 +384,37 @@ const ChatManager = {
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
     return true;
   },
-  mediaRecorder:null,audioChunks:[],recordingUser:null,
+  mediaRecorder:null,audioChunks:[],recordingUser:null,_recTimer:null,
   startVoiceMessage(userName){
+    if(this.mediaRecorder && this.mediaRecorder.state==='recording'){ this.stopVoiceMessage(); return true; }
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){showToast('Voice recording not supported');return false;}
-    if(this.mediaRecorder && this.mediaRecorder.state==='recording'){this.stopVoiceMessage();return true;}
     navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
       this.audioChunks=[];this.recordingUser=userName;
       this.mediaRecorder=new MediaRecorder(stream);
       this.mediaRecorder.ondataavailable=e=>{if(e.data.size>0) this.audioChunks.push(e.data);};
       this.mediaRecorder.onstop=()=>{ let b=new Blob(this.audioChunks,{type:this.mediaRecorder.mimeType||'audio/webm'}); stream.getTracks().forEach(t=>t.stop()); this.finishVoiceMessage(userName,b); };
-      this.mediaRecorder.start(); showToast('🔴 Recording... tap 🎤 again to send');
+      this.mediaRecorder.start();
+      let old=document.getElementById('voiceRecBar'); if(old) old.remove();
+      let bar=document.createElement('div'); bar.id='voiceRecBar';
+      bar.style.cssText='position:fixed;bottom:110px;left:12px;right:12px;background:#D32F2F;color:#fff;padding:14px;border-radius:16px;z-index:999999;display:flex;align-items:center;gap:10px;justify-content:space-between';
+      bar.innerHTML=`<span>🔴 <b>Recording...</b> <span id="voiceRecTime">0:00</span></span><button onclick="ChatManager.stopVoiceMessage()" style="background:#fff;color:#000;border:none;padding:10px 16px;border-radius:20px;font-weight:800;cursor:pointer">✅ Send</button><button onclick="ChatManager.cancelVoiceMessage()" style="background:#333;color:#fff;border:none;padding:10px 14px;border-radius:20px;font-weight:700;cursor:pointer">✕ Cancel</button>`;
+      document.body.appendChild(bar);
+      let sec=0; this._recTimer=setInterval(()=>{ sec++; let el=document.getElementById('voiceRecTime'); if(el) el.textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); if(sec>=60) this.stopVoiceMessage(); },1000);
     }).catch(()=>showToast('Microphone permission required'));
     return true;
   },
-  stopVoiceMessage(){ if(this.mediaRecorder && this.mediaRecorder.state==='recording'){this.mediaRecorder.stop();} },
+  stopVoiceMessage(){
+    if(this._recTimer) clearInterval(this._recTimer); this._recTimer=null;
+    let bar=document.getElementById('voiceRecBar'); if(bar) bar.remove();
+    if(this.mediaRecorder && this.mediaRecorder.state==='recording'){ this.mediaRecorder.stop(); }
+  },
+  cancelVoiceMessage(){
+    if(this._recTimer) clearInterval(this._recTimer); this._recTimer=null;
+    let bar=document.getElementById('voiceRecBar'); if(bar) bar.remove();
+    this.audioChunks=[];
+    if(this.mediaRecorder && this.mediaRecorder.state==='recording'){ this.mediaRecorder.onstop=null; try{ this.mediaRecorder.stop(); }catch(e){} try{ this.mediaRecorder.stream.getTracks().forEach(t=>t.stop()); }catch(e){} }
+    showToast('Voice cancelled');
+  },
   finishVoiceMessage(userName,audioBlob){
     if(!audioBlob||audioBlob.size===0){showToast('No voice recording captured.');return;}
     let reader=new FileReader(); reader.onload=e=>{ this.sendVoiceMessage(this.currentChatUser, e.target.result); }; reader.readAsDataURL(audioBlob);
@@ -340,10 +429,10 @@ const ChatManager = {
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
     return true;
   },
-  giftList:[{name:'Heart',coins:0,icon:'❤️'},{name:'Flower',coins:0,icon:'🌸'},{name:'Butterfly',coins:0,icon:'🦋'},{name:'Star',coins:0,icon:'⭐'}],
+  giftList:[{name:'Heart',coins:50,icon:'❤️'},{name:'Flower',coins:100,icon:'🌸'},{name:'Butterfly',coins:200,icon:'🦋'},{name:'Star',coins:300,icon:'⭐'},{name:'Diamond',coins:500,icon:'💎'}],
   openGiftPanel(user){
     let giftId='giftPanelPopup'; if(document.getElementById(giftId)) document.getElementById(giftId).remove();
-    let html=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#fff;color:#000;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Gift - FREE</div><button onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#eee;color:#000;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((g,i)=>`<button onclick="ChatManager.selectGift(${i},'${giftId}')" style="min-height:140px;border:1px solid #eee;border-radius:18px;background:#f9f9f9;color:#000;cursor:pointer;padding:8px 5px"><div style="font-size:50px">${g.icon}</div><div style="font-size:14px;font-weight:600">FREE</div><div style="margin-top:5px;font-size:14px">${g.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #eee;color:#888;font-size:13px;text-align:center">Sending gift to <strong style="color:#000">${typeof shortName!=='undefined'?shortName(user.name):user.name}</strong></div></div></div>`;
+    let html=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#fff;color:#000;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Send Gift 🎁</div><button onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#eee;color:#000;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((g,i)=>`<button onclick="ChatManager.selectGift(${i},'${giftId}')" style="min-height:140px;border:1px solid #eee;border-radius:18px;background:#f5f5f5;color:#000;cursor:pointer;padding:8px 5px"><div style="font-size:50px">${g.icon}</div><div style="font-size:14px;font-weight:600;color:#FF8C00">${g.coins} coins</div><div style="margin-top:5px;font-size:14px">${g.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #eee;color:#888;font-size:13px;text-align:center">Sending gift to <strong style="color:#000">${typeof shortName!=='undefined'?shortName(user.name):user.name}</strong> • FREE for ladies</div></div></div>`;
     document.body.insertAdjacentHTML('beforeend', html);
   },
   selectGift(index,giftPanelId){ let g=this.giftList[index]; if(!g) return; this.sendGift(g,this.currentChatUser,giftPanelId); },
@@ -356,7 +445,7 @@ const ChatManager = {
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:gift.icon+' Gift',lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
     if(document.getElementById(giftPanelId)) document.getElementById(giftPanelId).remove();
-    showToast('🎁 Gift sent! FREE');
+    showToast('🎁 Gift sent!');
   }
 };
 window.ChatManager = ChatManager;
