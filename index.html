@@ -28,6 +28,9 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .tabs button.active{background:#FF8C00;color:#fff}
 .card{background:#fff;margin:10px;border-radius:15px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,.05);cursor:pointer}
 .card img{width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700;flex-shrink:0}
+.avatar-wrap{position:relative;flex-shrink:0}
+.dot-blue{width:12px;height:12px;background:#2196F3;border-radius:50%;position:absolute;bottom:4px;right:4px;border:2px solid #fff}
+.dot-grey{width:12px;height:12px;background:#ccc;border-radius:50%;position:absolute;bottom:4px;right:4px;border:2px solid #fff}
 .card .info{flex:1;min-width:0}
 .card .info b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .info span{font-size:12px;color:#888}
@@ -52,35 +55,27 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
 </head>
 <body>
 <div class="wrapper">
-
-<!-- TOP -->
 <div class="topbar">
   <img id="meAvatar" src="logo-192.png" onclick="showPage('profile')">
   <div class="me"><b id="meName">Hi, Lady 👋</b><span>Ladies: FREE • You earn coins</span></div>
   <div class="coin-pill">🪙 <span id="meCoins">0</span></div>
-  <button class="btn btn-orange" onclick="ChatManager.openInbox()">💬</button>
+  <button class="btn btn-orange" onclick="openInboxSafe()">💬</button>
 </div>
-
 <div class="banner">
   <div class="banner-text"><b>🔥 Chat with boys — FREE for ladies</b><span>Chat • Photo • Voice • Calls • Gifts — All FREE. You earn!</span></div>
   <img src="logo-192.png">
 </div>
-
 <div class="tabs">
   <button class="active" onclick="filterGender('all',this)">All Boys</button>
   <button onclick="filterGender('online',this)">● Online</button>
   <button onclick="showPage('income')">💰 My Earnings</button>
   <button onclick="openWithdraw()">🏧 Withdraw</button>
 </div>
-
-<!-- HOME -->
 <div id="page-home">
   <div class="notice">💡 <b>How you earn:</b> Boys pay to chat you. You get coins. <b>1000 coins = KES 30.</b> Withdraw min 5000 coins. Fee: KES 100 = KES 5.</div>
   <div id="boysList"></div>
   <div id="noBoys" class="section hidden" style="text-align:center;color:#888">No boys yet. Pull to refresh.<br><br><button class="btn btn-orange" onclick="location.reload()">↻ Reload</button></div>
 </div>
-
-<!-- INCOME -->
 <div id="page-income" class="hidden">
   <div class="section">
     <h3>💰 My Earnings</h3>
@@ -95,8 +90,6 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
   </div>
   <div class="section"><h3>History</h3><div id="incomeList"><p style="color:#888;font-size:13px">No earnings yet.</p></div></div>
 </div>
-
-<!-- PROFILE -->
 <div id="page-profile" class="hidden">
   <div class="section">
     <h3>👤 My Profile</h3>
@@ -119,18 +112,13 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
     <button class="btn" style="width:100%;margin-top:14px;background:#D32F2F;color:#fff" onclick="logout()">🚪 Log Out</button>
   </div>
 </div>
-
 </div>
-
-<!-- BOTTOM NAV -->
 <div class="bottom-nav">
   <button class="active" onclick="showPage('home',this)">🏠<br>Home</button>
-  <button onclick="ChatManager.openInbox()">💬<br>Chats</button>
+  <button onclick="openInboxSafe()">💬<br>Chats</button>
   <button onclick="showPage('income',this)">💰<br>Earnings</button>
   <button onclick="showPage('profile',this)">👤<br>Profile</button>
 </div>
-
-<!-- WITHDRAW POPUP - NEW RATES -->
 <div id="withdrawPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:flex-end;justify-content:center">
   <div style="width:100%;max-width:650px;background:#fff;border-radius:25px 25px 0 0;padding:20px;max-height:92vh;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center">
@@ -148,35 +136,38 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
     <button onclick="submitWithdraw()" style="width:100%;padding:16px;border:none;border-radius:16px;background:#C86BFF;color:#fff;font-size:18px;font-weight:700;cursor:pointer">Submit Request</button>
   </div>
 </div>
-
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
+// FIXED: Real Firebase config - same project as Male, NOT dummy
 const firebaseConfig = {
-  apiKey: "AIzaSyDUMMY-REPLACE-WITH-YOURS",
-  authDomain: "patanisha.firebaseapp.com",
-  databaseURL: "https://patanisha-default-rtdb.firebaseio.com",
-  projectId: "patanisha",
-  storageBucket: "patanisha.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
+  authDomain: "patanisha-49561.firebaseapp.com",
+  databaseURL: "https://patanisha-49561-default-rtdb.firebaseio.com",
+  projectId: "patanisha-49561",
+  storageBucket: "patanisha-49561.firebasestorage.app",
+  messagingSenderId: "363879415134",
+  appId: "1:363879415134:web:81b99ab93290a3e45723cf",
+  measurementId: "G-GLXLGVWLHF"
 };
-try{ firebase.initializeApp(firebaseConfig); window.PatanishaDB = firebase.database(); }catch(e){ console.log('Firebase init',e); }
+try{ firebase.initializeApp(firebaseConfig); window.PatanishaDB = firebase.database(); window.PatanishaDBType='rtdb'; }catch(e){ console.log('Firebase init',e); }
 </script>
-<script src="chat-manager/female.js"></script>
+<script src="chat-manager/female.js?v=1006"></script>
 <script>
-// ===== NEW RATES - SINGLE SOURCE OF TRUTH =====
-const KES_PER_1000_COINS = 30; // 1000 coins = KES 30
-const FEE_RATE = 0.05;         // KES 100 = KES 5 fee
+const KES_PER_1000_COINS = 30;
+const FEE_RATE = 0.05;
 const MIN_WITHDRAW_COINS = 5000;
 function coinsToKES(c){ return (Number(c||0)*KES_PER_1000_COINS/1000); }
 function withdrawFeeKES(c){ return coinsToKES(c)*FEE_RATE; }
 function withdrawNetKES(c){ return coinsToKES(c)-withdrawFeeKES(c); }
 function shortName(n){ if(!n) return 'User'; let p=String(n).trim().split(' '); return p.length>1 ? p[0]+' '+p[1][0]+'.' : p[0]; }
 function showToast(m){ let t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:12px 18px;border-radius:20px;z-index:999999;font-size:14px;max-width:90%;text-align:center'; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
-
-// ===== PROFILE =====
+function openInboxSafe(){ if(window.ChatManager && window.ChatManager.openInbox) window.ChatManager.openInbox(); else { showToast('Opening chats...'); setTimeout(()=>{ if(window.ChatManager) window.ChatManager.openInbox(); },800); } }
+// FIXED: End call always closes, even from female page
+function endCall(){
+  try{ if(window.ChatManager && window.ChatManager.endCall) window.ChatManager.endCall(); }catch(e){}
+  document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); });
+}
 let myProfile = null, users = [], currentFilter='all';
 try{ myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_female')||localStorage.getItem('patanisha_myProfile')||'null'); }catch(e){}
 if(!myProfile){ location.href='register/index.html'; }
@@ -215,8 +206,6 @@ function saveProfile(){
   refreshMe(); showToast('✅ Profile saved');
 }
 function logout(){ if(confirm('Log out?')){ localStorage.removeItem('patanisha_myProfile'); localStorage.removeItem('patanisha_myProfile_female'); location.href='register/index.html'; } }
-
-// ===== PAGES =====
 function showPage(p,btn){
   ['home','income','profile'].forEach(x=>document.getElementById('page-'+x).classList.toggle('hidden', x!==p));
   document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
@@ -230,8 +219,6 @@ function filterGender(f,btn){
   if(btn) btn.classList.add('active');
   renderBoys();
 }
-
-// ===== BOYS LIST =====
 function loadBoys(){
   let list=[];
   try{ list=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); }catch(e){}
@@ -254,14 +241,12 @@ function renderBoys(){
   box.innerHTML = list.map((u,i)=>{
     let idx = users.findIndex(x=>x.id===u.id);
     return `<div class="card" onclick="ChatManager.openChatByIndex(${idx})">
-      <img src="${u.avatar||'logo-192.png'}">
+      <div class="avatar-wrap"><img src="${u.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><span class="${u.online?'dot-blue':'dot-grey'}"></span></div>
       <div class="info"><b>${shortName(u.name)} ♂ ${u.age||''}</b><span>📍 ${u.city||'Ruiru'} • ${u.online?'● Online':'○ Offline'}<br>${(u.bio||'Say Hi 👋').slice(0,40)}</span></div>
       <div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div>
     </div>`;
   }).join('');
 }
-
-// ===== INCOME =====
 function renderIncome(){
   refreshMe();
   let inc = myProfile.income||[];
@@ -269,8 +254,6 @@ function renderIncome(){
   if(!inc.length){ box.innerHTML='<p style="color:#888;font-size:13px">No earnings yet. Chat with boys to earn.</p>'; return; }
   box.innerHTML = inc.slice(0,30).map(x=>`<div class="row"><span>${x.reason||'Chat'} • ${new Date(x.ts||Date.now()).toLocaleDateString()}</span><b>+${x.amount||0} coins = KES ${coinsToKES(x.amount||0).toFixed(2)}</b></div>`).join('');
 }
-
-// ===== WITHDRAW - NEW RATES =====
 function updateWithdrawPreview(){
   let coins = Number(document.getElementById('withdrawCoins').value||0);
   let el=document.getElementById('withdrawPreview');
@@ -301,7 +284,6 @@ function submitWithdraw(){
   alert(`✅ Request sent!\n${coins} coins = KES ${coinsToKES(coins).toFixed(2)}\nFee KES ${withdrawFeeKES(coins).toFixed(2)}\nYou will receive KES ${net.toFixed(2)} to ${phone}`);
   closeWithdraw();
 }
-
 refreshMe();
 loadBoys();
 if(typeof loadFemaleEarnings==='function'){ try{ loadFemaleEarnings(); }catch(e){} }
