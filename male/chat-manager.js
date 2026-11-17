@@ -1,7 +1,8 @@
-// ===== male/chat-manager.js - MALE PAID - FIXED LOADING =====
+// ===== male/chat-manager.js - MALE PAID - FIXED LOADING + FIXED END CALL =====
 // Male: 1st message FREE, then 10 coins/msg, Voice 50/min, Video 100/min
 // FIX: Inbox NEVER waits for Firebase. Shows instantly.
 // FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
+// FIX: End call removes ALL #callScreen elements, stops tracks
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileMale(){
@@ -30,18 +31,14 @@ function getCachedMsgs(chatId){
 function saveCachedMsgs(chatId, msgs){
   try{ localStorage.setItem('patanisha_msgs_'+chatId, JSON.stringify((msgs||[]).slice(-100))); }catch(e){}
 }
-// ===== MALE COIN RATES =====
-const CHAT_COST = 10; // 10 coins per message after 1st FREE
+const CHAT_COST = 10;
 const VOICE_COST_PER_MIN = 50;
 const VIDEO_COST_PER_MIN = 100;
 function hasSentBefore(otherId){
   let chatId = getChatId(myProfile.id, otherId);
   let cached = getCachedMsgs(chatId);
   if(cached.length>0) return true;
-  try{
-    let k='patanisha_firstMsg_'+myProfile.id+'_'+otherId;
-    return localStorage.getItem(k)==='1';
-  }catch(e){ return false; }
+  try{ return localStorage.getItem('patanisha_firstMsg_'+myProfile.id+'_'+otherId)==='1'; }catch(e){ return false; }
 }
 function markSent(otherId){
   try{ localStorage.setItem('patanisha_firstMsg_'+myProfile.id+'_'+otherId,'1'); }catch(e){}
@@ -79,16 +76,20 @@ function getMaleChatUsers(){
 let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false, _callTimer=null, _callSeconds=0;
 function _callDB(){ return getDB(); }
 function _showCallUI(user, status, isIncoming){
-  let cs=document.getElementById('callScreen');
-  if(!cs){ cs=document.createElement('div'); cs.id='callScreen'; cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:20px'; document.body.appendChild(cs); }
-  cs.innerHTML=`<img src="${user.avatar||''}" style="width:120px;height:120px;border-radius:50%;margin-bottom:12px;border:4px solid #25D366;object-fit:cover"><div style="font-size:22px;font-weight:700">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div><div id="callStatusText" style="color:#aaa;margin:8px 0 14px">${status}</div><div id="callCoinText" style="color:#F59E0B;font-size:13px">Coins: ${myProfile?myProfile.coins||0:0}</div><video id="remoteVideo" autoplay playsinline style="width:100%;max-width:400px;border-radius:12px;display:none;background:#222"></video><video id="localVideo" autoplay muted playsinline style="width:120px;border-radius:10px;display:none;margin-top:10px"></video><div style="display:flex;gap:16px;margin-top:18px">${isIncoming?`<button onclick="ChatManager.acceptCall()" style="width:70px;height:70px;background:green;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button>`:''}<button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button><button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button></div><div style="font-size:12px;color:#888;margin-top:10px">${_currentCallType==='video'?'Video: 100 coins/min':'Voice: 50 coins/min'} • 1st minute FREE for test</div>`;
+  // Remove any old call screens first - prevents duplicate #callScreen bug
+  document.querySelectorAll('#callScreen').forEach(function(el){ el.remove(); });
+  let cs=document.createElement('div'); cs.id='callScreen';
+  cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:20px';
+  document.body.appendChild(cs);
+  cs.innerHTML=`<img src="${user.avatar||''}" style="width:120px;height:120px;border-radius:50%;margin-bottom:12px;border:4px solid #25D366;object-fit:cover"><div style="font-size:22px;font-weight:700">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div><div id="callStatusText" style="color:#aaa;margin:8px 0 14px">${status}</div><div id="callCoinText" style="color:#F59E0B;font-size:13px">Coins: ${myProfile?myProfile.coins||0:0}</div><video id="remoteVideo" autoplay playsinline style="width:100%;max-width:400px;border-radius:12px;display:none;background:#222"></video><video id="localVideo" autoplay muted playsinline style="width:120px;border-radius:10px;display:none;margin-top:10px"></video><div style="display:flex;gap:16px;margin-top:18px">${isIncoming?`<button onclick="ChatManager.acceptCall()" style="width:70px;height:70px;background:green;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button>`:''}<button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button><button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button></div><div style="font-size:12px;color:#888;margin-top:10px">${_currentCallType==='video'?'Video: 100 coins/min':'Voice: 50 coins/min'}</div>`;
   cs.style.display='flex';
 }
+// FIXED: Always removes ALL call screens, stops mic/camera
 function _cleanupCall(){
   if(_callTimer){ clearInterval(_callTimer); _callTimer=null; }
   if(_peerConn){ try{_peerConn.close();}catch(e){} _peerConn=null; }
-  if(_localStream){ _localStream.getTracks().forEach(t=>t.stop()); _localStream=null; }
-  let cs=document.getElementById('callScreen'); if(cs) cs.style.display='none';
+  if(_localStream){ try{ _localStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} _localStream=null; }
+  document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); });
   _currentCallId=null;
 }
 function _startCallBilling(){
@@ -96,7 +97,7 @@ function _startCallBilling(){
   if(_callTimer) clearInterval(_callTimer);
   _callTimer=setInterval(()=>{
     _callSeconds++;
-    if(_callSeconds<=60) return; // 1st minute free
+    if(_callSeconds<=60) return;
     if((_callSeconds-60)%60===0){
       let cost=_currentCallType==='video'?VIDEO_COST_PER_MIN:VOICE_COST_PER_MIN;
       let ok=deductCoins(cost, _currentCallType==='video'?'Video Call':'Voice Call', ChatManager.currentChatUser);
@@ -156,7 +157,6 @@ const ChatManager = {
     let old=document.getElementById('chatInboxPopup'); if(old) old.remove();
     let html=`<div id="chatInboxPopup" style="position:fixed;inset:0;background:#0D1117;z-index:99999;overflow-y:auto;color:#fff"><div style="display:flex;align-items:center;gap:10px;padding:15px;background:#2196F3;position:sticky;top:0"><button onclick="ChatManager.closeInbox()" style="background:#fff;color:#000;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><h3 style="flex:1;margin:0;color:#fff">💬 Chats - Ladies</h3><button onclick="ChatManager.openInbox()" style="background:#fff;border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer">↻</button></div><div id="inboxContent" style="padding:15px"></div></div>`;
     document.body.insertAdjacentHTML('beforeend', html);
-    // SHOW INSTANTLY - never wait for Firebase, never Loading
     let talked=getTalkedTo();
     let all=this.getChatUsers();
     let instant = talked.map(t=>{
@@ -164,7 +164,6 @@ const ChatManager = {
       return {id:t.id, name:t.name||u.name||'User', avatar:u.avatar||t.avatar||'https://via.placeholder.com/80', city:u.city||'', lastMsg:'', lastTs:t.lastTs||0};
     });
     this._renderInboxList(instant);
-    // Update lastMsg in background, one-by-one, never Promise.all, never db.ref('chats')
     let db=getDB(); if(!db || !myProfile || !myProfile.id) return;
     talked.forEach(t=>{
       let cid=getChatId(myProfile.id, t.id);
@@ -219,7 +218,6 @@ const ChatManager = {
   closeEmojiPanel(){ let p=document.getElementById('emojiPanel'); if(p) p.style.display='none'; },
   insertEmoji(e){ let inp=document.getElementById('chatInput'); if(inp){ inp.value+=e; inp.focus(); } },
   startListening(){
-    // SHOW INSTANTLY - cached or Say Hi, never Loading
     let cached = this.currentChatId ? getCachedMsgs(this.currentChatId) : [];
     this._msgs = cached;
     this.renderMessages(cached);
@@ -259,7 +257,6 @@ const ChatManager = {
     let to=(typeof toUser==='string')?{name:toUser,id:toUser}:toUser;
     saveTalkedTo(to);
     let db=getDB(); if(!db){ showToast('Firebase not loaded - reload page'); return false; }
-    // CHARGE: 1st FREE, then 10 coins
     let isFirst = !hasSentBefore(to.id);
     if(!isFirst){
       let ok = deductCoins(CHAT_COST, 'Chat message', to);
@@ -269,11 +266,9 @@ const ChatManager = {
     let chatId=getChatId(myProfile.id, to.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:to.id,to:to.name,text:message,type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs = [...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId, this._msgs); this.renderMessages(this._msgs);
-    // Give lady earnings: 10 coins credit in Firebase
     db.ref('earnings/'+to.id).push({amount:CHAT_COST, reason:'Chat from '+myProfile.name, ts:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:to.id,aName:myProfile.name,bName:to.name,lastMsg:message,lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
-    // Update header coins + placeholder after 1st msg
     let inp=document.getElementById('chatInput'); if(inp) inp.placeholder='Type message... 10 coins';
     return true;
   },
@@ -298,10 +293,13 @@ const ChatManager = {
     const s2=document.getElementById('callStatusText'); if(s2) s2.textContent='✅ Connected';
     db.ref('calls/'+_currentCallId+'/callerCandidates').on('child_added', s=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}); });
   },
+  // FIXED END CALL - always works, even if _currentCallId is null
   async endCall(){
     const db=_callDB();
     if(_currentCallId && db){ try{ await db.ref('calls/'+_currentCallId+'/status').set('ended'); }catch(e){} }
     _cleanupCall();
+    document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); });
+    if(typeof showToast!=='undefined') showToast('Call ended');
   },
   toggleMute(){
     if(!_localStream) return; _isMuted=!_isMuted;
