@@ -1,5 +1,6 @@
 // ===== male/chat-manager.js - MALE PAID - HD VIDEO 720p + RINGTONE + AUTO-CUT <50 + VOICE RECORDER =====
 // Male: 1st message FREE, then 10 coins/msg, Voice 50/min, Video 100/min
+// RULE: Lady calls Man = MAN PAYS. If man <50 coins, incoming call is auto-rejected with "insufficient_coins"
 // FIX: Inbox NEVER waits for Firebase. Shows instantly.
 // FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
 // FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
@@ -100,7 +101,6 @@ function _stopRingtone(){
   try{ if(_ringCtx) _ringCtx.close(); }catch(e){}
   _ringCtx=null;
 }
-// HD CAMERA SETTINGS - SHARED
 function _hdConstraints(type){
   return {
     audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true},
@@ -194,7 +194,14 @@ async function _startRealCall(user, type){
     try{ _stopRingtone(); await _peerConn.setRemoteDescription(new RTCSessionDescription(ans)); const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; _startCallBilling(); }catch(e){}
   });
   db.ref('calls/'+_currentCallId+'/calleeCandidates').on('child_added', snap=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(snap.val())).catch(()=>{}); });
-  db.ref('calls/'+_currentCallId+'/status').on('value', snap=>{ if(snap.val()==='ended') _cleanupCall(); });
+  db.ref('calls/'+_currentCallId+'/status').on('value', snap=>{
+    if(snap.val()==='ended'){
+      db.ref('calls/'+_currentCallId+'/rejectReason').once('value').then(rs=>{
+        if(rs.val()==='insufficient_coins' && typeof showToast!=='undefined') showToast('⚠️ Insufficient coins - call ended');
+      }).catch(()=>{});
+      _cleanupCall();
+    }
+  });
   return true;
 }
 function _listenForIncomingCalls(){
@@ -204,6 +211,14 @@ function _listenForIncomingCalls(){
     db.ref('calls').orderByChild('to').equalTo(myProfile.id).on('child_added', snap=>{
       const call=snap.val(); if(!call||call.status!=='ringing') return;
       if(call.from===myProfile.id) return;
+      // MAN PAYS EVEN IF LADY CALLS - if man has <50, REJECT instantly, lady sees why
+      if((myProfile.coins||0) < 50){
+        db.ref('calls/'+snap.key+'/status').set('ended');
+        db.ref('calls/'+snap.key+'/rejectReason').set('insufficient_coins');
+        if(typeof showToast!=='undefined') showToast('⚠️ Missed call from '+(call.fromName||'lady')+' - You have <50 coins. Recharge to receive calls!');
+        if(typeof openRecharge==='function') openRecharge();
+        return;
+      }
       _currentCallId=snap.key; _currentCallType=call.type;
       _showCallUI({name:call.fromName||'Someone', avatar:call.fromAvatar||''}, call.type==='video'?'📹 Incoming Video Call...':'📞 Incoming Voice Call...', true);
     });
@@ -343,6 +358,14 @@ const ChatManager = {
   startVoiceCall(user){ _listenForIncomingCalls(); return _startRealCall(user,'voice'); },
   startVideoCall(user){ _listenForIncomingCalls(); return _startRealCall(user,'video'); },
   async acceptCall(){
+    // MAN PAYS EVEN IF LADY CALLED - double check before accepting
+    if((myProfile.coins||0) < 50){
+      if(typeof showToast!=='undefined') showToast('⚠️ Insufficient coins! Need at least 50 coins to answer. Recharge: KES 100 = 1000 Coins');
+      const db=_callDB(); if(_currentCallId && db){ try{ await db.ref('calls/'+_currentCallId+'/status').set('ended'); await db.ref('calls/'+_currentCallId+'/rejectReason').set('insufficient_coins'); }catch(e){} }
+      _cleanupCall();
+      if(typeof openRecharge==='function') openRecharge();
+      return;
+    }
     _stopRingtone();
     const db=_callDB(); if(!db||!_currentCallId) return;
     const st=document.getElementById('callStatusText'); if(st) st.textContent='Connecting...';
