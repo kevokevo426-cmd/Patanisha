@@ -180,7 +180,6 @@ function renderUsers(){
 }
 function switchTab(tab, el){ currentHomeTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); renderUsers(); }
 function goHome(){ switchTab('recommend', document.querySelector('.tab')); window.scrollTo(0,0); }
-// ★★★ PHOTOS: My Photos + Other person's Photos + Viewer ★★★
 function handleAdditionalPhoto(file, idx){
   if(!file) return;
   let r=new FileReader();
@@ -248,7 +247,6 @@ function openProfile(idx){
   window._currentProfilePhotos = localPhotos;
   document.getElementById('profilePhotos').innerHTML = localPhotos.map((p,i)=>`<img src="${p}" onclick="openPhotoViewer(window._currentProfilePhotos,${i})">`).join('');
   document.getElementById('profilePopup').style.display = 'block';
-  // ★★★ FETCH HER REAL 3+ PHOTOS FROM FIREBASE ★★★
   try{
     let db = window.PatanishaDB;
     if(db && currentProfile.id){
@@ -262,7 +260,6 @@ function openProfile(idx){
           document.getElementById('profilePhotos').innerHTML = photos.map((p,i)=>`<img src="${p}" onclick="openPhotoViewer(window._currentProfilePhotos,${i})">`).join('');
         }
       });
-      // Also fetch her latest bio/city if missing
       db.ref('users/'+currentProfile.id).once('value').then(snap=>{
         let v=snap.val(); if(!v) return;
         if(v.bio) document.getElementById('profileBio').innerText=v.bio;
@@ -283,12 +280,12 @@ function startChat(){
     localStorage.setItem(k, JSON.stringify(arr.slice(0,100)));
   }catch(e){}
   if(window.ChatManager && window.ChatManager.openChat){ window.ChatManager.openChat(u); return; }
-  showToast('Chat loading... tap Chat again');
-  setTimeout(()=>{ if(window.ChatManager && window.ChatManager.openChat) window.ChatManager.openChat(u); },1000);
+  showToast('Opening chat...');
+  setTimeout(()=>{ if(window.ChatManager && window.ChatManager.openChat) window.ChatManager.openChat(u); else showToast('Chat file not loaded - reload page'); },800);
 }
 function startCall(type){ closeProfile(); if(!window.ChatManager) { showToast('Chat loading... tap again'); return; } if(type==='voice') window.ChatManager.startVoiceCall(currentProfile); else window.ChatManager.startVideoCall(currentProfile); }
 function endCall(){ if(window.ChatManager) window.ChatManager.endCall(); let cs=document.getElementById('callScreen'); if(cs) cs.style.display='none'; }
-function openChatList(){ if(window.ChatManager) window.ChatManager.openInbox(); else showToast('Chats loading... tap again'); }
+function openChatList(){ if(window.ChatManager && window.ChatManager.openInbox) window.ChatManager.openInbox(); else { showToast('Opening chats...'); setTimeout(()=>{ if(window.ChatManager) window.ChatManager.openInbox(); else showToast('Reload page - chat file missing'); },800); } }
 function openChatForUser(id){ let u = users.find(x=>x.id===id) || (window.ChatManager ? window.ChatManager.getChatUsers().find(x=>x.id===id) : null); if(u && window.ChatManager) window.ChatManager.openChat(u); }
 function openSearchById(){ document.getElementById('searchByIdBar').style.display='block'; let i=document.getElementById('searchIdInput'); if(i) i.focus(); }
 function closeSearchById(){ document.getElementById('searchByIdBar').style.display='none'; renderUsers(); }
@@ -360,7 +357,6 @@ function logoutUser(){
   localStorage.removeItem('patanisha_myProfile_male');
   window.location.replace('../register/index.html');
 }
-// ★★★ Load real ladies from Firebase (without downloading their photos in list) ★★★
 function loadUsersFromFirebase(){
   try{
     let db=window.PatanishaDB; if(!db) return;
@@ -398,6 +394,6 @@ renderUsers();
   window.PatanishaDBType = 'rtdb';
   loadUsersFromFirebase();
 </script>
-<script src="chat-manager.js?v=1004"></script>
+<script src="chat-manager.js?v=1005"></script>
 </body>
 </html>
