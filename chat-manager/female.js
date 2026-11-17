@@ -1,7 +1,7 @@
-// ===== chat-manager/female.js - FEMALE FREE - FIREBASE REAL CHAT =====
-// Female: Chat / Photo / Voice / Gifts = ALL FREE
-// Fix: NEVER download db.ref('chats') - only load meta for people you talked to
-// Fix: startListening shows chat INSTANTLY - never stuck on Loading
+// ===== chat-manager/female.js - FEMALE FREE - FIXED LOADING =====
+// FIX: Inbox NEVER waits for Firebase. Shows from localStorage instantly.
+// FIX: Chat NEVER waits. Shows "Say Hi" instantly, then loads messages.
+// FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileFemale(){
@@ -23,6 +23,13 @@ function saveTalkedTo(other){
 function getTalkedTo(){
   if(!myProfile || !myProfile.id) return [];
   try{ return JSON.parse(localStorage.getItem('patanisha_talkedTo_'+myProfile.id)||'[]'); }catch(e){ return []; }
+}
+// Cache messages locally so chat opens instantly even offline
+function getCachedMsgs(chatId){
+  try{ return JSON.parse(localStorage.getItem('patanisha_msgs_'+chatId)||'[]'); }catch(e){ return []; }
+}
+function saveCachedMsgs(chatId, msgs){
+  try{ localStorage.setItem('patanisha_msgs_'+chatId, JSON.stringify((msgs||[]).slice(-100))); }catch(e){}
 }
 function loadFemaleEarnings(){
   if(typeof myProfile==='undefined'||!myProfile) return;
@@ -53,9 +60,11 @@ function getFemaleChatUsers(){
     let pageUsers=(typeof users!=='undefined'?users:[]);
     pageUsers.forEach(pu=>{ if(pu && pu.gender && pu.gender.toLowerCase()==='male' && !list.find(x=>x.id===pu.id)) list.push(pu); });
   }catch(e){}
+  // Also add people you already talked to, even if not in users list
+  try{ getTalkedTo().forEach(t=>{ if(!list.find(x=>x.id===t.id)) list.push(t); }); }catch(e){}
   return list.filter(u=>{
-    if(!u.gender) return false;
-    if(u.gender.toLowerCase().trim()!=='male') return false;
+    if(!u.gender && !getTalkedTo().find(x=>x.id===u.id)) return false;
+    if(u.gender && u.gender.toLowerCase().trim()!=='male' && !getTalkedTo().find(x=>x.id===u.id)) return false;
     if(typeof myProfile!=='undefined' && myProfile){
       if(u.email && myProfile.email && u.email.toLowerCase()===myProfile.email.toLowerCase()) return false;
       if(u.id && myProfile.id && u.id===myProfile.id) return false;
@@ -63,64 +72,91 @@ function getFemaleChatUsers(){
     return true;
   });
 }
+// ===== REAL CALLS - WebRTC =====
+let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false;
+function _callDB(){ return getDB(); }
+function _showCallUI(user, status, isIncoming){
+  let cs=document.getElementById('callScreen');
+  if(!cs){ cs=document.createElement('div'); cs.id='callScreen'; cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:20px'; document.body.appendChild(cs); }
+  cs.innerHTML=`<img src="${user.avatar||''}" style="width:120px;height:120px;border-radius:50%;margin-bottom:12px;border:4px solid #25D366;object-fit:cover"><div style="font-size:22px;font-weight:700">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div><div id="callStatusText" style="color:#aaa;margin:8px 0 14px">${status}</div><video id="remoteVideo" autoplay playsinline style="width:100%;max-width:400px;border-radius:12px;display:none;background:#222"></video><video id="localVideo" autoplay muted playsinline style="width:120px;border-radius:10px;display:none;margin-top:10px"></video><div style="display:flex;gap:16px;margin-top:18px">${isIncoming?`<button onclick="ChatManager.acceptCall()" style="width:70px;height:70px;background:green;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button>`:''}<button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button><button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button></div><div style="font-size:12px;color:#888;margin-top:10px">Ladies: FREE • Men pay</div>`;
+  cs.style.display='flex';
+}
+function _cleanupCall(){
+  if(_peerConn){ try{_peerConn.close();}catch(e){} _peerConn=null; }
+  if(_localStream){ _localStream.getTracks().forEach(t=>t.stop()); _localStream=null; }
+  let cs=document.getElementById('callScreen'); if(cs) cs.style.display='none';
+  _currentCallId=null;
+}
+async function _startRealCall(user, type){
+  if(!user || !user.id){ if(typeof showToast!=='undefined') showToast('Select a person first'); return false; }
+  _currentCallType=type; _isMuted=false;
+  const db=_callDB(); if(!db){ if(typeof showToast!=='undefined') showToast('Firebase not loaded'); return false; }
+  _currentCallId=getChatId(myProfile.id, user.id)+'_'+Date.now();
+  _showCallUI(user, type==='video'?'📹 Video Calling... FREE':'📞 Voice Calling... FREE', false);
+  try{
+    _localStream=await navigator.mediaDevices.getUserMedia({audio:true, video:type==='video'});
+    if(type==='video'){ const lv=document.getElementById('localVideo'); if(lv){ lv.srcObject=_localStream; lv.style.display='block'; } const rv=document.getElementById('remoteVideo'); if(rv) rv.style.display='block'; }
+  }catch(e){ if(typeof showToast!=='undefined') showToast('Allow Microphone / Camera to call'); _cleanupCall(); return false; }
+  _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+  _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
+  _peerConn.ontrack=e=>{ const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; };
+  _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/callerCandidates').push(e.candidate.toJSON()); };
+  const offer=await _peerConn.createOffer(); await _peerConn.setLocalDescription(offer);
+  await db.ref('calls/'+_currentCallId).set({from:myProfile.id,to:user.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',type,offer:{type:offer.type,sdp:offer.sdp},status:'ringing',createdAt:Date.now()});
+  db.ref('calls/'+_currentCallId+'/answer').on('value', async snap=>{
+    const ans=snap.val(); if(!ans||!_peerConn||_peerConn.signalingState!=='have-local-offer') return;
+    try{ await _peerConn.setRemoteDescription(new RTCSessionDescription(ans)); const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; }catch(e){}
+  });
+  db.ref('calls/'+_currentCallId+'/calleeCandidates').on('child_added', snap=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(snap.val())).catch(()=>{}); });
+  db.ref('calls/'+_currentCallId+'/status').on('value', snap=>{ if(snap.val()==='ended') _cleanupCall(); });
+  return true;
+}
+function _listenForIncomingCalls(){
+  if(_callListening) return; _callListening=true;
+  const db=_callDB(); if(!db||!myProfile) return;
+  try{
+    db.ref('calls').orderByChild('to').equalTo(myProfile.id).on('child_added', snap=>{
+      const call=snap.val(); if(!call||call.status!=='ringing') return;
+      if(call.from===myProfile.id) return;
+      _currentCallId=snap.key; _currentCallType=call.type;
+      _showCallUI({name:call.fromName||'Someone', avatar:call.fromAvatar||''}, call.type==='video'?'📹 Incoming Video Call... FREE':'📞 Incoming Voice Call... FREE', true);
+    });
+  }catch(e){}
+}
 const ChatManager = {
   getChatUsers(){ return getFemaleChatUsers(); },
+  _renderInboxList(list){
+    let content=document.getElementById('inboxContent'); if(!content) return;
+    this._inboxList=list;
+    if(!list.length){
+      content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">No chats yet<br><span style="font-size:12px">Tap a boy on Home → Chat to start</span><br><br><button onclick="ChatManager.openInbox()" style="background:#FF8C00;color:#fff;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer">↻ Retry</button></div>`;
+      return;
+    }
+    content.innerHTML=list.map((u,i)=>`<div onclick="ChatManager.openInboxChat(${i})" style="display:flex;align-items:center;gap:12px;background:#fff;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05)"><img src="${u.avatar||'https://via.placeholder.com/80'}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${typeof shortName!=='undefined'?shortName(u.name):u.name} ♂</b><div style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.lastMsg ? String(u.lastMsg).replace(/</g,'&lt;') : '📍 '+(u.city||'Ruiru')}</div></div><span style="font-size:22px">💬</span></div>`).join('');
+  },
   openInbox(){
     loadFemaleEarnings();
     let old=document.getElementById('chatInboxPopup'); if(old) old.remove();
-    let html=`<div id="chatInboxPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;overflow-y:auto;color:#000"><div style="display:flex;align-items:center;gap:10px;padding:15px;background:#FFA500;position:sticky;top:0"><button onclick="ChatManager.closeInbox()" style="background:#fff;color:#000;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><h3 style="flex:1;margin:0;color:#fff">💬 Chats - Boys</h3></div><div id="inboxContent" style="padding:15px"></div></div>`;
+    let html=`<div id="chatInboxPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;overflow-y:auto;color:#000"><div style="display:flex;align-items:center;gap:10px;padding:15px;background:#FFA500;position:sticky;top:0"><button onclick="ChatManager.closeInbox()" style="background:#fff;color:#000;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><h3 style="flex:1;margin:0;color:#fff">💬 Chats - Boys</h3><button onclick="ChatManager.openInbox()" style="background:#fff;border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer">↻</button></div><div id="inboxContent" style="padding:15px"></div></div>`;
     document.body.insertAdjacentHTML('beforeend', html);
-    let content=document.getElementById('inboxContent');
-    content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">Loading chats... ⏳</div>`;
-    let db=getDB();
-    if(!db || !myProfile || !myProfile.id){
-      content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">Firebase not loaded<br><span style="font-size:12px">Reload page</span><br><br><button onclick="location.reload()" style="background:#FF8C00;color:#fff;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer">↻ Reload</button></div>`;
-      return;
-    }
+    // 1. SHOW INSTANTLY - never wait for Firebase
     let talked=getTalkedTo();
-    if(talked.length>0){
-      let all=this.getChatUsers();
-      let jobs=talked.map(t=>{
-        let cid=getChatId(myProfile.id, t.id);
-        return db.ref('chats/'+cid+'/meta').once('value').then(s=>{
-          let meta=s.val()||{};
-          let u=all.find(x=>x.id===t.id)||{};
-          return {id:t.id, name:meta.bName||meta.aName||t.name||u.name||'User', avatar:u.avatar||t.avatar||'https://via.placeholder.com/80', city:u.city||'', lastMsg:meta.lastMsg||'', lastTs:meta.lastTs||t.lastTs||0};
-        }).catch(()=>({id:t.id,name:t.name||'User',avatar:t.avatar||'https://via.placeholder.com/80',city:'',lastMsg:'',lastTs:t.lastTs||0}));
-      });
-      Promise.all(jobs).then(list=>{
-        list.sort((a,b)=>b.lastTs-a.lastTs);
-        this._inboxList=list;
-        content.innerHTML=list.map((u,i)=>`<div onclick="ChatManager.openInboxChat(${i})" style="display:flex;align-items:center;gap:12px;background:#fff;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05)"><img src="${u.avatar}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(u.name)} ♂</b><div style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.lastMsg ? u.lastMsg.replace(/</g,'&lt;') : '📍 '+(u.city||'Ruiru')}</div></div><span style="font-size:22px">💬</span></div>`).join('');
-      });
-      return;
-    }
-    let _done=false;
-    let _timer=setTimeout(()=>{
-      if(_done) return; _done=true;
-      content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">No chats yet<br><span style="font-size:12px">Tap a boy on Home → Chat to start</span><br><br><button onclick="ChatManager.openInbox()" style="background:#FF8C00;color:#fff;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer">↻ Retry</button></div>`;
-    },8000);
-    db.ref('chats').once('value').then(snap=>{
-      clearTimeout(_timer); if(_done && snap.numChildren()===0) return;
-      let list=[];
-      snap.forEach(c=>{
-        let v=c.val()||{}; let meta=v.meta||{};
-        let otherId=null, otherName=null;
-        if(meta.aId===myProfile.id){ otherId=meta.bId; otherName=meta.bName; }
-        else if(meta.bId===myProfile.id){ otherId=meta.aId; otherName=meta.aName; }
-        else return;
-        if(!otherId) return;
-        let u=this.getChatUsers().find(x=>x.id===otherId) || {};
-        list.push({id:otherId, name:otherName||u.name||'User', avatar:u.avatar||'https://via.placeholder.com/80', city:u.city||'', lastMsg:meta.lastMsg||'', lastTs:meta.lastTs||0});
-        saveTalkedTo({id:otherId,name:otherName||u.name,avatar:u.avatar});
-      });
-      list.sort((a,b)=>b.lastTs-a.lastTs);
-      if(list.length===0){ content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">No chats yet<br><span style="font-size:12px">Tap a boy on Home → Chat to start</span></div>`; return; }
-      this._inboxList=list;
-      content.innerHTML=list.map((u,i)=>`<div onclick="ChatManager.openInboxChat(${i})" style="display:flex;align-items:center;gap:12px;background:#fff;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05)"><img src="${u.avatar}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(u.name)} ♂</b><div style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.lastMsg ? u.lastMsg.replace(/</g,'&lt;') : '📍 '+(u.city||'Ruiru')}</div></div><span style="font-size:22px">💬</span></div>`).join('');
-    }).catch(e=>{
-      clearTimeout(_timer);
-      content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">Could not load chats<br><span style="font-size:12px">Check internet / reload</span><br><br><button onclick="ChatManager.openInbox()" style="background:#FF8C00;color:#fff;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer">↻ Retry</button></div>`;
+    let all=this.getChatUsers();
+    let instant = talked.map(t=>{
+      let u=all.find(x=>x.id===t.id)||{};
+      return {id:t.id, name:t.name||u.name||'User', avatar:u.avatar||t.avatar||'https://via.placeholder.com/80', city:u.city||'', lastMsg:'', lastTs:t.lastTs||0};
+    });
+    this._renderInboxList(instant);
+    // 2. UPDATE LAST MESSAGES IN BACKGROUND - one by one, never Promise.all
+    let db=getDB(); if(!db || !myProfile || !myProfile.id) return;
+    talked.forEach((t, idx)=>{
+      let cid=getChatId(myProfile.id, t.id);
+      db.ref('chats/'+cid+'/meta').once('value').then(s=>{
+        let meta=s.val()||{};
+        let list=this._inboxList||[];
+        let item=list.find(x=>x.id===t.id);
+        if(item){ item.lastMsg=meta.lastMsg||''; item.lastTs=meta.lastTs||item.lastTs; list.sort((a,b)=>b.lastTs-a.lastTs); this._renderInboxList(list); }
+      }).catch(()=>{});
     });
   },
   openInboxChat(idx){ let u=this._inboxList && this._inboxList[idx]; if(u) this.openChat(u); },
@@ -129,12 +165,13 @@ const ChatManager = {
   currentChatUser:null, currentChatId:null, _listener:null, _msgs:[],
   openChat(user){
     loadFemaleEarnings();
+    _listenForIncomingCalls();
     saveTalkedTo(user);
     this.currentChatUser=user; this.closeInbox();
     let old=document.getElementById('chatPopup'); if(old) old.remove();
     if(this._listener && this.currentChatId){ try{ getDB().ref('chats/'+this.currentChatId+'/messages').off('value', this._listener); }catch(e){} }
     this.currentChatId=getChatId(myProfile.id, user.id);
-    let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;display:flex;flex-direction:column;color:#000;height:100dvh"><div style="display:flex;align-items:center;gap:10px;padding:12px;background:#FFA500"><button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><img src="${user.avatar||''}" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${shortName(user.name)}</b><div style="font-size:11px;color:#2E7D32">● Online • FREE • You earn</div></div><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📞</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📹</button></div><div id="chatMessages" style="flex:1;min-height:0;overflow-y:auto;padding:15px 15px 10px;background:#f5f5f5"></div><div style="background:#fff;border-top:1px solid #eee;padding:8px 10px calc(8px + env(safe-area-inset-bottom))"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><button onclick="ChatManager.startVoiceMessage(ChatManager.currentChatUser.name)" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#f0f0f0;font-size:20px;cursor:pointer;line-height:1" title="Voice message">🎤</button><input id="chatInput" placeholder="Type message... FREE" style="flex:1;min-width:0;padding:13px 16px;border-radius:25px;border:none;background:#f0f0f0;color:#000;font-size:15px;outline:none"><button onclick="ChatManager.toggleEmojiPanel()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:none;font-size:26px;cursor:pointer;line-height:1" title="Emoji">😊</button><button onclick="ChatManager.sendChatMessage()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#FF8C00;color:#fff;font-size:18px;cursor:pointer;line-height:1" title="Send">✈️</button></div><div id="emojiPanel" style="display:none;flex-wrap:wrap;gap:8px;padding:8px 4px;border-top:1px solid #eee"><div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 4px 4px"><b style="font-size:13px;color:#888">Emojis</b><button onclick="ChatManager.closeEmojiPanel()" style="background:#eee;border:none;padding:6px 14px;border-radius:20px;font-weight:700;cursor:pointer;color:#000">← Back</button></div>${['😊','😂','❤️','😍','👋','🔥','😘','🥰','😉','👍','🙏','💋','😢','😎','🎉','💖','🌹','😇','🤗','😜'].map(e=>`<button onclick="ChatManager.insertEmoji('${e}')" style="background:none;border:none;font-size:26px;cursor:pointer;padding:4px">${e}</button>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 10px 2px"><button onclick="ChatManager.openGallery(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Gallery">🖼️</button><button onclick="ChatManager.openCamera(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Camera">📷</button><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Voice call">📞</button><button onclick="ChatManager.openGiftPanel(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Gift">🎁</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Video call">📹</button></div></div></div><input type="file" id="photoCameraInput_${user.name}" accept="image/*" capture="environment" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')"><input type="file" id="photoGalleryInput_${user.name}" accept="image/*" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')">`;
+    let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;display:flex;flex-direction:column;color:#000;height:100dvh"><div style="display:flex;align-items:center;gap:10px;padding:12px;background:#FFA500"><button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><img src="${user.avatar||''}" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${typeof shortName!=='undefined'?shortName(user.name):user.name}</b><div style="font-size:11px;color:#2E7D32">● Online • FREE • You earn</div></div><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📞</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📹</button></div><div id="chatMessages" style="flex:1;min-height:0;overflow-y:auto;padding:15px 15px 10px;background:#f5f5f5"></div><div style="background:#fff;border-top:1px solid #eee;padding:8px 10px calc(8px + env(safe-area-inset-bottom))"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><button onclick="ChatManager.startVoiceMessage(ChatManager.currentChatUser.name)" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#f0f0f0;font-size:20px;cursor:pointer;line-height:1" title="Voice message">🎤</button><input id="chatInput" placeholder="Type message... FREE" style="flex:1;min-width:0;padding:13px 16px;border-radius:25px;border:none;background:#f0f0f0;color:#000;font-size:15px;outline:none"><button onclick="ChatManager.toggleEmojiPanel()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:none;font-size:26px;cursor:pointer;line-height:1" title="Emoji">😊</button><button onclick="ChatManager.sendChatMessage()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#FF8C00;color:#fff;font-size:18px;cursor:pointer;line-height:1" title="Send">✈️</button></div><div id="emojiPanel" style="display:none;flex-wrap:wrap;gap:8px;padding:8px 4px;border-top:1px solid #eee"><div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 4px 4px"><b style="font-size:13px;color:#888">Emojis</b><button onclick="ChatManager.closeEmojiPanel()" style="background:#eee;border:none;padding:6px 14px;border-radius:20px;font-weight:700;cursor:pointer;color:#000">← Back</button></div>${['😊','😂','❤️','😍','👋','🔥','😘','🥰','😉','👍','🙏','💋','😢','😎','🎉','💖','🌹','😇','🤗','😜'].map(e=>`<button onclick="ChatManager.insertEmoji('${e}')" style="background:none;border:none;font-size:26px;cursor:pointer;padding:4px">${e}</button>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 10px 2px"><button onclick="ChatManager.openGallery(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Gallery">🖼️</button><button onclick="ChatManager.openCamera(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Camera">📷</button><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Voice call">📞</button><button onclick="ChatManager.openGiftPanel(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Gift">🎁</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Video call">📹</button></div></div></div><input type="file" id="photoCameraInput_${user.name}" accept="image/*" capture="environment" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')"><input type="file" id="photoGalleryInput_${user.name}" accept="image/*" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')">`;
     document.body.insertAdjacentHTML('beforeend', html);
     this.enableChatProtection();
     this.startListening();
@@ -165,26 +202,32 @@ const ChatManager = {
   closeEmojiPanel(){ let p=document.getElementById('emojiPanel'); if(p) p.style.display='none'; },
   insertEmoji(e){ let inp=document.getElementById('chatInput'); if(inp){ inp.value+=e; inp.focus(); } },
   startListening(){
-    let db=getDB(); if(!db || !this.currentChatId){ this.renderMessages([]); return; }
-    let box=document.getElementById('chatMessages');
-    if(box) box.innerHTML='<div style="text-align:center;color:#888;padding:30px">Say Hi to '+shortName(this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">FREE - No coins needed</span></div>';
+    // SHOW INSTANTLY - cached messages or Say Hi, never Loading
+    let cached = this.currentChatId ? getCachedMsgs(this.currentChatId) : [];
+    this._msgs = cached;
+    this.renderMessages(cached);
+    let db=getDB(); if(!db || !this.currentChatId) return;
     let _got=false;
-    let _t=setTimeout(()=>{ if(_got) return; if(this._msgs && this._msgs.length===0) this.renderMessages([]); },3000);
+    // If Firebase takes >2s, keep showing cached / Say Hi, don't switch to Loading
     let ref=db.ref('chats/'+this.currentChatId+'/messages');
-    this._listener=ref.on('value', snap=>{
-      _got=true; clearTimeout(_t);
-      let msgs=[]; snap.forEach(c=>{ let v=c.val(); msgs.push(v); });
-      msgs.sort((a,b)=>(a.ts||0)-(b.ts||0));
-      this._msgs=msgs; this.renderMessages(msgs);
-    }, (err)=>{ clearTimeout(_t); this.renderMessages(this._msgs||[]); });
+    try{
+      this._listener=ref.on('value', snap=>{
+        _got=true;
+        let msgs=[]; snap.forEach(c=>{ let v=c.val(); if(v) msgs.push(v); });
+        msgs.sort((a,b)=>(a.ts||0)-(b.ts||0));
+        this._msgs=msgs; saveCachedMsgs(this.currentChatId, msgs); this.renderMessages(msgs);
+      }, (err)=>{ console.log('chat load err',err); /* keep cached, do not show Loading */ });
+      // Fallback: if .on never fires, try .once after 2s
+      setTimeout(()=>{ if(_got) return; ref.once('value').then(s=>{ let m=[]; s.forEach(c=>m.push(c.val())); m.sort((a,b)=>(a.ts||0)-(b.ts||0)); if(m.length){ this._msgs=m; saveCachedMsgs(this.currentChatId,m); this.renderMessages(m); } }).catch(()=>{}); }, 2000);
+    }catch(e){ console.log(e); }
   },
   renderMessages(msgs){
     let box=document.getElementById('chatMessages'); if(!box) return;
-    if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#888;padding:30px">Say Hi to '+shortName(this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">FREE - No coins needed</span></div>'; return; }
+    if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#888;padding:30px">Say Hi to '+(typeof shortName!=='undefined'?shortName(this.currentChatUser?this.currentChatUser.name:'him'):this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">FREE - No coins needed</span></div>'; return; }
     box.innerHTML=msgs.map(m=>{
       let mine=(m.fromId===myProfile.id);
-      let inner=m.type==='photo'?`<div style="position:relative;display:inline-block;max-width:200px" oncontextmenu="return false"><img src="${m.photo}" draggable="false" oncontextmenu="return false" ondragstart="return false" style="max-width:200px;border-radius:10px;pointer-events:none;-webkit-touch-callout:none;user-select:none"><div style="position:absolute;inset:0;background:transparent;z-index:2" oncontextmenu="return false"></div><div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:2px 6px;border-radius:8px">🔒 Private</div></div>`:m.type==='voice'?`<audio controls controlsList="nodownload noplaybackrate" disablepictureinpicture src="${m.audio}" style="max-width:200px" oncontextmenu="return false"></audio>`:String(m.text||'').replace(/</g,'&lt;');
-      return `<div style="text-align:${mine?'right':'left'};margin:8px 0"><span oncontextmenu="return false" style="display:inline-block;background:${mine?'#FF8C00':'#fff'};color:${mine?'#fff':'#000'};padding:10px 14px;border-radius:15px;max-width:75%;box-shadow:0 1px 3px rgba(0,0,0,0.1);text-align:left;user-select:none;-webkit-touch-callout:none">${inner}<div style="font-size:10px;color:#aaa;margin-top:3px">${m.time||''}</div></span></div>`;
+      let inner=m.type==='photo'?`<div style="position:relative;display:inline-block;max-width:200px"><img src="${m.photo}" draggable="false" style="max-width:200px;border-radius:10px;pointer-events:none;user-select:none"><div style="position:absolute;inset:0;background:transparent;z-index:2"></div><div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:2px 6px;border-radius:8px">🔒 Private</div></div>`:m.type==='voice'?`<audio controls controlsList="nodownload noplaybackrate" src="${m.audio}" style="max-width:200px"></audio>`:String(m.text||'').replace(/</g,'&lt;');
+      return `<div style="text-align:${mine?'right':'left'};margin:8px 0"><span style="display:inline-block;background:${mine?'#FF8C00':'#fff'};color:${mine?'#fff':'#000'};padding:10px 14px;border-radius:15px;max-width:75%;box-shadow:0 1px 3px rgba(0,0,0,0.1);text-align:left;user-select:none">${inner}<div style="font-size:10px;color:#aaa;margin-top:3px">${m.time||''}</div></span></div>`;
     }).join('');
     box.scrollTop=box.scrollHeight;
   },
@@ -202,20 +245,45 @@ const ChatManager = {
     saveTalkedTo(to);
     let db=getDB(); if(!db){ showToast('Firebase not loaded - reload page'); return false; }
     let chatId=getChatId(myProfile.id, to.id);
-    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:to.id,aName:myProfile.name,bName:to.name,lastMsg:message,lastTs:Date.now()});
-    db.ref('chats/'+chatId+'/messages').push({fromId:myProfile.id,from:myProfile.name,toId:to.id,to:to.name,text:message,type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()});
+    // Optimistic: show instantly, don't wait for Firebase
+    let newMsg={fromId:myProfile.id,from:myProfile.name,toId:to.id,to:to.name,text:message,type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
+    this._msgs = [...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId, this._msgs); this.renderMessages(this._msgs);
+    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:to.id,aName:myProfile.name,bName:to.name,lastMsg:message,lastTs:Date.now()}).catch(()=>{});
+    db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
     return true;
   },
   loadChat(to){ return {messages:this._msgs||[],msgCount:(this._msgs||[]).length}; },
-  startVoiceCall(user){ this.showCallScreen(user,'Voice calling... FREE'); return true; },
-  startVideoCall(user){ this.showCallScreen(user,'Video calling... FREE'); return true; },
-  showCallScreen(user,status){
-    let cs=document.getElementById('callScreen');
-    if(!cs){ cs=document.createElement('div'); cs.id='callScreen'; cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff'; document.body.appendChild(cs); }
-    cs.innerHTML=`<img src="${user.avatar||''}" style="width:150px;height:150px;border-radius:50%;margin-bottom:20px;border:4px solid #25D366"><div style="font-size:24px;font-weight:700">${shortName(user.name)}</div><div style="color:#aaa;margin:10px 0 40px">${status}</div><div style="display:flex;gap:20px"><button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button><button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">← Back</button></div>`;
-    cs.style.display='flex';
+  startVoiceCall(user){ _listenForIncomingCalls(); return _startRealCall(user,'voice'); },
+  startVideoCall(user){ _listenForIncomingCalls(); return _startRealCall(user,'video'); },
+  async acceptCall(){
+    const db=_callDB(); if(!db||!_currentCallId) return;
+    const st=document.getElementById('callStatusText'); if(st) st.textContent='Connecting...';
+    try{ _localStream=await navigator.mediaDevices.getUserMedia({audio:true, video:_currentCallType==='video'}); }
+    catch(e){ if(typeof showToast!=='undefined') showToast('Allow Mic/Camera'); this.endCall(); return; }
+    if(_currentCallType==='video'){ const lv=document.getElementById('localVideo'); if(lv){ lv.srcObject=_localStream; lv.style.display='block'; } }
+    const snap=await db.ref('calls/'+_currentCallId).once('value');
+    const call=snap.val(); if(!call) return;
+    _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+    _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
+    _peerConn.ontrack=e=>{ const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const s=document.getElementById('callStatusText'); if(s) s.textContent='✅ Connected'; };
+    _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/calleeCandidates').push(e.candidate.toJSON()); };
+    await _peerConn.setRemoteDescription(new RTCSessionDescription(call.offer));
+    const answer=await _peerConn.createAnswer(); await _peerConn.setLocalDescription(answer);
+    await db.ref('calls/'+_currentCallId+'/answer').set({type:answer.type, sdp:answer.sdp});
+    const s2=document.getElementById('callStatusText'); if(s2) s2.textContent='✅ Connected';
+    db.ref('calls/'+_currentCallId+'/callerCandidates').on('child_added', s=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}); });
   },
-  endCall(){ let cs=document.getElementById('callScreen'); if(cs) cs.style.display='none'; },
+  async endCall(){
+    const db=_callDB();
+    if(_currentCallId && db){ try{ await db.ref('calls/'+_currentCallId+'/status').set('ended'); }catch(e){} }
+    _cleanupCall();
+  },
+  toggleMute(){
+    if(!_localStream) return; _isMuted=!_isMuted;
+    _localStream.getAudioTracks().forEach(t=>t.enabled=!_isMuted);
+    if(typeof showToast!=='undefined') showToast(_isMuted?'Muted 🔇':'Unmuted 🎤');
+  },
+  showCallScreen(user,status){ _showCallUI(user,status,false); },
   openGallery(userName){ let i=document.getElementById('photoGalleryInput_'+userName); if(i){i.value='';i.click();} },
   openCamera(userName){ let i=document.getElementById('photoCameraInput_'+userName); if(i){i.value='';i.click();} },
   handlePhotoSelected(file,userName){
@@ -239,8 +307,10 @@ const ChatManager = {
     if(!myProfile) return false;
     saveTalkedTo(toUser);
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
-    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:'📷 Photo',lastTs:Date.now()});
-    db.ref('chats/'+chatId+'/messages').push({fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,type:'photo',photo:photoData,text:'📷 Photo',time:new Date().toLocaleTimeString(),ts:Date.now()});
+    let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,type:'photo',photo:photoData,text:'📷 Photo',time:new Date().toLocaleTimeString(),ts:Date.now()};
+    this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
+    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:'📷 Photo',lastTs:Date.now()}).catch(()=>{});
+    db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
     return true;
   },
   mediaRecorder:null,audioChunks:[],recordingUser:null,
@@ -265,14 +335,16 @@ const ChatManager = {
     if(typeof myProfile==='undefined'||!myProfile) return false;
     saveTalkedTo(toUser);
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
-    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:'🎤 Voice message',lastTs:Date.now()});
-    db.ref('chats/'+chatId+'/messages').push({fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,type:'voice',audio:audioData,text:'🎤 Voice',time:new Date().toLocaleTimeString(),ts:Date.now()});
+    let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,type:'voice',audio:audioData,text:'🎤 Voice',time:new Date().toLocaleTimeString(),ts:Date.now()};
+    this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
+    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:'🎤 Voice message',lastTs:Date.now()}).catch(()=>{});
+    db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
     return true;
   },
   giftList:[{name:'Heart',coins:0,icon:'❤️'},{name:'Flower',coins:0,icon:'🌸'},{name:'Butterfly',coins:0,icon:'🦋'},{name:'Star',coins:0,icon:'⭐'}],
   openGiftPanel(user){
     let giftId='giftPanelPopup'; if(document.getElementById(giftId)) document.getElementById(giftId).remove();
-    let html=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#fff;color:#000;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Gift - FREE</div><button onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#eee;color:#000;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((g,i)=>`<button onclick="ChatManager.selectGift(${i},'${giftId}')" style="min-height:140px;border:1px solid #eee;border-radius:18px;background:#f9f9f9;color:#000;cursor:pointer;padding:8px 5px"><div style="font-size:50px">${g.icon}</div><div style="font-size:14px;font-weight:600">FREE</div><div style="margin-top:5px;font-size:14px">${g.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #eee;color:#888;font-size:13px;text-align:center">Sending gift to <strong style="color:#000">${shortName(user.name)}</strong></div></div></div>`;
+    let html=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#fff;color:#000;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Gift - FREE</div><button onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#eee;color:#000;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((g,i)=>`<button onclick="ChatManager.selectGift(${i},'${giftId}')" style="min-height:140px;border:1px solid #eee;border-radius:18px;background:#f9f9f9;color:#000;cursor:pointer;padding:8px 5px"><div style="font-size:50px">${g.icon}</div><div style="font-size:14px;font-weight:600">FREE</div><div style="margin-top:5px;font-size:14px">${g.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #eee;color:#888;font-size:13px;text-align:center">Sending gift to <strong style="color:#000">${typeof shortName!=='undefined'?shortName(user.name):user.name}</strong></div></div></div>`;
     document.body.insertAdjacentHTML('beforeend', html);
   },
   selectGift(index,giftPanelId){ let g=this.giftList[index]; if(!g) return; this.sendGift(g,this.currentChatUser,giftPanelId); },
@@ -280,11 +352,14 @@ const ChatManager = {
     if(typeof myProfile==='undefined'||!myProfile) return false;
     saveTalkedTo(toUser);
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
-    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:gift.icon+' Gift',lastTs:Date.now()});
-    db.ref('chats/'+chatId+'/messages').push({fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,text:gift.icon+' Sent '+gift.name+' gift',type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()});
+    let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,text:gift.icon+' Sent '+gift.name+' gift',type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
+    this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
+    db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:gift.icon+' Gift',lastTs:Date.now()}).catch(()=>{});
+    db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
     if(document.getElementById(giftPanelId)) document.getElementById(giftPanelId).remove();
     showToast('🎁 Gift sent! FREE');
   }
 };
 window.ChatManager = ChatManager;
 window.chatsLoading = false;
+try{ _listenForIncomingCalls(); }catch(e){}
