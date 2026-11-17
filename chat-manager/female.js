@@ -1,7 +1,8 @@
-// ===== chat-manager/female.js - FEMALE FREE - FIXED LOADING =====
-// FIX: Inbox NEVER waits for Firebase. Shows from localStorage instantly.
-// FIX: Chat NEVER waits. Shows "Say Hi" instantly, then loads messages.
+// ===== chat-manager/female.js - FEMALE FREE - FIXED LOADING + FIXED END CALL =====
+// Female: Chat / Photo / Voice / Gifts = ALL FREE
+// FIX: Inbox NEVER waits for Firebase. Shows instantly.
 // FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
+// FIX: End call removes ALL #callScreen elements, stops tracks
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileFemale(){
@@ -24,7 +25,6 @@ function getTalkedTo(){
   if(!myProfile || !myProfile.id) return [];
   try{ return JSON.parse(localStorage.getItem('patanisha_talkedTo_'+myProfile.id)||'[]'); }catch(e){ return []; }
 }
-// Cache messages locally so chat opens instantly even offline
 function getCachedMsgs(chatId){
   try{ return JSON.parse(localStorage.getItem('patanisha_msgs_'+chatId)||'[]'); }catch(e){ return []; }
 }
@@ -60,7 +60,6 @@ function getFemaleChatUsers(){
     let pageUsers=(typeof users!=='undefined'?users:[]);
     pageUsers.forEach(pu=>{ if(pu && pu.gender && pu.gender.toLowerCase()==='male' && !list.find(x=>x.id===pu.id)) list.push(pu); });
   }catch(e){}
-  // Also add people you already talked to, even if not in users list
   try{ getTalkedTo().forEach(t=>{ if(!list.find(x=>x.id===t.id)) list.push(t); }); }catch(e){}
   return list.filter(u=>{
     if(!u.gender && !getTalkedTo().find(x=>x.id===u.id)) return false;
@@ -76,15 +75,18 @@ function getFemaleChatUsers(){
 let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false;
 function _callDB(){ return getDB(); }
 function _showCallUI(user, status, isIncoming){
-  let cs=document.getElementById('callScreen');
-  if(!cs){ cs=document.createElement('div'); cs.id='callScreen'; cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:20px'; document.body.appendChild(cs); }
+  document.querySelectorAll('#callScreen').forEach(function(el){ el.remove(); });
+  let cs=document.createElement('div'); cs.id='callScreen';
+  cs.style.cssText='position:fixed;inset:0;background:#000;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:20px';
+  document.body.appendChild(cs);
   cs.innerHTML=`<img src="${user.avatar||''}" style="width:120px;height:120px;border-radius:50%;margin-bottom:12px;border:4px solid #25D366;object-fit:cover"><div style="font-size:22px;font-weight:700">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div><div id="callStatusText" style="color:#aaa;margin:8px 0 14px">${status}</div><video id="remoteVideo" autoplay playsinline style="width:100%;max-width:400px;border-radius:12px;display:none;background:#222"></video><video id="localVideo" autoplay muted playsinline style="width:120px;border-radius:10px;display:none;margin-top:10px"></video><div style="display:flex;gap:16px;margin-top:18px">${isIncoming?`<button onclick="ChatManager.acceptCall()" style="width:70px;height:70px;background:green;border:none;border-radius:50%;font-size:30px;cursor:pointer">📞</button>`:''}<button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button><button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button></div><div style="font-size:12px;color:#888;margin-top:10px">Ladies: FREE • Men pay</div>`;
   cs.style.display='flex';
 }
+// FIXED: Always removes ALL call screens, stops mic/camera
 function _cleanupCall(){
   if(_peerConn){ try{_peerConn.close();}catch(e){} _peerConn=null; }
-  if(_localStream){ _localStream.getTracks().forEach(t=>t.stop()); _localStream=null; }
-  let cs=document.getElementById('callScreen'); if(cs) cs.style.display='none';
+  if(_localStream){ try{ _localStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} _localStream=null; }
+  document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); });
   _currentCallId=null;
 }
 async function _startRealCall(user, type){
@@ -139,7 +141,6 @@ const ChatManager = {
     let old=document.getElementById('chatInboxPopup'); if(old) old.remove();
     let html=`<div id="chatInboxPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;overflow-y:auto;color:#000"><div style="display:flex;align-items:center;gap:10px;padding:15px;background:#FFA500;position:sticky;top:0"><button onclick="ChatManager.closeInbox()" style="background:#fff;color:#000;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><h3 style="flex:1;margin:0;color:#fff">💬 Chats - Boys</h3><button onclick="ChatManager.openInbox()" style="background:#fff;border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer">↻</button></div><div id="inboxContent" style="padding:15px"></div></div>`;
     document.body.insertAdjacentHTML('beforeend', html);
-    // 1. SHOW INSTANTLY - never wait for Firebase
     let talked=getTalkedTo();
     let all=this.getChatUsers();
     let instant = talked.map(t=>{
@@ -147,9 +148,8 @@ const ChatManager = {
       return {id:t.id, name:t.name||u.name||'User', avatar:u.avatar||t.avatar||'https://via.placeholder.com/80', city:u.city||'', lastMsg:'', lastTs:t.lastTs||0};
     });
     this._renderInboxList(instant);
-    // 2. UPDATE LAST MESSAGES IN BACKGROUND - one by one, never Promise.all
     let db=getDB(); if(!db || !myProfile || !myProfile.id) return;
-    talked.forEach((t, idx)=>{
+    talked.forEach(t=>{
       let cid=getChatId(myProfile.id, t.id);
       db.ref('chats/'+cid+'/meta').once('value').then(s=>{
         let meta=s.val()||{};
@@ -202,13 +202,11 @@ const ChatManager = {
   closeEmojiPanel(){ let p=document.getElementById('emojiPanel'); if(p) p.style.display='none'; },
   insertEmoji(e){ let inp=document.getElementById('chatInput'); if(inp){ inp.value+=e; inp.focus(); } },
   startListening(){
-    // SHOW INSTANTLY - cached messages or Say Hi, never Loading
     let cached = this.currentChatId ? getCachedMsgs(this.currentChatId) : [];
     this._msgs = cached;
     this.renderMessages(cached);
     let db=getDB(); if(!db || !this.currentChatId) return;
     let _got=false;
-    // If Firebase takes >2s, keep showing cached / Say Hi, don't switch to Loading
     let ref=db.ref('chats/'+this.currentChatId+'/messages');
     try{
       this._listener=ref.on('value', snap=>{
@@ -216,8 +214,7 @@ const ChatManager = {
         let msgs=[]; snap.forEach(c=>{ let v=c.val(); if(v) msgs.push(v); });
         msgs.sort((a,b)=>(a.ts||0)-(b.ts||0));
         this._msgs=msgs; saveCachedMsgs(this.currentChatId, msgs); this.renderMessages(msgs);
-      }, (err)=>{ console.log('chat load err',err); /* keep cached, do not show Loading */ });
-      // Fallback: if .on never fires, try .once after 2s
+      }, (err)=>{ console.log('chat load err',err); });
       setTimeout(()=>{ if(_got) return; ref.once('value').then(s=>{ let m=[]; s.forEach(c=>m.push(c.val())); m.sort((a,b)=>(a.ts||0)-(b.ts||0)); if(m.length){ this._msgs=m; saveCachedMsgs(this.currentChatId,m); this.renderMessages(m); } }).catch(()=>{}); }, 2000);
     }catch(e){ console.log(e); }
   },
@@ -245,7 +242,6 @@ const ChatManager = {
     saveTalkedTo(to);
     let db=getDB(); if(!db){ showToast('Firebase not loaded - reload page'); return false; }
     let chatId=getChatId(myProfile.id, to.id);
-    // Optimistic: show instantly, don't wait for Firebase
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:to.id,to:to.name,text:message,type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs = [...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId, this._msgs); this.renderMessages(this._msgs);
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:to.id,aName:myProfile.name,bName:to.name,lastMsg:message,lastTs:Date.now()}).catch(()=>{});
@@ -273,10 +269,13 @@ const ChatManager = {
     const s2=document.getElementById('callStatusText'); if(s2) s2.textContent='✅ Connected';
     db.ref('calls/'+_currentCallId+'/callerCandidates').on('child_added', s=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}); });
   },
+  // FIXED END CALL - always works, even if _currentCallId is null
   async endCall(){
     const db=_callDB();
     if(_currentCallId && db){ try{ await db.ref('calls/'+_currentCallId+'/status').set('ended'); }catch(e){} }
     _cleanupCall();
+    document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); });
+    if(typeof showToast!=='undefined') showToast('Call ended');
   },
   toggleMute(){
     if(!_localStream) return; _isMuted=!_isMuted;
