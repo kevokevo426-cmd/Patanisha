@@ -9,330 +9,361 @@
 <link rel="manifest" href="../manifest.json">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
-body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
+body{background:#0D1117;padding-bottom:80px;overflow-x:hidden;color:#fff}
 .wrapper{max-width:1200px;margin:0 auto}
 .banner{background:linear-gradient(135deg,#2196F3,#1976D2);margin:10px;padding:12px 14px;border-radius:15px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .banner-text{flex:1;min-width:0}
 .banner-text b{font-size:14px;display:block;margin-bottom:5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.banner-text p{font-size:11px;color:#BBDEFB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.banner-btn{background:linear-gradient(135deg,#FF5252,#D32F2F);color:white;border:none;padding:9px 16px;border-radius:20px;font-weight:bold;cursor:pointer;flex-shrink:0;font-size:13px}
-.tabs-wrapper{position:sticky;top:0;background:#0D1117;z-index:10;width:100%;overflow:hidden}
-.tabs{display:flex;gap:4px;padding:10px 8px;border-bottom:2px solid #1E293B;overflow-x:auto;background:#161B22;scroll-behavior:smooth;align-items:center;white-space:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.tabs::-webkit-scrollbar{display:none}
-.tab{color:#8B949E;font-weight:600;font-size:14px;padding:8px 10px;cursor:pointer;white-space:nowrap;position:relative;border:none;background:transparent;flex-shrink:0}
-.tab.active{color:#fff;font-weight:800;font-size:14px}
-.tab.active::after{content:'';position:absolute;bottom:-2px;left:0;width:100%;height:3px;background:#2196F3;border-radius:2px}
-.search-btn{margin-left:auto;background:#2196F3;color:#fff;border:none;padding:8px 12px;border-radius:20px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:13px;flex-shrink:0}
-#searchByIdBar{width:100%;box-sizing:border-box}
-#searchIdInput{min-width:0;flex:1;font-size:14px}
-#userList{display:grid;grid-template-columns:1fr;gap:0;touch-action:pan-y}
-@media(min-width:768px){#userList{grid-template-columns:1fr 1fr;padding:0 10px}.banner{margin:20px}.tabs{border-radius:12px;margin:10px}}
-@media(min-width:1024px){#userList{grid-template-columns:1fr 1fr 1fr}}
-.card{display:flex;background:#161B22;margin:10px;padding:15px;border-radius:12px;align-items:flex-start;box-shadow:0 2px 5px rgba(0,0,0,0.3);color:#C9D1D9}
-.avatar{width:70px;height:70px;border-radius:50%;border:3px solid #2196F3;position:relative;margin-right:12px;cursor:pointer;flex-shrink:0}
-.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-.online{width:12px;height:12px;background:#2196F3;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid #161B22}
-.card-info{flex:1;cursor:pointer;min-width:0}
-.card-info h3{font-size:16px;margin-bottom:2px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.friends-count{font-size:11px;color:#8B949E;margin-bottom:4px}
-.btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.hi-btn,.call-btn{background:linear-gradient(135deg,#2196F3,#1976D2);border:none;border-radius:20px;padding:8px 12px;color:white;font-weight:bold;font-size:12px;cursor:pointer}
-.nav{position:fixed;bottom:0;left:0;width:100%;background:#161B22;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,0.3);z-index:99}
-@media(min-width:768px){.nav{max-width:600px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0}}
-.nav-item{text-align:center;font-size:11px;color:#8B949E;cursor:pointer;position:relative;flex:1}
-.nav-item.active{color:#2196F3}
-.nav-icon{font-size:26px;display:block}
-.popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:999;overflow-y:auto}
-.popup-content{background:#161B22;margin:5% auto;border-radius:15px;text-align:center;position:relative;max-width:500px;width:90%;color:#C9D1D9}
-.close-btn{position:absolute;top:10px;right:20px;font-size:30px;color:#8B949E;cursor:pointer;z-index:10}
-.empty{text-align:center;padding:40px;color:#999}
-.me-header{background:linear-gradient(135deg,#2196F3,#1976D2);padding:25px 20px;border-radius:15px 15px 0 0}
-.me-stats{display:flex;justify-content:space-around;padding:15px 10px;background:#161B22}
-.stat-item{text-align:center;cursor:pointer}
-.stat-num{font-size:20px;font-weight:bold;color:#fff}
-.stat-label{font-size:12px;color:#8B949E}
-.me-cards{display:flex;gap:10px;padding:0 15px 15px}
-.me-card{flex:1;border-radius:12px;padding:15px;display:flex;align-items:center;gap:8px;cursor:pointer}
-.coin-card{background:#F59E0B;cursor:pointer}
-.btn{width:100%;padding:16px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:15px}
-.form-group{margin-bottom:16px;text-align:left;padding:0 20px}
-.form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:14px;color:#C9D1D9}
-.form-group input{width:100%;padding:14px;border:1px solid #30363D;border-radius:12px;font-size:15px;background:#21262D;color:#C9D1D9}
-.menu-item{padding:12px 20px;border-bottom:1px solid #30363D;text-align:left;display:flex;align-items:center;gap:10px;cursor:pointer;color:#C9D1D9}
-.menu-item:hover{background:#21262D}
-.profile-popup-body{padding:0;text-align:left}
-.profile-cover{height:250px;position:relative}
-.profile-cover img{width:100%;height:100%;object-fit:cover}
-.profile-avatar-big{width:100px;height:100px;border-radius:50%;border:4px solid #161B22;position:absolute;bottom:-50px;left:20px;object-fit:cover}
-.profile-info{padding:70px 20px 20px}
-.profile-name{font-size:22px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.profile-city{color:#8B949E;font-size:14px;margin:5px 0 15px}
-.profile-bio{background:#21262D;padding:15px;border-radius:12px;color:#C9D1D9;line-height:1.6}
-.profile-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:15px 0}
-.profile-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;cursor:pointer}
-.action-btns{display:flex;gap:10px;margin-top:20px}
-.action-btn{flex:1;padding:14px;border-radius:12px;border:none;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
-.btn-chat{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff}
-.btn-voice{background:linear-gradient(135deg,#F59E0B,#D97706);color:#000}
-.btn-video{background:linear-gradient(135deg,#2196F3,#1976D2);color:#fff}
-.btn-follow{background:linear-gradient(135deg,#2196F3,#1976D2);color:#fff}
-.btn-friend{background:#333;color:#fff}
-.call-screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:1000;align-items:center;justify-content:center;flex-direction:column;color:#fff}
-.call-screen-avatar{width:150px;height:150px;border-radius:50%;margin-bottom:20px;border:4px solid #25D366}
-.call-screen-name{font-size:24px;font-weight:700}
-.call-screen-status{color:#aaa;margin:10px 0 40px}
-.call-end-btn{width:70px;height:70px;background:red;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer}
-#appToast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;z-index:999999;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:90%;text-align:center;display:none}
+.banner-text span{font-size:12px;color:#BBDEFB}
+.banner img{width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0}
+.topbar{background:#0D1117;padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.topbar img{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #2196F3;cursor:pointer}
+.topbar .me{flex:1;min-width:0}
+.topbar .me b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .me span{font-size:12px;color:#8B949E}
+.coin-pill{background:#2196F3;padding:8px 12px;border-radius:20px;font-weight:800;font-size:13px;white-space:nowrap;cursor:pointer}
+/* TOP TABS - Recommend / Nearby / Online / Search */
+.toptabs{display:flex;align-items:center;gap:4px;padding:10px 10px 0;overflow-x:auto;scrollbar-width:none}
+.toptabs::-webkit-scrollbar{display:none}
+.toptab{border:none;background:none;color:#8B949E;padding:10px 12px;font-weight:700;font-size:15px;cursor:pointer;white-space:nowrap;position:relative;flex-shrink:0}
+.toptab.active{color:#fff}
+.toptab.active::after{content:'';position:absolute;left:10px;right:10px;bottom:0;height:3px;background:#2196F3;border-radius:3px}
+.search-btn{margin-left:auto;background:#2196F3;color:#fff;border:none;padding:9px 16px;border-radius:20px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.tabs{display:flex;gap:8px;padding:10px;overflow-x:auto}
+.tabs button{border:none;background:#161B22;color:#fff;padding:10px 16px;border-radius:20px;font-weight:700;cursor:pointer;white-space:nowrap}
+.tabs button.active{background:#2196F3;color:#fff}
+.card{background:#161B22;margin:10px;border-radius:15px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,.3);cursor:pointer}
+.card img{width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #2196F3;flex-shrink:0}
+.avatar-wrap{position:relative;flex-shrink:0}
+.dot-blue{width:12px;height:12px;background:#2196F3;border-radius:50%;position:absolute;bottom:4px;right:4px;border:2px solid #161B22}
+.dot-grey{width:12px;height:12px;background:#666;border-radius:50%;position:absolute;bottom:4px;right:4px;border:2px solid #161B22}
+.card .info{flex:1;min-width:0}
+.card .info b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.card .info span{font-size:12px;color:#8B949E}
+.card .actions{display:flex;gap:6px;flex-shrink:0}
+.btn{border:none;padding:10px 14px;border-radius:20px;font-weight:700;cursor:pointer}
+.btn-blue{background:#2196F3;color:#fff}
+.btn-grey{background:#21262D;color:#fff}
+.section{background:#161B22;margin:10px;border-radius:15px;padding:16px}
+.section h3{margin-bottom:10px}
+.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #30363D;font-size:14px}
+.row b{color:#fff}
+input,select{width:100%;padding:13px 14px;border:1px solid #30363D;border-radius:14px;font-size:15px;outline:none;margin-top:6px;background:#0D1117;color:#fff}
+label{display:block;margin-top:12px;font-weight:700;font-size:14px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#161B22;display:flex;border-top:1px solid #30363D;z-index:100}
+.bottom-nav button{flex:1;border:none;background:none;padding:12px 4px;font-size:12px;cursor:pointer;color:#8B949E}
+.bottom-nav button.active{color:#2196F3;font-weight:800}
+.notice{background:#1A2A3A;padding:12px;border-radius:12px;font-size:13px;margin:10px;color:#BBDEFB}
+.hidden{display:none!important}
 </style>
 </head>
 <body>
-<div id="appToast"></div>
 <div class="wrapper">
-<div class="banner"><div class="banner-text"><b>Set up 3 Say hi texts</b><p>Get more replies from ladies</p></div><button class="banner-btn" onclick="openInfoRates()">Go</button></div>
-<div class="tabs-wrapper">
-  <div class="tabs" id="tabs">
-    <button class="tab active" onclick="switchTab('recommend', this)">Recommend</button>
-    <button class="tab" onclick="switchTab('nearby', this)">Nearby</button>
-    <button class="search-btn" onclick="openSearchById()">🔍 Search</button>
+<div class="topbar">
+  <img id="meAvatar" src="../logo-192.png" onclick="showPage('profile')">
+  <div class="me"><b id="meName">Hi 👋</b><span>1st msg FREE • Then 10 coins</span></div>
+  <div class="coin-pill" onclick="openRecharge()">🪙 <span id="meCoins">0</span></div>
+  <button class="btn btn-blue" onclick="openInboxSafe()">💬</button>
+</div>
+<div class="banner" onclick="openSayHiSetup()">
+  <div class="banner-text"><b>Set up 3 Say hi texts</b><span>Get more replies from ladies</span></div>
+  <span style="background:#FF5252;color:#fff;padding:10px 18px;border-radius:20px;font-weight:800;cursor:pointer">Go</span>
+</div>
+
+<!-- TOP TABS: Recommend / Nearby / Online / Search -->
+<div class="toptabs">
+  <button class="toptab active" id="tabRecommend" onclick="setTopFilter('recommend',this)">Recommend</button>
+  <button class="toptab" id="tabNearby" onclick="setTopFilter('nearby',this)">Nearby</button>
+  <button class="toptab" id="tabOnline" onclick="setTopFilter('online',this)">● Online</button>
+  <button class="search-btn" onclick="openSearch()">🔍 Search</button>
+</div>
+<div id="searchBar" class="hidden" style="padding:10px;display:flex;gap:8px">
+  <input id="searchInput" placeholder="Search name, ID e.g. PT477241, or city..." oninput="applySearch()" style="margin:0">
+  <button class="btn btn-grey" onclick="clearSearch()">✕</button>
+</div>
+
+<div class="tabs">
+  <button class="active" onclick="showPage('home',this)">All Ladies</button>
+  <button onclick="showPage('income')">💰 My Coins</button>
+  <button onclick="openRecharge()">💎 Recharge</button>
+</div>
+<div id="page-home">
+  <div class="notice">💡 <b>How it works:</b> 1st message to each lady is FREE. Then 10 coins / msg. Voice 50/min • Video 100/min. Recharge: KES 100 = 1000 Coins.</div>
+  <div id="ladiesList"></div>
+  <div id="noLadies" class="section hidden" style="text-align:center;color:#8B949E">No ladies yet. Pull to refresh.<br><br><button class="btn btn-blue" onclick="location.reload()">↻ Reload</button></div>
+</div>
+<div id="page-income" class="hidden">
+  <div class="section">
+    <h3>🪙 My Coins</h3>
+    <div class="row"><span>Balance</span><b>🪙 <span id="incomeBalance">0</span></b></div>
+    <div class="row"><span>Usage</span><b id="usageCount">0 msgs</b></div>
+    <button class="btn btn-blue" style="width:100%;margin-top:14px" onclick="openRecharge()">💎 Recharge</button>
   </div>
-  <div id="searchByIdBar" style="display:none;padding:8px 10px;background:#161B22">
-    <div style="display:flex;gap:8px;background:#0D1117;padding:8px;border-radius:25px">
-      <input id="searchIdInput" placeholder="Search by ID e.g. PT585065" style="flex:1;padding:10px;border:none;background:transparent;color:#fff;outline:none">
-      <button onclick="searchUserById()" style="background:#2196F3;color:#fff;border:none;padding:10px 18px;border-radius:20px;font-weight:700;cursor:pointer;flex-shrink:0">Search</button>
-      <button onclick="closeSearchById()" style="background:#333;color:#fff;border:none;padding:10px 14px;border-radius:20px;cursor:pointer;flex-shrink:0">✕</button>
+  <div class="section"><h3>History</h3><div id="incomeList"><p style="color:#8B949E;font-size:13px">No usage yet.</p></div></div>
+</div>
+<div id="page-profile" class="hidden">
+  <div class="section">
+    <h3>👤 My Profile</h3>
+    <div style="text-align:center"><img id="profileAvatar" src="../logo-192.png" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #2196F3"></div>
+    <div style="display:flex;justify-content:space-around;text-align:center;margin:16px 0;padding:12px 0;border-top:1px solid #30363D;border-bottom:1px solid #30363D">
+      <div onclick="openSocialList('friends')" style="cursor:pointer"><b id="meFriends" style="font-size:18px">0</b><div style="font-size:11px;color:#8B949E">Friends</div></div>
+      <div onclick="openSocialList('following')" style="cursor:pointer"><b id="meFollowing" style="font-size:18px">0</b><div style="font-size:11px;color:#8B949E">Following</div></div>
+      <div onclick="openSocialList('followers')" style="cursor:pointer"><b id="meFollowers" style="font-size:18px">0</b><div style="font-size:11px;color:#8B949E">Followers</div></div>
+      <div onclick="openSocialList('visitors')" style="cursor:pointer"><b id="meVisitors" style="font-size:18px">0</b><div style="font-size:11px;color:#8B949E">Visitors</div></div>
     </div>
+    <div style="text-align:center;margin-bottom:12px"><button class="btn btn-blue" onclick="openSocialList('requests')">🤝 Friend Requests</button></div>
+    <label>Full Name</label><input id="editName">
+    <label>City / Estate</label><input id="editCity" placeholder="e.g. Ruiru">
+    <label>Age</label><input id="editAge" type="number" placeholder="18+">
+    <label>About Me</label><input id="editBio" placeholder="Tell ladies about you...">
+    <div class="row"><span>My ID</span><b id="profileId">-</b></div>
+    <div class="row"><span>Coins</span><b id="profileCoins">0</b></div>
+    <button class="btn btn-blue" style="width:100%;margin-top:14px" onclick="saveProfile()">Save Profile</button>
+    <button class="btn btn-grey" style="width:100%;margin-top:8px" onclick="openRecharge()">💎 Recharge</button>
+    <button class="btn" style="width:100%;margin-top:14px;background:#D32F2F;color:#fff" onclick="logout()">🚪 Log Out</button>
+  </div>
+  <div id="referralBox" style="background:#000;padding:16px;border-radius:16px;color:#fff;margin:0 10px 10px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:16px">🎁 Invite & Earn</b><span id="myReferralEarned" style="font-size:12px;color:#F59E0B;font-weight:700">0 coins earned</span></div>
+    <p style="font-size:12px;color:#888;margin:6px 0 12px">Male joins with your code + first purchase = <b style="color:#fff">YOU get +100 coins</b> • <span id="myReferralCount">0 joined</span></p>
+    <div style="font-size:13px;color:#888;margin-bottom:6px">Your Code</div>
+    <div id="myReferralCode" onclick="copyReferralCode()" style="background:#111;border:1px solid #333;padding:12px;border-radius:10px;font-size:18px;font-weight:800;letter-spacing:1px;cursor:pointer">PT...</div>
+    <div style="font-size:13px;color:#888;margin:12px 0 6px">Your Link</div>
+    <div id="myReferralLink" onclick="copyReferralLink()" style="background:#111;border:1px solid #333;padding:12px;border-radius:10px;font-size:13px;word-break:break-all;cursor:pointer">...</div>
+    <div style="display:flex;gap:10px;margin-top:14px"><button onclick="copyReferralLink()" style="flex:1;background:#25D366;color:#fff;border:none;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">📋 Copy</button><button onclick="shareReferralLink()" style="flex:1;background:#F59E0B;color:#000;border:none;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">🔗 Share</button></div>
   </div>
 </div>
-<div id="userList"></div>
 </div>
-<div class="nav">
-  <div class="nav-item active" onclick="goHome()"><span class="nav-icon">🏠</span>Home</div>
-  <div class="nav-item" onclick="window.location='../about.html'"><span class="nav-icon">ℹ️</span>About</div>
-  <div class="nav-item" onclick="openChatList()"><span class="nav-icon">💬</span>Chat</div>
-  <div class="nav-item" onclick="openMe()"><span class="nav-icon">👤</span>Me</div>
+<div class="bottom-nav">
+  <button class="active" onclick="showPage('home',this)">🏠<br>Home</button>
+  <button onclick="showPage('income',this)">💰<br>Coins</button>
+  <button onclick="openInboxSafe()">💬<br>Chat</button>
+  <button onclick="showPage('profile',this)">👤<br>Me</button>
 </div>
-
-<!-- PROFILE POPUP - WITH FOLLOW -->
-<div class="popup" id="profilePopup"><span class="close-btn" onclick="closeProfile()">×</span><div class="popup-content profile-popup-body"><div class="profile-cover"><img id="profileCover" src=""><img id="profileAvatarBig" class="profile-avatar-big" src=""></div><div class="profile-info"><div class="profile-name" id="profileName"></div><div class="profile-city" id="profileCity"></div><div class="profile-bio" id="profileBio"></div>
-<div style="display:flex;gap:8px;margin:16px 0 10px">
-  <button id="profileFollowBtn" onclick="toggleFollowFromProfile()" style="flex:1;background:#2196F3;color:#fff;border:none;padding:13px;border-radius:25px;font-weight:800;font-size:16px;cursor:pointer">+ Follow</button>
-  <button onclick="sendFriendRequestFromProfile()" style="background:#333;color:#fff;border:none;padding:13px 16px;border-radius:25px;font-weight:700;cursor:pointer">🤝 Friend</button>
-</div>
-<div style="display:flex;justify-content:space-around;text-align:center;margin-bottom:6px">
-  <div onclick="openSocialListForUser('followers')"><b id="profileCountFollowers" style="color:#fff;font-size:18px">0</b><div style="font-size:11px;color:#888">Followers</div></div>
-  <div onclick="openSocialListForUser('following')"><b id="profileCountFollowing" style="color:#fff;font-size:18px">0</b><div style="font-size:11px;color:#888">Following</div></div>
-  <div onclick="openSocialListForUser('friends')"><b id="profileCountFriends" style="color:#fff;font-size:18px">0</b><div style="font-size:11px;color:#888">Friends</div></div>
-  <div onclick="openSocialListForUser('visitors')"><b id="profileCountVisitors" style="color:#fff;font-size:18px">0</b><div style="font-size:11px;color:#888">Visitors</div></div>
-</div>
-<h3 style="margin:20px 0 10px;color:#fff">Photos</h3><div class="profile-photos" id="profilePhotos"></div><p style="font-size:12px;color:#888;text-align:center">Tap a photo to view</p><div class="action-btns"><button class="action-btn btn-chat" onclick="startChat()">💬 Chat</button><button class="action-btn btn-voice" onclick="startCall('voice')">📞 Voice</button><button class="action-btn btn-video" onclick="startCall('video')">📹 Video</button></div></div></div></div>
-
-<div class="call-screen" id="callScreen"><img id="callScreenAvatar" class="call-screen-avatar" src=""><div class="call-screen-name" id="callScreenName"></div><div class="call-screen-status" id="callScreenStatus">Calling...</div><div class="call-end-btn" onclick="endCall()">📞</div></div>
-
-<!-- ME POPUP - CLICKABLE STATS + REFERRAL -->
-<div class="popup" id="mePopup"><div class="popup-content" style="text-align:left; padding:0">
-<div style="display:flex;align-items:center;gap:10px;padding:12px 15px;background:#2196F3;border-radius:15px 15px 0 0;position:sticky;top:0;z-index:10">
-  <button onclick="closePopup('mePopup')" style="background:#fff;color:#000;border:none;padding:10px 16px;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer">← Back</button>
-  <span style="color:#fff;font-weight:700;font-size:16px">My Profile</span>
-  <button onclick="closePopup('mePopup')" style="margin-left:auto;width:38px;height:38px;border:none;border-radius:50%;background:#fff;color:#000;font-size:22px;font-weight:900;cursor:pointer">✕</button>
-</div>
-<div class="me-header"><div style="display:flex;align-items:center;gap:15px"><img id="meAvatar" src="https://via.placeholder.com/80" style="width:80px;height:80px;border-radius:50%;border:3px solid white;object-fit:cover"><div><h2 id="meName" style="color:#fff;margin:0">Name</h2><p id="meID" style="color:#BBDEFB;font-size:12px;margin-top:5px">ID:123456</p></div></div></div>
-<div class="me-stats">
-  <div class="stat-item" onclick="openSocialList('friends')"><div id="meFriends" class="stat-num">0</div><div class="stat-label">Friends</div></div>
-  <div class="stat-item" onclick="openSocialList('following')"><div id="meFollowing" class="stat-num">0</div><div class="stat-label">Following</div></div>
-  <div class="stat-item" onclick="openSocialList('followers')"><div id="meFollowers" class="stat-num">0</div><div class="stat-label">Followers</div></div>
-  <div class="stat-item" onclick="openSocialList('visitors')"><div id="meVisitors" class="stat-num">0</div><div class="stat-label">Visitors</div></div>
-</div>
-<div class="me-cards"><div class="me-card coin-card" onclick="openUsageHistory()"><span style="background:#000;color:#F59E0B;border-radius:50%;width:25px;height:25px;display:flex;align-items:center;justify-content:center;font-weight:bold">S</span><div><div style="font-size:11px;color:#000">My Coins</div><b id="meCoins">0</b></div></div><div class="me-card" style="background:linear-gradient(135deg,#2196F3,#1976D2);color:white;justify-content:center;cursor:pointer;font-weight:bold" onclick="openRecharge()">Recharge</div></div>
-
-<!-- REFERRAL BOX -->
-<div id="referralBox" style="margin:0 15px 15px;background:#000;padding:16px;border-radius:16px;color:#fff">
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <b style="font-size:16px">🎁 Invite & Earn</b>
-    <span id="myReferralEarned" style="font-size:12px;color:#F59E0B;font-weight:700">0 coins earned</span>
-  </div>
-  <p style="font-size:12px;color:#888;margin:6px 0 12px">Male joins with your code + first purchase = <b style="color:#fff">YOU get +100 coins</b> • <span id="myReferralCount">0 joined</span></p>
-  <div style="font-size:13px;color:#888;margin-bottom:6px">Your Code</div>
-  <div id="myReferralCode" onclick="copyReferralCode()" style="background:#111;border:1px solid #333;padding:12px;border-radius:10px;font-size:18px;font-weight:800;letter-spacing:1px;cursor:pointer">PT...</div>
-  <div style="font-size:13px;color:#888;margin:12px 0 6px">Your Link</div>
-  <div id="myReferralLink" onclick="copyReferralLink()" style="background:#111;border:1px solid #333;padding:12px;border-radius:10px;font-size:13px;word-break:break-all;cursor:pointer">...</div>
-  <div style="display:flex;gap:10px;margin-top:14px">
-    <button onclick="copyReferralLink()" style="flex:1;background:#25D366;color:#fff;border:none;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">📋 Copy</button>
-    <button onclick="shareReferralLink()" style="flex:1;background:#F59E0B;color:#000;border:none;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">🔗 Share</button>
+<!-- RECHARGE POPUP -->
+<div id="rechargePopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:flex-end;justify-content:center">
+  <div style="width:100%;max-width:650px;background:#161B22;color:#fff;border-radius:25px 25px 0 0;padding:20px;max-height:92vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px">💎 Recharge</b><button onclick="closeRecharge()" style="border:none;background:none;color:#fff;font-size:30px;cursor:pointer">×</button></div>
+    <p style="color:#8B949E;font-size:13px;margin:8px 0">KES 100 = 1000 Coins • 1st message FREE, then 10 coins/msg</p>
+    <label>Coins to Buy (1000 coins = KES 100)</label>
+    <input id="rechargeCoins" type="number" placeholder="e.g. 1000" value="1000" oninput="updateRechargePreview()">
+    <div id="rechargePreview" style="margin:10px 0;color:#8B949E;font-size:14px">You pay: KES 100</div>
+    <label>Your M-Pesa Number</label>
+    <input id="rechargePhone" type="tel" placeholder="07XXXXXXXX">
+    <button onclick="submitRecharge()" style="width:100%;padding:16px;border:none;border-radius:16px;background:#2196F3;color:#fff;font-size:18px;font-weight:700;cursor:pointer;margin-top:10px">I Have Sent</button>
+    <p style="color:#8B949E;font-size:12px;margin-top:10px;text-align:center">Send to Till / Paybill shown by Admin. Admin approves, coins added.</p>
   </div>
 </div>
-
-<div style="padding:0 15px 15px"><b style="color:#fff">My Photos (at least 3)</b><div style="display:flex;gap:8px;margin-top:8px">
-<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],0)"><img id="addPhoto0" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt0" style="font-size:28px">+</span></label>
-<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],1)"><img id="addPhoto1" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt1" style="font-size:28px">+</span></label>
-<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],2)"><img id="addPhoto2" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt2" style="font-size:28px">+</span></label>
-<label style="flex:1;height:90px;border:2px dashed #888;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden"><input type="file" accept="image/*" hidden onchange="handleAdditionalPhoto(this.files[0],3)"><img id="addPhoto3" style="width:100%;height:100%;object-fit:cover;display:none"><span id="addPhotoTxt3" style="font-size:28px">+</span></label>
-</div><div id="addPhotoHint" style="font-size:12px;color:#888;margin-top:6px">Tap + to add photo. Ladies will see these on your profile.</div></div>
-<div style="padding:0 0 20px"><div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div><div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div><div class="menu-item" onclick="window.location='../about.html'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='../about.html'">🔒 Privacy Policy</div><button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button><button onclick="askLogout()" style="width:calc(100% - 30px);margin:0 15px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
-
-<div class="popup" id="infoPopup"><span class="close-btn" onclick="closePopup('infoPopup')">×</span><div class="popup-content" style="text-align:left;padding:25px"><h3 style="text-align:center;margin-bottom:20px;color:#2196F3">Coin Rates</h3><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Chat</b><p style="color:#8B949E;font-size:13px">1st message FREE, then 10 Coins per message</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📞 Voice Call</b><p style="color:#8B949E;font-size:13px">50 Coins per minute</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📹 Video Call</b><p style="color:#8B949E;font-size:13px">100 Coins per minute</p></div><div style="background:#21262D;padding:15px;border-radius:12px"><b>🔄 Recharge Rate</b><p style="color:#8B949E;font-size:13px">KES 100 = 1000 Coins</p></div></div></div>
-<div class="popup" id="rechargePopup"><span class="close-btn" onclick="closePopup('rechargePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Recharge Coins</h3><p style="font-size:12px;color:#8B949E;margin-bottom:10px">Rate: KES 100 = 1000 Coins</p><div class="form-group"><label>Send M-Pesa to:</label><input type="text" id="adminMpesa" value="0718422377" readonly style="font-weight:bold;color:#4CAF50"></div><div class="form-group"><label>Enter Amount KES</label><input type="number" id="rechargeAmount" placeholder="100" onkeyup="calcCoins()"></div><div class="form-group"><label>You will get</label><input type="text" id="rechargeCoins" readonly style="background:#21262D"></div><div class="form-group"><label>Your M-Pesa Number</label><input type="text" id="rechargeMpesa" placeholder="07XXXXXXXX"></div><button class="btn" onclick="submitRecharge()">I Have Sent</button></div></div>
-<div class="popup" id="usagePopup"><span class="close-btn" onclick="closePopup('usagePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Coin Usage</h3><div id="usageList" style="margin-top:15px"></div></div></div>
-<div class="popup" id="rechargeHistoryPopup"><span class="close-btn" onclick="closePopup('rechargeHistoryPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Recharge History</h3><div id="rechargeList" style="margin-top:15px"></div></div></div>
-<div class="popup" id="adminChatPopup"><span class="close-btn" onclick="closePopup('adminChatPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Contact Admin</h3><p style="font-size:12px;color:#8B949E">For recharge issues or account help</p><div class="form-group"><label>Your Message</label><textarea id="adminMessage" style="width:100%;height:100px;background:#21262D;border:1px solid #30363D;color:#C9D1D9;border-radius:12px;padding:10px"></textarea></div><button class="btn" onclick="sendToAdmin()">Send to Admin</button></div></div>
-<div id="logoutConfirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999999;align-items:center;justify-content:center"><div style="background:#161B22;padding:25px;border-radius:20px;text-align:center;width:85%;max-width:300px;color:#fff"><h3>Log out?</h3><p style="color:#888;font-size:13px;margin:8px 0 18px">You will need to sign in again.</p><div style="display:flex;gap:10px"><button onclick="closeLogoutConfirm()" style="flex:1;padding:14px;border:none;border-radius:12px;background:#333;color:#fff;font-weight:700;cursor:pointer">Cancel</button><button onclick="logoutUser()" style="flex:1;padding:14px;border:none;border-radius:12px;background:#FF5252;color:#fff;font-weight:700;cursor:pointer">Log Out</button></div></div></div>
-
+<!-- SAY HI SETUP -->
+<div id="sayHiPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:flex-end;justify-content:center">
+  <div style="width:100%;max-width:650px;background:#161B22;color:#fff;border-radius:25px 25px 0 0;padding:20px">
+    <div style="display:flex;justify-content:space-between"><b>Set up 3 Say hi texts</b><button onclick="closeSayHi()" style="border:none;background:none;color:#fff;font-size:28px">×</button></div>
+    <label>Say Hi 1</label><input id="sayHi1" placeholder="Hi beautiful 😍">
+    <label>Say Hi 2</label><input id="sayHi2" placeholder="Hey, how are you?">
+    <label>Say Hi 3</label><input id="sayHi3" placeholder="Hi, you look amazing">
+    <button class="btn btn-blue" style="width:100%;margin-top:14px" onclick="saveSayHi()">Save</button>
+  </div>
+</div>
+<!-- LADY PROFILE POPUP -->
+<div id="ladyProfilePopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;align-items:flex-end;justify-content:center">
+  <div style="width:100%;max-width:650px;background:#161B22;color:#fff;border-radius:25px 25px 0 0;padding:20px;max-height:92vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center"><b id="ladyProfileName" style="font-size:20px">Lady</b><button onclick="closeLadyProfile()" style="border:none;background:none;color:#fff;font-size:30px;cursor:pointer">×</button></div>
+    <div style="text-align:center;margin:14px 0"><img id="ladyProfileAvatar" src="../logo-192.png" style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid #2196F3"></div>
+    <p id="ladyProfileCity" style="text-align:center;color:#8B949E;font-size:14px"></p>
+    <p id="ladyProfileBio" style="text-align:center;color:#ddd;margin:10px 0"></p>
+    <div style="display:flex;gap:8px;margin:14px 0">
+      <button id="ladyFollowBtn" onclick="toggleFollowFromLadyProfile()" style="flex:1;background:#2196F3;color:#fff;border:none;padding:13px;border-radius:25px;font-weight:800;font-size:16px;cursor:pointer">+ Follow</button>
+      <button onclick="sendFriendRequestFromLadyProfile()" style="background:#333;color:#fff;border:none;padding:13px 16px;border-radius:25px;font-weight:700;cursor:pointer">🤝 Friend</button>
+    </div>
+    <div style="display:flex;justify-content:space-around;text-align:center;margin-bottom:10px">
+      <div><b id="ladyCountFollowers" style="font-size:18px">0</b><div style="font-size:11px;color:#8B949E">Followers</div></div>
+      <div><b id="ladyCountFollowing" style="font-size:18px">0</b><div style="font-size:11px;color:#8B949E">Following</div></div>
+      <div><b id="ladyCountFriends" style="font-size:18px">0</b><div style="font-size:11px;color:#8B949E">Friends</div></div>
+      <div><b id="ladyCountVisitors" style="font-size:18px">0</b><div style="font-size:11px;color:#8B949E">Visitors</div></div>
+    </div>
+    <div style="display:flex;gap:8px"><button class="btn btn-blue" style="flex:1" onclick="chatFromLadyProfile()">💬 Chat</button><button class="btn btn-grey" style="flex:1" onclick="closeLadyProfile()">Close</button></div>
+  </div>
+</div>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script src="../social.js"></script>
 <script src="../referral.js"></script>
-<script src="chat-manager.js?v=1012"></script>
+<script src="chat-manager.js"></script>
 <script>
-let myProfile=null;
-try{ myProfile=JSON.parse(localStorage.getItem('patanisha_myProfile'))||JSON.parse(localStorage.getItem('patanisha_myProfile_male')); }catch(e){ myProfile=null; }
-if(!myProfile){ window.location.href='../register/index.html'; }
-if(!myProfile.friends) myProfile.friends=[]; if(!myProfile.following) myProfile.following=[]; if(!myProfile.followers) myProfile.followers=[]; if(!myProfile.visitors) myProfile.visitors=[]; if(!myProfile.recharges) myProfile.recharges=[]; if(!myProfile.usage) myProfile.usage=[]; if(myProfile.coins==null) myProfile.coins=0;
-let users=[];
-try{
-  ['patanisha_allAccounts','patanishaUsers','patanishaUsers_male'].forEach(k=>{
-    let arr=JSON.parse(localStorage.getItem(k)||'[]');
-    arr.forEach(u=>{ if(u && !users.find(x=>x.id===u.id)) users.push(u); });
-  });
-}catch(e){}
-function shortName(n){ if(!n) return ''; let p=String(n).trim().split(' '); return p.length>1 ? p[0]+' '+p[1].charAt(0)+'.' : p[0]; }
-function showToast(m){ let t=document.getElementById('appToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',2500); }
-function saveMe(){ localStorage.setItem('patanisha_myProfile',JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile_male',JSON.stringify(myProfile)); }
-
-// ===== SOCIAL: PROFILE FOLLOW =====
-let _currentProfileUser=null, _currentTab='recommend';
-function setCurrentProfileUser(u){ _currentProfileUser=u; if(typeof recordProfileVisit==='function') recordProfileVisit(u); setTimeout(updateProfileFollowUI,250); }
-async function updateProfileFollowUI(){
-  let u=_currentProfileUser, btn=document.getElementById('profileFollowBtn'); if(!u||!btn) return;
-  let db=window.PatanishaDB||null; if(!db||!myProfile) return;
+function shortName(n){ if(!n) return 'User'; let p=String(n).trim().split(' '); return p.length>1 ? p[0]+' '+p[1][0]+'.' : p[0]; }
+function showToast(m){ let t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:12px 18px;border-radius:20px;z-index:999999;font-size:14px;max-width:90%;text-align:center'; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
+function openInboxSafe(){ if(window.ChatManager && window.ChatManager.openInbox) window.ChatManager.openInbox(); else { showToast('Opening chats...'); setTimeout(()=>{ if(window.ChatManager) window.ChatManager.openInbox(); },800); } }
+function endCall(){ try{ if(window.ChatManager && window.ChatManager.endCall) window.ChatManager.endCall(); }catch(e){} document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); }); }
+let myProfile=null, users=[], topFilter='recommend', searchQuery='';
+try{ myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_male')||localStorage.getItem('patanisha_myProfile')||'null'); }catch(e){}
+if(!myProfile){ location.href='../register/index.html'; }
+if(!myProfile.referralCode){ myProfile.referralCode = myProfile.displayId || myProfile.id; try{ localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); }catch(e){} }
+function refreshMe(){
+  if(!myProfile) return;
+  document.getElementById('meName').textContent='Hi, '+shortName(myProfile.name)+' 👋';
+  document.getElementById('meCoins').textContent=myProfile.coins||0;
+  document.getElementById('meAvatar').src=myProfile.avatar||'../logo-192.png';
+  document.getElementById('profileAvatar').src=myProfile.avatar||'../logo-192.png';
+  document.getElementById('profileCoins').textContent=myProfile.coins||0;
+  document.getElementById('profileId').textContent=myProfile.displayId||myProfile.id||'-';
+  document.getElementById('incomeBalance').textContent=myProfile.coins||0;
+  document.getElementById('editName').value=myProfile.name||'';
+  document.getElementById('editCity').value=myProfile.city||'';
+  document.getElementById('editAge').value=myProfile.age||'';
+  document.getElementById('editBio').value=myProfile.bio||'';
+  if(typeof refreshSocialCounts==='function') refreshSocialCounts().then(c=>{ if(c){ document.getElementById('meFriends').textContent=c.friends; document.getElementById('meFollowing').textContent=c.following; document.getElementById('meFollowers').textContent=c.followers; document.getElementById('meVisitors').textContent=c.visitors; } }).catch(()=>{});
+  if(typeof renderReferralBox==='function') renderReferralBox();
+  let u=myProfile.usage||[]; document.getElementById('usageCount').textContent=u.length+' msgs';
+  let box=document.getElementById('incomeList'); if(u.length) box.innerHTML=u.slice(0,30).map(x=>`<div class="row"><span>${x.reason||'Chat'} • ${x.to||''}</span><b>-${x.coins||0}</b></div>`).join(''); else box.innerHTML='<p style="color:#8B949E;font-size:13px">No usage yet.</p>';
+}
+function saveProfile(){
+  myProfile.name=document.getElementById('editName').value.trim()||myProfile.name;
+  myProfile.city=document.getElementById('editCity').value.trim();
+  myProfile.age=document.getElementById('editAge').value;
+  myProfile.bio=document.getElementById('editBio').value.trim();
+  localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile));
+  localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
+  if(window.PatanishaDB && myProfile.id){ PatanishaDB.ref('users/'+myProfile.id).update({name:myProfile.name,city:myProfile.city,age:myProfile.age,bio:myProfile.bio}); }
+  refreshMe(); showToast('✅ Profile saved');
+}
+function logout(){ if(confirm('Log out?')){ localStorage.removeItem('patanisha_myProfile'); localStorage.removeItem('patanisha_myProfile_male'); location.href='../register/index.html'; } }
+function showPage(p,btn){
+  ['home','income','profile'].forEach(x=>document.getElementById('page-'+x).classList.toggle('hidden', x!==p));
+  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(p==='profile') refreshMe();
+  window.scrollTo(0,0);
+}
+// ===== TOP FILTERS: Recommend / Nearby / Online / Search =====
+function setTopFilter(f,btn){
+  topFilter=f;
+  document.querySelectorAll('.toptab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(f!=='search') { /* keep search bar if user typed */ }
+  renderLadies();
+}
+function openSearch(){
+  let bar=document.getElementById('searchBar');
+  bar.classList.toggle('hidden');
+  if(!bar.classList.contains('hidden')){ document.getElementById('searchInput').focus(); }
+}
+function applySearch(){
+  searchQuery=document.getElementById('searchInput').value.trim().toLowerCase();
+  renderLadies();
+}
+function clearSearch(){
+  searchQuery=''; document.getElementById('searchInput').value='';
+  document.getElementById('searchBar').classList.add('hidden');
+  renderLadies();
+}
+function loadLadies(){
+  let list=[];
+  try{ list=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); }catch(e){}
+  try{ let u=JSON.parse(localStorage.getItem('patanishaUsers_male')||'[]'); u.forEach(x=>{ if(!list.find(y=>y.id===x.id)) list.push(x); }); }catch(e){}
+  users = list.filter(u=>u && u.gender && u.gender.toLowerCase()==='female' && u.id!==myProfile.id);
+  if(window.PatanishaDB){
+    PatanishaDB.ref('users').once('value').then(s=>{
+      let arr=[]; s.forEach(c=>{ let v=c.val(); v.id=c.key; arr.push(v); });
+      arr.filter(u=>u.gender && u.gender.toLowerCase()==='female' && u.id!==myProfile.id).forEach(u=>{ if(!users.find(x=>x.id===u.id)) users.push(u); });
+      renderLadies();
+    }).catch(()=>{});
+  }
+  renderLadies();
+}
+function renderLadies(){
+  let box=document.getElementById('ladiesList');
+  let list=[...users];
+  // Search FIRST - overrides tab
+  if(searchQuery){
+    list=list.filter(u=>{
+      let hay=((u.name||'')+' '+(u.displayId||u.id||'')+' '+(u.city||'')+' '+(u.bio||'')).toLowerCase();
+      return hay.includes(searchQuery);
+    });
+  } else if(topFilter==='online'){
+    list=list.filter(u=>u.online);
+  } else if(topFilter==='nearby'){
+    let myCity=(myProfile.city||'').toLowerCase().trim();
+    list.sort((a,b)=>{
+      let aNear=(a.city||'').toLowerCase().trim()===myCity?0:1;
+      let bNear=(b.city||'').toLowerCase().trim()===myCity?0:1;
+      if(aNear!==bNear) return aNear-bNear;
+      return (b.online?1:0)-(a.online?1:0);
+    });
+  } else if(topFilter==='recommend'){
+    // Recommend: online first, then shuffled-ish by recent
+    list.sort((a,b)=>(b.online?1:0)-(a.online?1:0));
+  }
+  if(!list.length){ document.getElementById('noLadies').classList.remove('hidden'); box.innerHTML=''; return; }
+  document.getElementById('noLadies').classList.add('hidden');
+  box.innerHTML=list.map(u=>{
+    let idx=users.findIndex(x=>x.id===u.id);
+    return `<div class="card" onclick="openLadyProfile(${idx})">
+      <div class="avatar-wrap"><img src="${u.avatar||'../logo-192.png'}"><span class="${u.online?'dot-blue':'dot-grey'}"></span></div>
+      <div class="info"><b>${shortName(u.name)} ♀</b><span>📍 ${u.city||'Ruiru'} • ID:${u.displayId||u.id}<br>${(u.bio||'Say hi 👋').slice(0,40)}</span></div>
+      <div class="actions"><button class="btn btn-grey" onclick="event.stopPropagation();openLadyProfile(${idx})">👤 View</button><button class="btn btn-blue" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div>
+    </div>`;
+  }).join('');
+}
+// ===== LADY PROFILE + FOLLOW =====
+let _currentLady=null;
+function openLadyProfile(idx){
+  let u=users[idx]; if(!u) return; _currentLady=u;
+  if(typeof recordProfileVisit==='function') recordProfileVisit(u);
+  document.getElementById('ladyProfileName').textContent=shortName(u.name)+' ♀ '+(u.age||'');
+  document.getElementById('ladyProfileAvatar').src=u.avatar||'../logo-192.png';
+  document.getElementById('ladyProfileCity').textContent='📍 '+(u.city||'Ruiru')+' • ID:'+(u.displayId||u.id);
+  document.getElementById('ladyProfileBio').textContent=u.bio||'Say Hi 👋';
+  document.getElementById('ladyProfilePopup').style.display='flex';
+  updateLadyFollowUI();
+}
+function closeLadyProfile(){ document.getElementById('ladyProfilePopup').style.display='none'; }
+async function updateLadyFollowUI(){
+  let u=_currentLady, btn=document.getElementById('ladyFollowBtn'); if(!u||!btn) return;
+  let db=window.PatanishaDB; if(!db||!myProfile) return;
   try{
     let s=await db.ref('follows/'+myProfile.id+'/'+u.id).once('value'); let isF=!!s.val();
     btn.textContent=isF?'✓ Following':'+ Follow'; btn.style.background=isF?'#666':'#2196F3';
-    let f=await db.ref('followers/'+u.id).once('value'); let e1=document.getElementById('profileCountFollowers'); if(e1) e1.textContent=f.numChildren();
-    let fg=await db.ref('follows/'+u.id).once('value'); let e2=document.getElementById('profileCountFollowing'); if(e2) e2.textContent=fg.numChildren();
-    let fr=await db.ref('friends/'+u.id).once('value'); let e3=document.getElementById('profileCountFriends'); if(e3) e3.textContent=fr.numChildren();
-    let v=await db.ref('profileViews/'+u.id).once('value'); let e4=document.getElementById('profileCountVisitors'); if(e4) e4.textContent=v.numChildren();
+    let f=await db.ref('followers/'+u.id).once('value'); document.getElementById('ladyCountFollowers').textContent=f.numChildren();
+    let fg=await db.ref('follows/'+u.id).once('value'); document.getElementById('ladyCountFollowing').textContent=fg.numChildren();
+    let fr=await db.ref('friends/'+u.id).once('value'); document.getElementById('ladyCountFriends').textContent=fr.numChildren();
+    let v=await db.ref('profileViews/'+u.id).once('value'); document.getElementById('ladyCountVisitors').textContent=v.numChildren();
   }catch(e){}
 }
-async function toggleFollowFromProfile(){
-  let u=_currentProfileUser; if(!u) return; if(u.id===myProfile.id){ showToast('This is you'); return; }
-  if(typeof toggleFollow==='function'){ await toggleFollow(u); updateProfileFollowUI(); return; }
-  let db=window.PatanishaDB; if(!db) return;
-  let s=await db.ref('follows/'+myProfile.id+'/'+u.id).once('value');
-  if(s.val()){ await db.ref('follows/'+myProfile.id+'/'+u.id).remove(); await db.ref('followers/'+u.id+'/'+myProfile.id).remove(); showToast('Unfollowed '+u.name); }
-  else{
-    await db.ref('follows/'+myProfile.id+'/'+u.id).set(true); await db.ref('followers/'+u.id+'/'+myProfile.id).set(true);
-    let back=await db.ref('follows/'+u.id+'/'+myProfile.id).once('value');
-    if(back.val()){ await db.ref('friends/'+myProfile.id+'/'+u.id).set({name:u.name,avatar:u.avatar||'',ts:Date.now()}); await db.ref('friends/'+u.id+'/'+myProfile.id).set({name:myProfile.name,avatar:myProfile.avatar||'',ts:Date.now()}); showToast('🎉 You are now Friends with '+u.name); }
-    else showToast('✅ Following '+u.name);
-  }
-  updateProfileFollowUI();
+async function toggleFollowFromLadyProfile(){
+  let u=_currentLady; if(!u) return;
+  if(typeof toggleFollow==='function'){ await toggleFollow(u); updateLadyFollowUI(); refreshMe(); return; }
 }
-async function sendFriendRequestFromProfile(){
-  let u=_currentProfileUser; if(!u) return;
+async function sendFriendRequestFromLadyProfile(){
+  let u=_currentLady; if(!u) return;
   if(typeof sendFriendRequest==='function'){ sendFriendRequest(u); return; }
-  let db=window.PatanishaDB; if(!db) return;
-  await db.ref('friendRequests/'+u.id+'/'+myProfile.id).set({name:myProfile.name,avatar:myProfile.avatar||'',ts:Date.now()});
-  showToast('Friend request sent to '+u.name);
 }
-async function openSocialListForUser(type){
-  let u=_currentProfileUser; if(!u) return;
-  let db=window.PatanishaDB; if(!db) return;
-  let path= type==='friends'?'friends/'+u.id : type==='following'?'follows/'+u.id : type==='followers'?'followers/'+u.id : 'profileViews/'+u.id;
-  let snap=await db.ref(path).once('value'); let list=[]; snap.forEach(c=>list.push({id:c.key,...(c.val()||{})}));
-  let old=document.getElementById('socialListPopup'); if(old) old.remove();
-  let html=`<div id="socialListPopup" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999999;display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:600px;max-height:85vh;background:#161B22;color:#fff;border-radius:20px 20px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:16px;display:flex;justify-content:space-between"><b>${u.name} - ${type} (${list.length})</b><button onclick="document.getElementById('socialListPopup').remove()" style="background:#333;color:#fff;border:none;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 14px 20px">${list.length?list.map(x=>`<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#21262D;border-radius:12px;margin-bottom:8px"><img src="${x.avatar||'https://via.placeholder.com/80'}" style="width:48px;height:48px;border-radius:50%;object-fit:cover"><b>${String(x.name||'User').replace(/</g,'')}</b></div>`).join(''):`<div style="text-align:center;color:#888;padding:30px">No ${type} yet</div>`}</div></div></div>`;
-  document.body.insertAdjacentHTML('beforeend',html);
+function chatFromLadyProfile(){ if(!_currentLady) return; let idx=users.findIndex(x=>x.id===_currentLady.id); closeLadyProfile(); if(idx>=0 && window.ChatManager) ChatManager.openChatByIndex(idx); }
+// ===== RECHARGE =====
+function openRecharge(){ document.getElementById('rechargePopup').style.display='flex'; updateRechargePreview(); }
+function closeRecharge(){ document.getElementById('rechargePopup').style.display='none'; }
+function updateRechargePreview(){
+  let coins=Number(document.getElementById('rechargeCoins').value||0);
+  document.getElementById('rechargePreview').textContent='You pay: KES '+(coins/10).toFixed(0)+' • You get: '+coins+' coins';
 }
-
-// ===== LIST / PROFILE =====
-function filteredUsers(){
-  return users.filter(u=>{
-    if(!u || u.id===myProfile.id) return false;
-    if(u.email && myProfile.email && u.email.toLowerCase()===myProfile.email.toLowerCase()) return false;
-    if(u.gender && u.gender.toLowerCase()!=='female') return false;
-    return true;
-  });
-}
-function renderUsers(){
-  let list=document.getElementById('userList');
-  let arr=filteredUsers();
-  if(!arr.length){ list.innerHTML='<div class="empty">No ladies yet.<br>Check back soon.</div>'; return; }
-  list.innerHTML=arr.map((u,i)=>{
-    let idx=users.findIndex(x=>x.id===u.id);
-    return `<div class="card"><div class="avatar" onclick="openProfile(${idx})"><img src="${u.avatar||'https://via.placeholder.com/80'}"><span class="online"></span></div><div class="card-info" onclick="openProfile(${idx})"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">📍 ${u.city||'Ruiru'} • ID:${u.displayId||u.id}</div><div class="friends-count">${u.bio?String(u.bio).slice(0,60):'Say hi 👋'}</div></div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();openProfile(${idx})">👤 View</button><button class="call-btn" onclick="event.stopPropagation();ChatManager.openChat(users[${idx}])">💬 Chat</button></div></div>`;
-  }).join('');
-}
-function openProfile(idx){
-  let u=users[idx]; if(!u) return; _currentProfileUser=u; setCurrentProfileUser(u);
-  document.getElementById('profileCover').src=u.avatar||'https://via.placeholder.com/500';
-  document.getElementById('profileAvatarBig').src=u.avatar||'https://via.placeholder.com/80';
-  document.getElementById('profileName').textContent=shortName(u.name);
-  document.getElementById('profileCity').textContent='📍 '+(u.city||'Ruiru')+' • ID:'+(u.displayId||u.id);
-  document.getElementById('profileBio').textContent=u.bio||'No bio yet';
-  let photos=u.photos||(u.avatar?[u.avatar]:[]);
-  document.getElementById('profilePhotos').innerHTML=photos.map(p=>`<img src="${p}" onclick="window.open('${p}','_blank')">`).join('')||'<div style="color:#888;font-size:13px">No photos yet</div>';
-  document.getElementById('profilePopup').style.display='block';
-}
-function closeProfile(){ document.getElementById('profilePopup').style.display='none'; }
-function startChat(){ if(!_currentProfileUser) return; closeProfile(); ChatManager.openChat(_currentProfileUser); }
-function startCall(type){ if(!_currentProfileUser) return; closeProfile(); if(type==='voice') ChatManager.startVoiceCall(_currentProfileUser); else ChatManager.startVideoCall(_currentProfileUser); }
-function endCall(){ if(window.ChatManager) ChatManager.endCall(); }
-
-// ===== TABS / SEARCH =====
-function switchTab(t,el){ _currentTab=t; document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); if(el) el.classList.add('active'); renderUsers(); }
-function openSearchById(){ document.getElementById('searchByIdBar').style.display='block'; }
-function closeSearchById(){ document.getElementById('searchByIdBar').style.display='none'; }
-function searchUserById(){
-  let q=document.getElementById('searchIdInput').value.trim().toLowerCase(); if(!q) return;
-  let found=users.findIndex(u=> String(u.displayId||u.id).toLowerCase()===q || String(u.name||'').toLowerCase().includes(q));
-  if(found>=0) openProfile(found); else showToast('User not found');
-}
-function goHome(){ window.scrollTo({top:0,behavior:'smooth'}); renderUsers(); }
-function openChatList(){ if(window.ChatManager) ChatManager.openInbox(); }
-function openInfoRates(){ openPopup('infoPopup'); }
-function openPopup(id){ document.getElementById(id).style.display='block'; }
-function closePopup(id){ document.getElementById(id).style.display='none'; }
-
-// ===== ME =====
-async function openMe(){
-  document.getElementById('meAvatar').src=myProfile.avatar||'https://via.placeholder.com/80';
-  document.getElementById('meName').textContent=shortName(myProfile.name);
-  document.getElementById('meID').textContent='ID:'+(myProfile.displayId||myProfile.id);
-  document.getElementById('meCoins').textContent=myProfile.coins||0;
-  if(typeof refreshSocialCounts==='function'){ let c=await refreshSocialCounts(); if(c){ document.getElementById('meFriends').textContent=c.friends; document.getElementById('meFollowing').textContent=c.following; document.getElementById('meFollowers').textContent=c.followers; document.getElementById('meVisitors').textContent=c.visitors; } }
-  if(typeof renderReferralBox==='function') renderReferralBox();
-  if(typeof loadReferralEarnings==='function') loadReferralEarnings();
-  let photos=myProfile.photos||[];
-  for(let i=0;i<4;i++){ let img=document.getElementById('addPhoto'+i); let txt=document.getElementById('addPhotoTxt'+i); if(photos[i]){ img.src=photos[i]; img.style.display='block'; txt.style.display='none'; } }
-  openPopup('mePopup');
-}
-function handleAdditionalPhoto(file,idx){
-  if(!file) return; let r=new FileReader(); r.onload=e=>{
-    if(!myProfile.photos) myProfile.photos=[];
-    myProfile.photos[idx]=e.target.result; saveMe();
-    let img=document.getElementById('addPhoto'+idx); img.src=e.target.result; img.style.display='block'; document.getElementById('addPhotoTxt'+idx).style.display='none';
-    showToast('Photo saved');
-  }; r.readAsDataURL(file);
-}
-function calcCoins(){ let amt=parseFloat(document.getElementById('rechargeAmount').value||0); document.getElementById('rechargeCoins').value=(amt*10)+' Coins'; }
-function openRecharge(){ closePopup('mePopup'); openPopup('rechargePopup'); }
 function submitRecharge(){
-  let amt=document.getElementById('rechargeAmount').value; let mp=document.getElementById('rechargeMpesa').value;
-  if(!amt||!mp){ showToast('Enter amount + M-Pesa number'); return; }
-  if(!myProfile.recharges) myProfile.recharges=[];
-  myProfile.recharges.unshift({amount:amt,mpesa:mp,date:new Date().toLocaleString(),status:'Pending'});
-  saveMe(); closePopup('rechargePopup'); showToast('Recharge request sent. Admin will approve.');
-  // REFERRAL: if this male was referred, pay referrer +100 on FIRST purchase
-  if(typeof payReferralRewardIfFirstPurchase==='function') payReferralRewardIfFirstPurchase(myProfile);
+  let coins=Number(document.getElementById('rechargeCoins').value||0);
+  let phone=document.getElementById('rechargePhone').value.trim();
+  if(!coins||coins<100){ alert('Min 100 coins'); return; }
+  if(!/^0\d{9}$/.test(phone)){ alert('Enter valid M-Pesa e.g. 0712345678'); return; }
+  if(window.PatanishaDB){
+    PatanishaDB.ref('recharges').push({userId:myProfile.id,name:myProfile.name,phone:phone,coins:coins,amountKES:coins/10,status:'pending',createdAt:Date.now()});
+  }
+  // Referral bonus: if this male was referred, pay referrer +100 once
+  try{ if(typeof payReferralOnFirstPurchase==='function') payReferralOnFirstPurchase(myProfile); }catch(e){}
+  alert('✅ Request sent! Admin will approve. You asked for '+coins+' coins.');
+  closeRecharge();
 }
-function openUsageHistory(){ let l=document.getElementById('usageList'); l.innerHTML=(myProfile.usage||[]).length?(myProfile.usage||[]).map(u=>`<div style="padding:10px;border-bottom:1px solid #333">${u.reason} - <b>${u.coins} coins</b><div style="font-size:11px;color:#888">${u.date||''}</div></div>`).join(''):'<div style="color:#888">No usage yet</div>'; openPopup('usagePopup'); }
-function openRechargeHistory(){ let l=document.getElementById('rechargeList'); l.innerHTML=(myProfile.recharges||[]).length?(myProfile.recharges||[]).map(r=>`<div style="padding:10px;border-bottom:1px solid #333">KES ${r.amount} - ${r.status}<div style="font-size:11px;color:#888">${r.date||''}</div></div>`).join(''):'<div style="color:#888">No recharges yet</div>'; openPopup('rechargeHistoryPopup'); }
-function openAdminChat(){ openPopup('adminChatPopup'); }
-function sendToAdmin(){ let m=document.getElementById('adminMessage').value; if(!m.trim()){ showToast('Type a message'); return; } let db=window.PatanishaDB; if(db) db.ref('adminMessages').push({from:myProfile.id,name:myProfile.name,msg:m,ts:Date.now()}); document.getElementById('adminMessage').value=''; closePopup('adminChatPopup'); showToast('Sent to Admin'); }
-function askLogout(){ document.getElementById('logoutConfirm').style.display='flex'; }
-function closeLogoutConfirm(){ document.getElementById('logoutConfirm').style.display='none'; }
-function logoutUser(){ localStorage.removeItem('patanisha_myProfile'); localStorage.removeItem('patanisha_myProfile_male'); window.location.href='../register/index.html'; }
-renderUsers();
+// ===== SAY HI =====
+function openSayHiSetup(){ document.getElementById('sayHiPopup').style.display='flex'; try{ let s=JSON.parse(localStorage.getItem('patanisha_sayhi_'+myProfile.id)||'[]'); document.getElementById('sayHi1').value=s[0]||''; document.getElementById('sayHi2').value=s[1]||''; document.getElementById('sayHi3').value=s[2]||''; }catch(e){} }
+function closeSayHi(){ document.getElementById('sayHiPopup').style.display='none'; }
+function saveSayHi(){ let arr=[document.getElementById('sayHi1').value,document.getElementById('sayHi2').value,document.getElementById('sayHi3').value]; localStorage.setItem('patanisha_sayhi_'+myProfile.id, JSON.stringify(arr)); showToast('✅ Say hi texts saved'); closeSayHi(); }
+refreshMe();
+loadLadies();
 </script>
 </body>
 </html>
