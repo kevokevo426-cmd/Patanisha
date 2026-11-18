@@ -4,7 +4,7 @@
 // FIX: Inbox NEVER waits for Firebase. Shows instantly.
 // FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
 // FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
-// NEW: Follow + Friend buttons INSIDE Chat header
+// FIX: Chat header CLEAN - only Back, Photo, Name, Coins, Follow on top. All other buttons at bottom.
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileFemale(){
@@ -33,38 +33,16 @@ function getCachedMsgs(chatId){
 function saveCachedMsgs(chatId, msgs){
   try{ localStorage.setItem('patanisha_msgs_'+chatId, JSON.stringify((msgs||[]).slice(-100))); }catch(e){}
 }
-function loadFemaleEarnings(){
-  if(typeof myProfile==='undefined'||!myProfile) return;
-  let db=getDB(); if(!db || !myProfile.id) return;
-  db.ref('earnings/'+myProfile.id).once('value').then(snap=>{
-    let total=0, income=[];
-    snap.forEach(c=>{ let v=c.val(); total+=(v.amount||0); income.unshift(v); });
-    let claimed=parseInt(localStorage.getItem('patanisha_earnings_claimed_'+myProfile.id)||'0');
-    if(total>claimed){
-      let add=total-claimed;
-      myProfile.coins=(myProfile.coins||0)+add;
-      localStorage.setItem('patanisha_earnings_claimed_'+myProfile.id, String(total));
-      myProfile.income=income; saveMyProfileFemale();
-      if(document.getElementById('meCoins')) document.getElementById('meCoins').innerText=myProfile.coins;
-      if(add>0 && typeof showToast!=='undefined') showToast('💰 +'+add+' coins earned!');
-    } else { myProfile.income=income; saveMyProfileFemale(); }
-    if(typeof renderIncome==='function'){ try{ renderIncome(); }catch(e){} }
-  }).catch(()=>{});
-}
-window.loadFemaleEarnings = loadFemaleEarnings;
-try{ loadFemaleEarnings(); }catch(e){}
-setInterval(()=>{ try{ loadFemaleEarnings(); }catch(e){} }, 8000);
 function getFemaleChatUsers(){
   let list=[];
   try{ list=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); }catch(e){ list=[]; }
   if(list.length===0){ try{ list=JSON.parse(localStorage.getItem('patanishaUsers')||'[]'); }catch(e){} }
   try{
     let pageUsers=(typeof users!=='undefined'?users:[]);
-    pageUsers.forEach(pu=>{ if(pu && pu.gender && pu.gender.toLowerCase()==='male' && !list.find(x=>x.id===pu.id)) list.push(pu); });
+    pageUsers.forEach(pu=>{ if(pu && !list.find(x=>x.id===pu.id)) list.push(pu); });
   }catch(e){}
   try{ getTalkedTo().forEach(t=>{ if(!list.find(x=>x.id===t.id)) list.push(t); }); }catch(e){}
   return list.filter(u=>{
-    if(!u.gender && !getTalkedTo().find(x=>x.id===u.id)) return false;
     if(u.gender && u.gender.toLowerCase().trim()!=='male' && !getTalkedTo().find(x=>x.id===u.id)) return false;
     if(typeof myProfile!=='undefined' && myProfile){
       if(u.email && myProfile.email && u.email.toLowerCase()===myProfile.email.toLowerCase()) return false;
@@ -94,8 +72,8 @@ async function sendFriendRequestInChat(){
   let u=(window.ChatManager && ChatManager.currentChatUser); if(!u) return;
   if(typeof sendFriendRequest==='function'){ sendFriendRequest(u); return; }
 }
-// ===== REAL CALLS - WebRTC HD + RINGTONE + FULL SCREEN =====
-let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false;
+// ===== REAL CALLS - WebRTC HD + RINGTONE + FULL SCREEN VIDEO =====
+let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false, _callTimer=null, _callSeconds=0;
 let _ringtoneTimer=null, _ringCtx=null;
 function _callDB(){ return getDB(); }
 function _playRingtone(){
@@ -154,6 +132,7 @@ function _showCallUI(user, status, isIncoming){
     <img src="${user.avatar||''}" style="width:80px;height:80px;border-radius:50%;border:3px solid #25D366;object-fit:cover;margin:0 auto">
     <div style="font-size:22px;font-weight:700;margin-top:8px">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div>
     <div id="callStatusText" style="color:#fff;font-size:15px;margin-top:4px">${status}</div>
+    <div id="callCoinText" style="color:#F59E0B;font-size:14px;font-weight:700;margin-top:4px">🪙 Your coins: ${myProfile?myProfile.coins||0:0} • FREE for you</div>
   </div>
   <video id="localVideo" autoplay muted playsinline style="position:absolute;bottom:110px;right:14px;width:120px;height:170px;object-fit:cover;border-radius:14px;border:2px solid #fff;display:none;z-index:4;background:#222;filter:brightness(1.25) contrast(1.1)"></video>
   <div style="position:absolute;bottom:0;left:0;right:0;padding:18px;display:flex;gap:16px;justify-content:center;z-index:5;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent)">
@@ -161,22 +140,31 @@ function _showCallUI(user, status, isIncoming){
     <button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button>
     <button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button>
   </div>
-  <div style="position:absolute;bottom:96px;left:0;right:0;text-align:center;font-size:12px;color:#ccc;z-index:4">Ladies: FREE • Men pay • HD Video</div>`;
+  <div style="position:absolute;bottom:96px;left:0;right:0;text-align:center;font-size:12px;color:#ccc;z-index:4">FREE for ladies • Man pays: Voice 50 / Video 100 coins per min</div>`;
   cs.style.display='flex';
 }
 function _cleanupCall(){
   _stopRingtone();
+  if(_callTimer){ clearInterval(_callTimer); _callTimer=null; }
   if(_peerConn){ try{_peerConn.close();}catch(e){} _peerConn=null; }
   if(_localStream){ try{ _localStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} _localStream=null; }
   document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); });
   _currentCallId=null;
+}
+function _startCallBilling(){
+  _callSeconds=0;
+  if(_callTimer) clearInterval(_callTimer);
+  _callTimer=setInterval(()=>{
+    _callSeconds++;
+    let ct=document.getElementById('callCoinText'); if(ct) ct.textContent='🪙 Your coins: '+(myProfile?myProfile.coins||0:0)+' • FREE for you';
+  },1000);
 }
 async function _startRealCall(user, type){
   if(!user || !user.id){ if(typeof showToast!=='undefined') showToast('Select a person first'); return false; }
   _currentCallType=type; _isMuted=false;
   const db=_callDB(); if(!db){ if(typeof showToast!=='undefined') showToast('Firebase not loaded'); return false; }
   _currentCallId=getChatId(myProfile.id, user.id)+'_'+Date.now();
-  _showCallUI(user, type==='video'?'📹 Video Calling... FREE':'📞 Voice Calling... FREE', false);
+  _showCallUI(user, type==='video'?'📹 Video Calling...':'📞 Voice Calling...', false);
   try{
     _localStream=await navigator.mediaDevices.getUserMedia(_hdConstraints(type));
     if(type==='video'){ const lv=document.getElementById('localVideo'); if(lv){ lv.srcObject=_localStream; lv.style.display='block'; } const rv=document.getElementById('remoteVideo'); if(rv) rv.style.display='block'; }
@@ -184,19 +172,19 @@ async function _startRealCall(user, type){
   _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
   _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
   _applyHDBitrate();
-  _peerConn.ontrack=e=>{ _stopRingtone(); const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; };
+  _peerConn.ontrack=e=>{ _stopRingtone(); const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; _startCallBilling(); };
   _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/callerCandidates').push(e.candidate.toJSON()); };
   const offer=await _peerConn.createOffer(); await _peerConn.setLocalDescription(offer);
   await db.ref('calls/'+_currentCallId).set({from:myProfile.id,to:user.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',type,offer:{type:offer.type,sdp:offer.sdp},status:'ringing',createdAt:Date.now()});
   db.ref('calls/'+_currentCallId+'/answer').on('value', async snap=>{
     const ans=snap.val(); if(!ans||!_peerConn||_peerConn.signalingState!=='have-local-offer') return;
-    try{ _stopRingtone(); await _peerConn.setRemoteDescription(new RTCSessionDescription(ans)); const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; }catch(e){}
+    try{ _stopRingtone(); await _peerConn.setRemoteDescription(new RTCSessionDescription(ans)); const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; _startCallBilling(); }catch(e){}
   });
   db.ref('calls/'+_currentCallId+'/calleeCandidates').on('child_added', snap=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(snap.val())).catch(()=>{}); });
   db.ref('calls/'+_currentCallId+'/status').on('value', snap=>{
     if(snap.val()==='ended'){
       db.ref('calls/'+_currentCallId+'/rejectReason').once('value').then(rs=>{
-        if(rs.val()==='insufficient_coins' && typeof showToast!=='undefined') showToast('⚠️ He has insufficient coins (<50) - Ask him to recharge to answer your call');
+        if(rs.val()==='insufficient_coins' && typeof showToast!=='undefined') showToast('⚠️ He has insufficient coins (<50). Ask him to recharge.');
       }).catch(()=>{});
       _cleanupCall();
     }
@@ -211,7 +199,7 @@ function _listenForIncomingCalls(){
       const call=snap.val(); if(!call||call.status!=='ringing') return;
       if(call.from===myProfile.id) return;
       _currentCallId=snap.key; _currentCallType=call.type;
-      _showCallUI({name:call.fromName||'Someone', avatar:call.fromAvatar||''}, call.type==='video'?'📹 Incoming Video Call... FREE':'📞 Incoming Voice Call... FREE', true);
+      _showCallUI({name:call.fromName||'Someone', avatar:call.fromAvatar||''}, call.type==='video'?'📹 Incoming Video Call...':'📞 Incoming Voice Call...', true);
     });
   }catch(e){}
 }
@@ -221,15 +209,14 @@ const ChatManager = {
     let content=document.getElementById('inboxContent'); if(!content) return;
     this._inboxList=list;
     if(!list.length){
-      content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">No chats yet<br><span style="font-size:12px">Tap a boy on Home → Chat to start</span><br><br><button onclick="ChatManager.openInbox()" style="background:#FF8C00;color:#fff;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer">↻ Retry</button></div>`;
+      content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">No chats yet<br><span style="font-size:12px">Tap a boy on Home → Chat to start<br>All FREE for ladies</span><br><br><button onclick="ChatManager.openInbox()" style="background:#FF8C00;color:#fff;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer">↻ Retry</button></div>`;
       return;
     }
-    content.innerHTML=list.map((u,i)=>`<div onclick="ChatManager.openInboxChat(${i})" style="display:flex;align-items:center;gap:12px;background:#fff;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05)"><img src="${u.avatar||'https://via.placeholder.com/80'}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${typeof shortName!=='undefined'?shortName(u.name):u.name} ♂</b><div style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.lastMsg ? String(u.lastMsg).replace(/</g,'&lt;') : '📍 '+(u.city||'Ruiru')}</div></div><span style="font-size:22px">💬</span></div>`).join('');
+    content.innerHTML=list.map((u,i)=>`<div onclick="ChatManager.openInboxChat(${i})" style="display:flex;align-items:center;gap:12px;background:#161B22;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer"><img src="${u.avatar||'https://via.placeholder.com/80'}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #FF8C00"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;color:#fff">${typeof shortName!=='undefined'?shortName(u.name):u.name} ♂</b><div style="font-size:12px;color:#8B949E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.lastMsg ? String(u.lastMsg).replace(/</g,'&lt;') : '📍 '+(u.city||'Ruiru')}</div></div><span style="font-size:22px">💬</span></div>`).join('');
   },
   openInbox(){
-    loadFemaleEarnings();
     let old=document.getElementById('chatInboxPopup'); if(old) old.remove();
-    let html=`<div id="chatInboxPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;overflow-y:auto;color:#000"><div style="display:flex;align-items:center;gap:10px;padding:15px;background:#FFA500;position:sticky;top:0"><button onclick="ChatManager.closeInbox()" style="background:#fff;color:#000;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><h3 style="flex:1;margin:0;color:#fff">💬 Chats - Boys</h3><button onclick="ChatManager.openInbox()" style="background:#fff;border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer">↻</button></div><div id="inboxContent" style="padding:15px"></div></div>`;
+    let html=`<div id="chatInboxPopup" style="position:fixed;inset:0;background:#0D1117;z-index:99999;overflow-y:auto;color:#fff"><div style="display:flex;align-items:center;gap:10px;padding:15px;background:#FF8C00;position:sticky;top:0"><button onclick="ChatManager.closeInbox()" style="background:#fff;color:#000;border:none;padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><h3 style="flex:1;margin:0;color:#fff">💬 Chats - Boys</h3><button onclick="ChatManager.openInbox()" style="background:#fff;border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer">↻</button></div><div id="inboxContent" style="padding:15px"></div></div>`;
     document.body.insertAdjacentHTML('beforeend', html);
     let talked=getTalkedTo();
     let all=this.getChatUsers();
@@ -254,7 +241,6 @@ const ChatManager = {
   openChatByIndex(idx){ let u=this.getChatUsers()[idx]; if(u) this.openChat(u); },
   currentChatUser:null, currentChatId:null, _listener:null, _msgs:[],
   openChat(user){
-    loadFemaleEarnings();
     _listenForIncomingCalls();
     saveTalkedTo(user);
     if(typeof recordProfileVisit==='function'){ try{ recordProfileVisit(user); }catch(e){} }
@@ -262,7 +248,37 @@ const ChatManager = {
     let old=document.getElementById('chatPopup'); if(old) old.remove();
     if(this._listener && this.currentChatId){ try{ getDB().ref('chats/'+this.currentChatId+'/messages').off('value', this._listener); }catch(e){} }
     this.currentChatId=getChatId(myProfile.id, user.id);
-    let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;display:flex;flex-direction:column;color:#000;height:100dvh"><div style="display:flex;align-items:center;gap:6px;padding:12px;background:#FFA500"><button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><img src="${user.avatar||''}" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${typeof shortName!=='undefined'?shortName(user.name):user.name}</b><div style="font-size:11px;color:#2E7D32">● Online • FREE • You earn</div></div><button id="chatFollowBtn" onclick="toggleFollowInChat()" style="background:#2196F3;color:#fff;border:none;padding:9px 12px;border-radius:20px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap">+ Follow</button><button onclick="sendFriendRequestInChat()" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer" title="Friend Request">🤝</button><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📞</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📹</button></div><div id="chatMessages" style="flex:1;min-height:0;overflow-y:auto;padding:15px 15px 10px;background:#f5f5f5"></div><div style="background:#fff;border-top:1px solid #eee;padding:8px 10px calc(8px + env(safe-area-inset-bottom))"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><button onclick="ChatManager.startVoiceMessage(ChatManager.currentChatUser.name)" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#f0f0f0;font-size:20px;cursor:pointer;line-height:1" title="Voice message">🎤</button><input id="chatInput" placeholder="Type message... FREE" style="flex:1;min-width:0;padding:13px 16px;border-radius:25px;border:none;background:#f0f0f0;color:#000;font-size:15px;outline:none"><button onclick="ChatManager.toggleEmojiPanel()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:none;font-size:26px;cursor:pointer;line-height:1" title="Emoji">😊</button><button onclick="ChatManager.sendChatMessage()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#FF8C00;color:#fff;font-size:18px;cursor:pointer;line-height:1" title="Send">✈️</button></div><div id="emojiPanel" style="display:none;flex-wrap:wrap;gap:8px;padding:8px 4px;border-top:1px solid #eee"><div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 4px 4px"><b style="font-size:13px;color:#888">Emojis</b><button onclick="ChatManager.closeEmojiPanel()" style="background:#eee;border:none;padding:6px 14px;border-radius:20px;font-weight:700;cursor:pointer;color:#000">← Back</button></div>${['😊','😂','❤️','😍','👋','🔥','😘','🥰','😉','👍','🙏','💋','😢','😎','🎉','💖','🌹','😇','🤗','😜'].map(e=>`<button onclick="ChatManager.insertEmoji('${e}')" style="background:none;border:none;font-size:26px;cursor:pointer;padding:4px">${e}</button>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 10px 2px"><button onclick="ChatManager.openGallery(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Gallery">🖼️</button><button onclick="ChatManager.openCamera(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Camera">📷</button><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Voice call">📞</button><button onclick="ChatManager.openGiftPanel(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Gift">🎁</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Video call">📹</button></div></div></div><input type="file" id="photoCameraInput_${user.name}" accept="image/*" capture="environment" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')"><input type="file" id="photoGalleryInput_${user.name}" accept="image/*" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')">`;
+    // CLEAN HEADER: Back | Photo | Name + Online + Coins | Follow
+    // BOTTOM BAR: Friend | Voice | Video | Gift | Gallery | Camera
+    let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#0D1117;z-index:99999;display:flex;flex-direction:column;color:#fff;height:100dvh">
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#FF8C00;flex-shrink:0">
+      <button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0">← Back</button>
+      <img src="${user.avatar||'https://via.placeholder.com/80'}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0">
+      <div style="flex:1;min-width:0;line-height:1.2">
+        <b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;font-size:15px">${typeof shortName!=='undefined'?shortName(user.name):user.name}</b>
+        <div style="font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">● Online • FREE • You earn</div>
+        <div id="chatHeaderCoins" style="font-size:12px;color:#FFD700;font-weight:800;white-space:nowrap">🪙 ${myProfile?myProfile.coins||0:0}</div>
+      </div>
+      <button id="chatFollowBtn" onclick="toggleFollowInChat()" style="background:#2196F3;color:#fff;border:2px solid #fff;padding:9px 12px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Follow</button>
+    </div>
+    <div id="chatMessages" style="flex:1;min-height:0;overflow-y:auto;padding:15px 15px 10px;background:#0D1117"></div>
+    <div style="background:#161B22;border-top:1px solid #30363D;padding:8px 10px calc(8px + env(safe-area-inset-bottom));flex-shrink:0">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <button onclick="ChatManager.startVoiceMessage(ChatManager.currentChatUser.name)" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#21262D;font-size:20px;cursor:pointer;line-height:1" title="Voice message">🎤</button>
+        <input id="chatInput" placeholder="Type message... FREE" style="flex:1;min-width:0;padding:13px 16px;border-radius:25px;border:none;background:#21262D;color:#fff;font-size:15px;outline:none">
+        <button onclick="ChatManager.toggleEmojiPanel()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:none;font-size:26px;cursor:pointer;line-height:1" title="Emoji">😊</button>
+        <button onclick="ChatManager.sendChatMessage()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#FF8C00;color:#fff;font-size:18px;cursor:pointer;line-height:1" title="Send">✈️</button>
+      </div>
+      <div id="emojiPanel" style="display:none;flex-wrap:wrap;gap:8px;padding:8px 4px;border-top:1px solid #30363D"><div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 4px 4px"><b style="font-size:13px;color:#8B949E">Emojis</b><button onclick="ChatManager.closeEmojiPanel()" style="background:#21262D;border:none;padding:6px 14px;border-radius:20px;font-weight:700;cursor:pointer;color:#fff">← Back</button></div>${['😊','😂','❤️','😍','👋','🔥','😘','🥰','😉','👍','🙏','💋','😢','😎','🎉','💖','🌹','😇','🤗','😜'].map(e=>`<button onclick="ChatManager.insertEmoji('${e}')" style="background:none;border:none;font-size:26px;cursor:pointer;padding:4px">${e}</button>`).join('')}</div>
+      <div style="display:flex;justify-content:space-around;align-items:center;padding:6px 2px 2px">
+        <button onclick="sendFriendRequestInChat()" style="background:none;border:none;font-size:24px;cursor:pointer;padding:6px;line-height:1" title="Friend Request">🤝</button>
+        <button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:24px;cursor:pointer;padding:6px;line-height:1" title="Voice call">📞</button>
+        <button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:24px;cursor:pointer;padding:6px;line-height:1" title="Video call">📹</button>
+        <button onclick="ChatManager.openGiftPanel(ChatManager.currentChatUser)" style="background:none;border:none;font-size:24px;cursor:pointer;padding:6px;line-height:1" title="Gift">🎁</button>
+        <button onclick="ChatManager.openGallery(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:24px;cursor:pointer;padding:6px;line-height:1" title="Gallery">🖼️</button>
+        <button onclick="ChatManager.openCamera(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:24px;cursor:pointer;padding:6px;line-height:1" title="Camera">📷</button>
+      </div>
+    </div></div><input type="file" id="photoCameraInput_${user.name}" accept="image/*" capture="environment" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')"><input type="file" id="photoGalleryInput_${user.name}" accept="image/*" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')">`;
     document.body.insertAdjacentHTML('beforeend', html);
     this.enableChatProtection();
     this.startListening();
@@ -312,11 +328,11 @@ const ChatManager = {
   },
   renderMessages(msgs){
     let box=document.getElementById('chatMessages'); if(!box) return;
-    if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#888;padding:30px">Say Hi to '+(typeof shortName!=='undefined'?shortName(this.currentChatUser?this.currentChatUser.name:'him'):this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">Chat FREE • You earn</span></div>'; return; }
+    if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#8B949E;padding:30px">Say Hi to '+(typeof shortName!=='undefined'?shortName(this.currentChatUser?this.currentChatUser.name:'him'):this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">All FREE for ladies • You earn</span></div>'; return; }
     box.innerHTML=msgs.map(m=>{
       let mine=(m.fromId===myProfile.id);
       let inner=m.type==='photo'?`<div style="position:relative;display:inline-block;max-width:200px"><img src="${m.photo}" draggable="false" style="max-width:200px;border-radius:10px;pointer-events:none;user-select:none"><div style="position:absolute;inset:0;background:transparent;z-index:2"></div><div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;padding:2px 6px;border-radius:8px">🔒 Private</div></div>`:m.type==='voice'?`<audio controls controlsList="nodownload noplaybackrate" src="${m.audio}" style="max-width:200px"></audio>`:String(m.text||'').replace(/</g,'&lt;');
-      return `<div style="text-align:${mine?'right':'left'};margin:8px 0"><span style="display:inline-block;background:${mine?'#FF8C00':'#fff'};color:${mine?'#fff':'#000'};padding:10px 14px;border-radius:15px;max-width:75%;box-shadow:0 1px 3px rgba(0,0,0,0.1);text-align:left;user-select:none">${inner}<div style="font-size:10px;color:#aaa;margin-top:3px">${m.time||''}</div></span></div>`;
+      return `<div style="text-align:${mine?'right':'left'};margin:8px 0"><span style="display:inline-block;background:${mine?'#FF8C00':'#161B22'};color:#fff;padding:10px 14px;border-radius:15px;max-width:75%;box-shadow:0 1px 3px rgba(0,0,0,0.1);text-align:left;user-select:none">${inner}<div style="font-size:10px;color:#aaa;margin-top:3px">${m.time||''}</div></span></div>`;
     }).join('');
     box.scrollTop=box.scrollHeight;
   },
@@ -333,6 +349,7 @@ const ChatManager = {
     let to=(typeof toUser==='string')?{name:toUser,id:toUser}:toUser;
     saveTalkedTo(to);
     let db=getDB(); if(!db){ showToast('Firebase not loaded - reload page'); return false; }
+    // FEMALE FREE - no deduction
     let chatId=getChatId(myProfile.id, to.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:to.id,to:to.name,text:message,type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs = [...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId, this._msgs); this.renderMessages(this._msgs);
@@ -355,7 +372,7 @@ const ChatManager = {
     _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
     _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
     _applyHDBitrate();
-    _peerConn.ontrack=e=>{ _stopRingtone(); const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const s=document.getElementById('callStatusText'); if(s) s.textContent='✅ Connected'; };
+    _peerConn.ontrack=e=>{ _stopRingtone(); const rv=document.getElementById('remoteVideo'); if(rv){ rv.srcObject=e.streams[0]; rv.style.display='block'; } const s=document.getElementById('callStatusText'); if(s) s.textContent='✅ Connected'; _startCallBilling(); };
     _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/calleeCandidates').push(e.candidate.toJSON()); };
     await _peerConn.setRemoteDescription(new RTCSessionDescription(call.offer));
     const answer=await _peerConn.createAnswer(); await _peerConn.setLocalDescription(answer);
@@ -454,7 +471,7 @@ const ChatManager = {
   giftList:[{name:'Heart',coins:50,icon:'❤️'},{name:'Flower',coins:100,icon:'🌸'},{name:'Butterfly',coins:200,icon:'🦋'},{name:'Star',coins:300,icon:'⭐'},{name:'Diamond',coins:500,icon:'💎'}],
   openGiftPanel(user){
     let giftId='giftPanelPopup'; if(document.getElementById(giftId)) document.getElementById(giftId).remove();
-    let html=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#fff;color:#000;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Send Gift 🎁</div><button onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#eee;color:#000;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((g,i)=>`<button onclick="ChatManager.selectGift(${i},'${giftId}')" style="min-height:140px;border:1px solid #eee;border-radius:18px;background:#f5f5f5;color:#000;cursor:pointer;padding:8px 5px"><div style="font-size:50px">${g.icon}</div><div style="font-size:14px;font-weight:600;color:#FF8C00">${g.coins} coins</div><div style="margin-top:5px;font-size:14px">${g.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #eee;color:#888;font-size:13px;text-align:center">Sending gift to <strong style="color:#000">${typeof shortName!=='undefined'?shortName(user.name):user.name}</strong> • FREE for ladies</div></div></div>`;
+    let html=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#161B22;color:#fff;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Send Gift 🎁</div><button onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#21262D;color:#fff;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((g,i)=>`<button onclick="ChatManager.selectGift(${i},'${giftId}')" style="background:#21262D;color:#fff;border:1px solid #30363D;border-radius:18px;min-height:140px;cursor:pointer;padding:8px 5px"><div style="font-size:50px">${g.icon}</div><div style="font-size:14px;font-weight:600;color:#F59E0B">${g.coins} coins</div><div style="margin-top:5px;font-size:14px">${g.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #30363D;color:#8B949E;font-size:13px;text-align:center">Ladies send gifts FREE • Sending to <strong style="color:#fff">${typeof shortName!=='undefined'?shortName(user.name):user.name}</strong></div></div></div>`;
     document.body.insertAdjacentHTML('beforeend', html);
   },
   selectGift(index,giftPanelId){ let g=this.giftList[index]; if(!g) return; this.sendGift(g,this.currentChatUser,giftPanelId); },
