@@ -516,6 +516,7 @@ refreshMe();
 startPresence();
 loadBoys();
 if(typeof loadFemaleEarnings==='function'){ try{ loadFemaleEarnings(); }catch(e){} }
+setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000);
 </script>
 </body>
 </html>
