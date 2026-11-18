@@ -38,6 +38,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 .avatar{width:70px;height:70px;border-radius:50%;border:3px solid #2196F3;position:relative;margin-right:12px;cursor:pointer;flex-shrink:0}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .online{width:12px;height:12px;background:#4CAF50;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid #161B22}
+.offline{width:12px;height:12px;background:#666;border-radius:50%;position:absolute;bottom:2px;right:2px;border:2px solid #161B22}
 .card-info{flex:1;cursor:pointer;min-width:0}
 .card-info h3{font-size:16px;margin-bottom:2px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .friends-count{font-size:11px;color:#8B949E;margin-bottom:4px}
@@ -191,6 +192,25 @@ let filteredUsers = [];
 let currentHomeTab = 'recommend';
 function showToast(msg){ let t=document.getElementById('appToast'); t.innerText=msg; t.style.display='block'; clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.display='none',2500); }
 function shortName(name){ if(!name) return 'User'; let n = String(name).split(' ')[0]; if(n.length>12) n=n.substring(0,12)+'...'; return n; }
+function isOnlineNow(u){
+  if(!u) return false;
+  if(u.online===true && u.lastSeen && (Date.now()-u.lastSeen < 120000)) return true;
+  if(u.online===true && !u.lastSeen) return true;
+  var ls = u.lastSeen || u.onlineAt || 0;
+  return ls && (Date.now() - ls < 120000);
+}
+function startPresence(){
+  if(!myProfile || !window.PatanishaDB) return;
+  var ref = window.PatanishaDB.ref('users/'+myProfile.id);
+  function markOnline(){
+    try{ ref.update({online:true, lastSeen:Date.now()}); }catch(e){}
+    try{ myProfile.online=true; myProfile.lastSeen=Date.now(); }catch(e){}
+  }
+  markOnline();
+  setInterval(markOnline, 30000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) markOnline(); });
+  window.addEventListener('beforeunload', function(){ try{ ref.update({online:false, lastSeen:Date.now()}); }catch(e){} });
+}
 function localToggleFollow(){
   if(!currentProfile || !currentProfile.id) return;
   if(!myProfile.following) myProfile.following=[];
@@ -218,14 +238,14 @@ function refreshTopHeader(){ if(!myProfile) return; var av=document.getElementBy
 function getFilteredUsers(){
   let base = users.filter(u => u.gender && u.gender.toLowerCase().trim() === 'female');
   if(currentHomeTab === 'nearby'){ let myTown = (myProfile.city||'Ruiru').trim().toLowerCase(); return base.filter(u => (u.city||'').trim().toLowerCase() === myTown); }
-  if(currentHomeTab === 'online'){ return [...base].sort((a,b)=>(b.online?1:0)-(a.online?1:0)); }
+  if(currentHomeTab === 'online'){ return base.filter(u=>isOnlineNow(u)); }
   return base;
 }
 function renderUsers(){
   filteredUsers = getFilteredUsers();
   let list = document.getElementById('userList');
-  if(filteredUsers.length===0){ list.innerHTML='<div class="empty">No ladies found yet<br><span style="font-size:12px">No Female users in '+(myProfile.city||'Ruiru')+' yet</span></div>'; return; }
-  list.innerHTML = filteredUsers.map((u,i)=>`<div class="card" onclick="openProfile(${i})"><div class="avatar"><img src="${u.avatar||'https://via.placeholder.com/80'}"><div class="online"></div></div><div class="card-info"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">${(u.friends||[]).length} friends • ID:${u.id||''}</div><div style="font-size:12px;color:#8B949E">📍 ${u.city||'Ruiru'} • Tap to view</div>${u.bio?`<div style="font-size:12px;color:#aaa;margin-top:4px">${u.bio.substring(0,60)}</div>`:''}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();openProfile(${i});startChat()">💬 Chat</button></div></div>`).join('');
+  if(filteredUsers.length===0){ list.innerHTML='<div class="empty">No ladies found yet<br><span style="font-size:12px">'+(currentHomeTab==='online'?'No ladies online right now':'No Female users in '+(myProfile.city||'Ruiru')+' yet')+'</span></div>'; return; }
+  list.innerHTML = filteredUsers.map((u,i)=>`<div class="card" onclick="openProfile(${i})"><div class="avatar"><img src="${u.avatar||'https://via.placeholder.com/80'}"><div class="${isOnlineNow(u)?'online':'offline'}"></div></div><div class="card-info"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">${(u.friends||[]).length} friends • ID:${u.id||''} • ${isOnlineNow(u)?'● Online':'○ Offline'}</div><div style="font-size:12px;color:#8B949E">📍 ${u.city||'Ruiru'} • Tap to view</div>${u.bio?`<div style="font-size:12px;color:#aaa;margin-top:4px">${u.bio.substring(0,60)}</div>`:''}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();openProfile(${i});startChat()">💬 Chat</button></div></div>`).join('');
 }
 function switchTab(tab, el){ currentHomeTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); renderUsers(); }
 function goHome(){ switchTab('recommend', document.querySelector('.tab')); window.scrollTo(0,0); }
@@ -290,7 +310,7 @@ function openProfile(idx){
   document.getElementById('profileCover').src = currentProfile.avatar;
   document.getElementById('profileAvatarBig').src = currentProfile.avatar;
   document.getElementById('profileName').innerText = shortName(currentProfile.name);
-  document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown') + ' • ID:' + (currentProfile.id||'');
+  document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown') + ' • ID:' + (currentProfile.id||'') + ' • ' + (isOnlineNow(currentProfile)?'● Online':'○ Offline');
   document.getElementById('profileBio').innerText = currentProfile.bio || 'No bio yet';
   let localPhotos = (currentProfile.photos && currentProfile.photos.length) ? currentProfile.photos.filter(Boolean) : [currentProfile.avatar];
   window._currentProfilePhotos = localPhotos;
@@ -315,6 +335,8 @@ function openProfile(idx){
         let v=snap.val(); if(!v) return;
         if(v.bio) document.getElementById('profileBio').innerText=v.bio;
         if(v.avatar){ document.getElementById('profileCover').src=v.avatar; document.getElementById('profileAvatarBig').src=v.avatar; }
+        if(v.lastSeen!=null) currentProfile.lastSeen=v.lastSeen;
+        if(v.online!=null) currentProfile.online=v.online;
       });
     }
   }catch(e){}
@@ -346,7 +368,7 @@ function searchUserById(){
   let all = users.filter(u=>u.gender && u.gender.toLowerCase().trim()==='female');
   let found = all.find(u => (u.id && u.id.toUpperCase()===q) || (u.id && u.id.toUpperCase().includes(q)) || (u.name && u.name.toUpperCase().includes(q)));
   if(!found){ showToast('No user found with ID: '+q); return; }
-  filteredUsers=[found]; document.getElementById('userList').innerHTML = filteredUsers.map((u,i)=>`<div class="card" onclick="openProfile(0)"><div class="avatar"><img src="${u.avatar}"><div class="online"></div></div><div class="card-info"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">ID:${u.id}</div></div></div>`).join('');
+  filteredUsers=[found]; document.getElementById('userList').innerHTML = filteredUsers.map((u,i)=>`<div class="card" onclick="openProfile(0)"><div class="avatar"><img src="${u.avatar}"><div class="${isOnlineNow(u)?'online':'offline'}"></div></div><div class="card-info"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">ID:${u.id} • ${isOnlineNow(u)?'● Online':'○ Offline'}</div></div></div>`).join('');
 }
 function openMe(){
   if(!myProfile) return;
@@ -435,8 +457,8 @@ function loadUsersFromFirebase(){
         if(v.gender && v.gender.toLowerCase().trim()!=='female') return;
         if(v.id===myProfile.id) return;
         let ex=users.find(x=>x.id===v.id);
-        if(ex){ ex.name=v.name||ex.name; ex.avatar=v.avatar||ex.avatar; ex.city=v.city||ex.city; ex.bio=v.bio||ex.bio; ex.age=v.age||ex.age; }
-        else { users.push({name:v.name||'User',gender:'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:[],friends:[],id:v.id,activityScore:v.activityScore||0}); changed=true; }
+        if(ex){ ex.name=v.name||ex.name; ex.avatar=v.avatar||ex.avatar; ex.city=v.city||ex.city; ex.bio=v.bio||ex.bio; ex.age=v.age||ex.age; ex.online=v.online; ex.lastSeen=v.lastSeen; }
+        else { users.push({name:v.name||'User',gender:'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:[],friends:[],id:v.id,activityScore:v.activityScore||0,online:v.online,lastSeen:v.lastSeen}); changed=true; }
       });
       if(changed) renderUsers();
     }).catch(()=>{});
@@ -462,6 +484,7 @@ refreshTopHeader();
   window.PatanishaDB = firebase.database();
   window.PatanishaDBType = 'rtdb';
   loadUsersFromFirebase();
+  if(typeof startPresence==='function') startPresence();
 </script>
 <script src="../referral.js"></script>
 <script src="../social.js"></script>
