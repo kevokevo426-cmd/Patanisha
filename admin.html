@@ -13,7 +13,7 @@ body{background:#f5f5f5;padding:20px}
 .box h3{margin-bottom:15px;color:#333;border-bottom:2px solid #FFD700;padding-bottom:8px}
 input,select,textarea{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:10px;font-size:14px}
 textarea{min-height:300px;resize:vertical;font-family:monospace;font-size:13px}
-textarea:disabled{background:#f5f5f5;color:#666} /* ADDED: locked style */
+textarea:disabled{background:#f5f5f5;color:#666}
 .btn{background:linear-gradient(135deg,#FFA500,#FF8C00);color:white;border:none;padding:10px 16px;border-radius:10px;font-weight:bold;cursor:pointer;margin:4px;font-size:12px}
 .btn-success{background:linear-gradient(135deg,#00C853,#00BFA5)}
 .btn-danger{background:linear-gradient(135deg,#FF5252,#FF1744)}
@@ -21,8 +21,6 @@ textarea:disabled{background:#f5f5f5;color:#666} /* ADDED: locked style */
 .btn-info{background:linear-gradient(135deg,#00BFFF,#1E90FF)}
 .btn-purple{background:linear-gradient(135deg,#9C27B0,#673AB7)}
 .btn-gray{background:#666}
-
-/* ANCHOR CARD */
 .anchor-tabs{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
 .anchor-tab{flex:1;min-width:120px;padding:10px;background:#eee;border:none;border-radius:10px;font-weight:600;cursor:pointer}
 .anchor-tab.active{background:#FFD700}
@@ -38,17 +36,17 @@ textarea:disabled{background:#f5f5f5;color:#666} /* ADDED: locked style */
 .status-badge{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700}
 .status-pending{background:#FFF3CD;color:#856404}
 .status-approved{background:#D4EDDA;color:#155724}
-
-/* WITHDRAWAL CARD */
 .withdraw-card{background:#FFF3E0;border:1px solid #FFB74D;padding:15px;border-radius:12px;margin:10px 0}
 .withdraw-info{display:flex;justify-content:space-between;margin:5px 0}
-
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} /* CHANGED: 4 to 3 */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:700px){.stats{grid-template-columns:repeat(4,1fr)}}
 .stat-card{background:#FFF7E6;padding:15px;border-radius:10px;text-align:center;cursor:pointer}
 .stat-card b{font-size:24px;color:#FF8C00;display:block}
 .stat-breakdown{font-size:12px;color:#666;margin-top:5px}
 .alert{padding:12px;border-radius:8px;margin:10px 0;display:none}
 .alert.success{background:#C8E6C9;color:#2E7D32}
+.alert.error{background:#FFCDD2;color:#B71C1C}
+.ref-card{background:#f8f8f8;padding:12px;border-radius:12px;margin:10px 0;display:flex;gap:12px;align-items:center}
 </style>
 </head>
 <body>
@@ -56,7 +54,7 @@ textarea:disabled{background:#f5f5f5;color:#666} /* ADDED: locked style */
 
 <div class="header">
   <h1>🔧 Patanisha Admin Panel</h1>
-  <p>Anchor Management + Withdrawals + Ban System</p>
+  <p>Anchor Management + Withdrawals + Ban System + Referrals & Bonus</p>
 </div>
 
 <div id="alert" class="alert"></div>
@@ -70,9 +68,25 @@ textarea:disabled{background:#f5f5f5;color:#666} /* ADDED: locked style */
       <div id="userBreakdown" class="stat-breakdown"></div>
     </div>
     <div class="stat-card"><b id="bannedUsers">0</b><span>Banned</span></div>
-    <!-- REMOVED: Pending Withdrawals -->
+    <div class="stat-card" style="background:#E8F5E9"><b id="totalReferrals">0</b><span>Total Referrals</span><div class="stat-breakdown" id="referralBreakdown"></div></div>
+    <div class="stat-card" style="background:#FFF3E0"><b id="totalBonusPaid">0</b><span>Bonus Paid (coins)</span><div class="stat-breakdown">+100 per male 1st purchase</div></div>
+    <div class="stat-card" style="background:#FFEBEE"><b id="pendingWithdrawalsCount">0</b><span>Pending Withdrawals</span></div>
     <div class="stat-card"><b id="totalIncome">0</b><span>Total Income</span></div>
   </div>
+  <button class="btn btn-info" onclick="loadReferralStats();loadWithdrawalsFirebase();showAlert('Refreshed','success')">↻ Refresh All</button>
+</div>
+
+<!-- NEW: REFERRAL + BONUS -->
+<div class="box">
+  <h3>🎁 Referral & Bonus — All Users</h3>
+  <p style="font-size:12px;color:#666;margin-bottom:10px">Rule: Male joins with code + 1st purchase → Referrer gets +100 coins. Paid once per male.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" onclick="switchRefTab('all',this)" id="refTabAll">All Referrals</button>
+    <button class="btn btn-gray" onclick="switchRefTab('paid',this)" id="refTabPaid">✅ Bonus Paid</button>
+    <button class="btn btn-gray" onclick="switchRefTab('unpaid',this)" id="refTabUnpaid">⏳ Not Yet Paid</button>
+    <button class="btn btn-purple" onclick="switchRefTab('leaders',this)" id="refTabLeaders">🏆 Top Referrers</button>
+  </div>
+  <div id="referralList">Loading referrals from Firebase...</div>
 </div>
 
 <div class="box">
@@ -92,7 +106,6 @@ textarea:disabled{background:#f5f5f5;color:#666} /* ADDED: locked style */
 <div class="box">
   <h3>👑 Anchor Management</h3>
   <input id="anchorSearch" placeholder="Search by Name or ID" onkeyup="loadAnchors()">
-
   <div class="anchor-tabs">
     <button class="anchor-tab active" onclick="switchAnchorTab('all', this)">All Anchors</button>
     <button class="anchor-tab" onclick="switchAnchorTab('male', this)">Male</button>
@@ -100,7 +113,6 @@ textarea:disabled{background:#f5f5f5;color:#666} /* ADDED: locked style */
     <button class="anchor-tab" onclick="switchAnchorTab('pending', this)">Pending Approval</button>
     <button class="anchor-tab" onclick="switchAnchorTab('banned', this)">Banned</button>
   </div>
-
   <div id="anchorList">Loading...</div>
 </div>
 
@@ -110,18 +122,18 @@ textarea:disabled{background:#f5f5f5;color:#666} /* ADDED: locked style */
     <button class="btn" onclick="switchEditTab('terms')">Terms</button>
     <button class="btn" onclick="switchEditTab('privacy')">Privacy</button>
   </div>
-  <textarea id="termsEditor" disabled></textarea> <!-- ADDED: disabled -->
-  <textarea id="privacyEditor" style="display:none" disabled></textarea> <!-- ADDED: disabled -->
-  <button class="btn" id="editBtn" onclick="enableEdit()">✏️ Edit</button> <!-- ADDED -->
-  <button class="btn btn-warning" id="saveBtn" onclick="saveContent()" style="display:none">💾 Save</button> <!-- CHANGED -->
+  <textarea id="termsEditor" disabled></textarea>
+  <textarea id="privacyEditor" style="display:none" disabled></textarea>
+  <button class="btn" id="editBtn" onclick="enableEdit()">✏️ Edit</button>
+  <button class="btn btn-warning" id="saveBtn" onclick="saveContent()" style="display:none">💾 Save</button>
 </div>
 
-<!-- REMOVED: Danger Zone Box -->
-
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
 <script>
-// KEPT YOUR FULL DEFAULT TEXT
 const DEFAULT_TERMS = `KE Terms and Conditions
 
 Welcome to KEKE. These Terms and Conditions (“Terms”) explain the rules that apply when you access or use the KEKE application, website, and related services.
@@ -167,16 +179,19 @@ let maleUsers = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [];
 let withdrawals = JSON.parse(localStorage.getItem('patanishaWithdrawals')) || [];
 let banned = JSON.parse(localStorage.getItem('patanishaBanned')) || [];
 let currentAnchorTab = 'all';
+let currentRefTab = 'all';
+let _allReferrals = []; // {referrerId, referrerName, referredId, referredName, code, rewardPaid, ts}
+let _bonusByUser = {}; // referrerId -> {name, count, coins}
+let _firebaseWithdrawals = []; // {key, ...}
 
+function getDB(){ return window.PatanishaDB || null; }
 function showAlert(msg, type){
   let alert = document.getElementById('alert');
-  alert.className = 'alert ' + type;
+  alert.className = 'alert ' + (type==='error'?'error':'success');
   alert.innerText = msg;
   alert.style.display = 'block';
   setTimeout(()=>{alert.style.display='none'}, 3000);
 }
-
-// ADDED: LOCK/UNLOCK TERMS
 function enableEdit(){
   document.getElementById('termsEditor').disabled = false;
   document.getElementById('privacyEditor').disabled = false;
@@ -184,37 +199,28 @@ function enableEdit(){
   document.getElementById('saveBtn').style.display = 'inline-block';
   showAlert('Editing enabled', 'success');
 }
-
 function disableEdit(){
   document.getElementById('termsEditor').disabled = true;
   document.getElementById('privacyEditor').disabled = true;
   document.getElementById('editBtn').style.display = 'inline-block';
   document.getElementById('saveBtn').style.display = 'none';
 }
-
-// SHOW FEMALE/MALE BREAKDOWN
 function showUserBreakdown(){
   let femaleCount = users.length;
   let maleCount = maleUsers.length;
   document.getElementById('userBreakdown').innerHTML = `👩 ${femaleCount} Female<br>👨 ${maleCount} Male`;
   setTimeout(()=>{document.getElementById('userBreakdown').innerHTML = ''}, 4000);
 }
-
-// SEND COINS TO MALE FUNCTION
 function sendCoinsToMale(){
   let name = document.getElementById('creditMaleName').value.trim();
   let id = document.getElementById('creditMaleId').value.trim();
   let coins = document.getElementById('creditMaleCoins').value.trim();
-
   if(!name ||!id ||!coins) return showAlert('Please fill all fields', 'error');
   if(isNaN(coins) || coins <= 0) return showAlert('Enter valid coin amount', 'error');
-
   let u = maleUsers.find(x=>x.id==id && x.name.toLowerCase()==name.toLowerCase());
   if(!u) return showAlert('Male user not found with that Name + ID', 'error');
-
   u.coins = (u.coins || 0) + parseInt(coins);
   localStorage.setItem('patanishaUsers_male', JSON.stringify(maleUsers));
-
   showAlert(`${coins} coins sent to ${name}`, 'success');
   document.getElementById('creditMaleName').value = '';
   document.getElementById('creditMaleId').value = '';
@@ -222,46 +228,146 @@ function sendCoinsToMale(){
   loadAnchors();
 }
 
-// WITHDRAWAL FUNCTIONS
-function loadWithdrawals(){
-  let list = document.getElementById('withdrawList');
-  let pending = withdrawals.filter(w=>w.status==='pending');
-  // REMOVED: document.getElementById('pendingWithdrawals').innerText = pending.length;
-
-  if(pending.length === 0){
-    list.innerHTML = '<p style="color:#999;text-align:center">No pending withdrawals</p>';
+// ===== REFERRAL + BONUS FROM FIREBASE =====
+async function loadReferralStats(){
+  let db=getDB();
+  document.getElementById('referralList').innerHTML = 'Loading referrals from Firebase...';
+  if(!db){ document.getElementById('referralList').innerHTML = '<p style="color:#999">Firebase not loaded. Check firebase-config.js path.</p>'; return; }
+  try{
+    // 1. referrals/<referrerId>/<referredId> = {name, gender, ts, rewardPaid}
+    let snap = await db.ref('referrals').once('value');
+    _allReferrals = []; _bonusByUser = {};
+    let totalBonus = 0;
+    snap.forEach(refSnap=>{
+      let referrerId = refSnap.key;
+      refSnap.forEach(child=>{
+        let v = child.val()||{};
+        let paid = !!v.rewardPaid;
+        if(paid) totalBonus += 100;
+        _allReferrals.push({referrerId, referredId: child.key, referredName: v.name||'User', gender: v.gender||'', code:'', rewardPaid: paid, ts: v.ts||0});
+        if(!_bonusByUser[referrerId]) _bonusByUser[referrerId]={name:'', count:0, paid:0, coins:0};
+        _bonusByUser[referrerId].count++;
+        if(paid){ _bonusByUser[referrerId].paid++; _bonusByUser[referrerId].coins+=100; }
+      });
+    });
+    // 2. Enrich referrer names from referredBy/<referredId>
+    let rb = await db.ref('referredBy').once('value');
+    rb.forEach(child=>{
+      let v=child.val()||{};
+      let item=_allReferrals.find(x=>x.referredId===child.key);
+      if(item){ item.code=v.code||''; item.referrerName=v.referrerName||''; }
+      if(v.referrerId && _bonusByUser[v.referrerId] && v.referrerName) _bonusByUser[v.referrerId].name=v.referrerName;
+    });
+    // 3. Also count referralRewards/<referrerId> as backup for bonus total
+    let rr = await db.ref('referralRewards').once('value');
+    let rewardCount = 0; rr.forEach(s=>{ rewardCount += s.numChildren(); });
+    document.getElementById('totalReferrals').innerText = _allReferrals.length;
+    document.getElementById('totalBonusPaid').innerText = totalBonus || (rewardCount*100);
+    document.getElementById('referralBreakdown').innerHTML = `✅ Paid: ${_allReferrals.filter(x=>x.rewardPaid).length} • ⏳ Pending: ${_allReferrals.filter(x=>!x.rewardPaid).length}`;
+    renderReferralList();
+  }catch(e){ document.getElementById('referralList').innerHTML = '<p style="color:#999">Could not load referrals: '+e.message+'</p>'; }
+}
+function switchRefTab(tab, btn){
+  currentRefTab=tab;
+  ['All','Paid','Unpaid','Leaders'].forEach(t=>{ let el=document.getElementById('refTab'+t); if(el) el.className='btn btn-gray'; });
+  if(btn) btn.className='btn';
+  renderReferralList();
+}
+function renderReferralList(){
+  let box=document.getElementById('referralList');
+  if(currentRefTab==='leaders'){
+    let leaders = Object.entries(_bonusByUser).sort((a,b)=>b[1].coins-a[1].coins).slice(0,20);
+    if(!leaders.length){ box.innerHTML='<p style="color:#999;text-align:center;padding:20px">No referrals yet</p>'; return; }
+    box.innerHTML = leaders.map(([id, v], i)=>`<div class="ref-card"><b style="font-size:20px">${i+1}.</b><div style="flex:1"><b>${v.name||'User'}</b><div style="font-size:12px;color:#888">ID: ${id} • ${v.count} joined • ${v.paid} paid</div></div><b style="color:#FF8C00">+${v.coins} coins</b></div>`).join('');
     return;
   }
-
-  let html = '';
-  pending.forEach((w, index)=>{
-    let u = users.find(x=>x.id==w.userId);
-    html += `<div class="withdraw-card">
-      <div class="withdraw-info"><span>Anchor:</span> <b>${u?.name || 'Unknown'}</b></div>
-      <div class="withdraw-info"><span>ID:</span> <b>${w.userId}</b></div>
-      <div class="withdraw-info"><span>Amount:</span> <b style="color:#00C853">$${w.amount}</b></div>
-      <div class="withdraw-info"><span>Method:</span> <b>${w.method}</b></div>
-      <div class="withdraw-info"><span>Date:</span> <b>${w.date}</b></div>
-      <button class="btn btn-success" onclick="approveWithdrawal(${index})">✅ Approve</button>
-      <button class="btn btn-danger" onclick="rejectWithdrawal(${index})">❌ Reject</button>
-    </div>`;
-  });
-  list.innerHTML = html;
+  let list = _allReferrals.slice().sort((a,b)=>b.ts-a.ts);
+  if(currentRefTab==='paid') list=list.filter(x=>x.rewardPaid);
+  if(currentRefTab==='unpaid') list=list.filter(x=>!x.rewardPaid);
+  if(!list.length){ box.innerHTML='<p style="color:#999;text-align:center;padding:20px">No referrals in this tab yet</p>'; return; }
+  box.innerHTML = list.map(r=>`<div class="ref-card"><div style="flex:1"><b>👤 ${r.referredName}</b> <span style="font-size:12px;color:#888">(${r.gender||''} • ID: ${r.referredId})</span><div style="font-size:12px;color:#666">Referred by: <b>${r.referrerName||'User'}</b> (ID: ${r.referrerId}) ${r.code?'• Code: '+r.code:''}</div><div style="font-size:11px;color:#999">${r.ts?new Date(r.ts).toLocaleString():''}</div></div><span style="padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${r.rewardPaid?'#D4EDDA;color:#155724':'#FFF3CD;color:#856404'}">${r.rewardPaid?'✅ +100 PAID':'⏳ NOT YET PAID'}</span></div>`).join('');
 }
 
+// ===== WITHDRAWALS FROM FIREBASE + LOCAL =====
+async function loadWithdrawalsFirebase(){
+  let db=getDB();
+  _firebaseWithdrawals=[];
+  if(db){
+    try{
+      let snap = await db.ref('withdrawals').once('value');
+      snap.forEach(c=>{ _firebaseWithdrawals.push({key:c.key, ...c.val()}); });
+      _firebaseWithdrawals.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    }catch(e){}
+  }
+  renderWithdrawals();
+}
+function renderWithdrawals(){
+  let list=document.getElementById('withdrawList');
+  let fbPending = _firebaseWithdrawals.filter(w=>!w.status || w.status==='pending');
+  let localPending = withdrawals.filter(w=>w.status==='pending');
+  document.getElementById('pendingWithdrawalsCount').innerText = fbPending.length + localPending.length;
+  let html='';
+  if(fbPending.length){
+    html += '<p style="font-size:12px;color:#666;margin-bottom:8px"><b>From Firebase (real Female requests):</b></p>';
+    fbPending.forEach(w=>{
+      html += `<div class="withdraw-card">
+        <div class="withdraw-info"><span>Anchor:</span> <b>${w.name||'Unknown'}</b></div>
+        <div class="withdraw-info"><span>ID:</span> <b>${w.userId||''}</b></div>
+        <div class="withdraw-info"><span>Coins:</span> <b>${w.coins||0} coins</b></div>
+        <div class="withdraw-info"><span>You send (net):</span> <b style="color:#00C853">KES ${(w.netKES||0).toFixed(2)}</b></div>
+        <div class="withdraw-info"><span>Gross / Fee:</span> <b>KES ${(w.grossKES||0).toFixed(2)} / KES ${(w.feeKES||0).toFixed(2)}</b></div>
+        <div class="withdraw-info"><span>M-Pesa:</span> <b>${w.phone||''}</b></div>
+        <div class="withdraw-info"><span>Date:</span> <b>${w.createdAt?new Date(w.createdAt).toLocaleString():''}</b></div>
+        <button class="btn btn-success" onclick="approveWithdrawalFirebase('${w.key}')">✅ Approve - I Sent Money</button>
+        <button class="btn btn-danger" onclick="rejectWithdrawalFirebase('${w.key}', ${w.coins||0}, '${w.userId||''}')">❌ Reject + Refund Coins</button>
+      </div>`;
+    });
+  }
+  if(localPending.length){
+    html += '<p style="font-size:12px;color:#666;margin:14px 0 8px"><b>From Local (old):</b></p>';
+    localPending.forEach((w, index)=>{
+      let u = users.find(x=>x.id==w.userId);
+      html += `<div class="withdraw-card">
+        <div class="withdraw-info"><span>Anchor:</span> <b>${u?.name || 'Unknown'}</b></div>
+        <div class="withdraw-info"><span>ID:</span> <b>${w.userId}</b></div>
+        <div class="withdraw-info"><span>Amount:</span> <b style="color:#00C853">$${w.amount}</b></div>
+        <div class="withdraw-info"><span>Method:</span> <b>${w.method}</b></div>
+        <div class="withdraw-info"><span>Date:</span> <b>${w.date}</b></div>
+        <button class="btn btn-success" onclick="approveWithdrawal(${index})">✅ Approve</button>
+        <button class="btn btn-danger" onclick="rejectWithdrawal(${index})">❌ Reject</button>
+      </div>`;
+    });
+  }
+  if(!fbPending.length && !localPending.length) html='<p style="color:#999;text-align:center">No pending withdrawals</p>';
+  list.innerHTML = html;
+}
+async function approveWithdrawalFirebase(key){
+  let db=getDB(); if(!db) return;
+  await db.ref('withdrawals/'+key+'/status').set('approved');
+  showAlert('Withdrawal Approved - remember you sent the money', 'success');
+  loadWithdrawalsFirebase();
+}
+async function rejectWithdrawalFirebase(key, coins, userId){
+  let db=getDB(); if(!db) return;
+  await db.ref('withdrawals/'+key+'/status').set('rejected');
+  // REFUND coins to lady via earnings - she auto-claims it
+  if(userId && coins) await db.ref('earnings/'+userId).push({amount: coins, reason:'Withdrawal rejected - refund', ts: Date.now()});
+  showAlert('Withdrawal Rejected + '+coins+' coins refunded to lady', 'success');
+  loadWithdrawalsFirebase();
+}
 function approveWithdrawal(index){
   withdrawals[index].status = 'approved';
   localStorage.setItem('patanishaWithdrawals', JSON.stringify(withdrawals));
   showAlert('Withdrawal Approved', 'success');
   loadWithdrawals();
 }
-
 function rejectWithdrawal(index){
   withdrawals[index].status = 'rejected';
   localStorage.setItem('patanishaWithdrawals', JSON.stringify(withdrawals));
   showAlert('Withdrawal Rejected', 'success');
   loadWithdrawals();
 }
+function loadWithdrawals(){ renderWithdrawals(); }
 
 // ANCHOR FUNCTIONS
 function switchAnchorTab(tab, btn){
@@ -270,34 +376,28 @@ function switchAnchorTab(tab, btn){
   btn.classList.add('active');
   loadAnchors();
 }
-
 function loadAnchors(){
   let search = document.getElementById('anchorSearch').value.toLowerCase();
   let allAnchors = [
 ...users.map(u=>({...u, gender:'female'})),
 ...maleUsers.map(u=>({...u, gender:'male'}))
   ];
-
   let filtered = allAnchors;
   if(currentAnchorTab === 'male') filtered = allAnchors.filter(u=>u.gender==='male');
   if(currentAnchorTab === 'female') filtered = allAnchors.filter(u=>u.gender==='female');
   if(currentAnchorTab === 'pending') filtered = allAnchors.filter(u=>u.gender==='female' && u.approved===false);
   if(currentAnchorTab === 'banned') filtered = allAnchors.filter(u=>banned.includes(u.id));
-
   if(search){
     filtered = filtered.filter(u=>
       u.name.toLowerCase().includes(search) ||
       (u.id && u.id.toString().includes(search))
     );
   }
-
   updateStats(allAnchors);
-
   if(filtered.length === 0){
     document.getElementById('anchorList').innerHTML = '<p style="color:#999;text-align:center">No anchors found</p>';
     return;
   }
-
   let html = '';
   filtered.forEach(u=>{
     let isBanned = banned.includes(u.id);
@@ -308,7 +408,6 @@ function loadAnchors(){
     let bio = u.bio || u.desc || 'No bio';
     let id = u.id || 'N/A';
     let status = u.approved === true? 'approved' : u.approved === false? 'pending' : 'approved';
-
     html += `<div class="anchor-card ${isBanned?'banned':''}">
       <div class="anchor-avatar">
         <img src="${u.avatar}">
@@ -319,6 +418,7 @@ function loadAnchors(){
         <div class="anchor-info-row"><span>NickName :</span> <b>${u.name} <span style="color:#888">(${u.gender})</span></b></div>
         <div class="anchor-info-row"><span>Income :</span> <b style="color:#00C853">${income.toFixed(2)}</b></div>
         <div class="anchor-info-row"><span>Total Coins :</span> <b>${totalCoins}</b></div>
+        <div class="anchor-info-row"><span>Referral Bonus:</span> <b style="color:#FF8C00">${_bonusByUser[id]?'+'+_bonusByUser[id].coins+' coins ('+_bonusByUser[id].count+' referred)':'0'}</b></div>
         <div class="anchor-info-row"><span>Status :</span> <b style="color:${isOnline?'#4CAF50':'#999'}">${isOnline?'Online':`Last seen ${lastSeen}`}</b></div>
         <div class="anchor-info-row"><span>Bio :</span> <span style="font-size:12px">${bio.substring(0,50)}</span></div>
         <div>
@@ -342,8 +442,6 @@ function loadAnchors(){
   });
   document.getElementById('anchorList').innerHTML = html;
 }
-
-// BAN / UNBAN
 function banUser(id){
   if(!banned.includes(id)){
     banned.push(id);
@@ -352,29 +450,24 @@ function banUser(id){
     loadAnchors();
   }
 }
-
 function unbanUser(id){
   banned = banned.filter(x=>x!=id);
   localStorage.setItem('patanishaBanned', JSON.stringify(banned));
   showAlert('User Unbanned', 'success');
   loadAnchors();
 }
-
 function approveAnchor(id){
   let u = users.find(x=>x.id==id);
   if(u){ u.approved = true; localStorage.setItem('patanishaUsers', JSON.stringify(users)); }
   showAlert('Anchor Approved', 'success');
   loadAnchors();
 }
-
 function rejectAnchor(id){
   let u = users.find(x=>x.id==id);
   if(u){ u.approved = false; localStorage.setItem('patanishaUsers', JSON.stringify(users)); }
   showAlert('Anchor Rejected', 'success');
   loadAnchors();
 }
-
-// CREDIT MALE + CHAT
 function creditMale(id){
   let amount = prompt('Enter coins to credit to this male user:');
   if(!amount || isNaN(amount)) return;
@@ -386,41 +479,34 @@ function creditMale(id){
     loadAnchors();
   }
 }
-
 function chatUser(id){
   let u = [...users,...maleUsers].find(x=>x.id==id);
   if(u){
     window.open(`/chat.html?userId=${id}&name=${u.name}`, '_blank');
   }
 }
-
 function updateStats(allAnchors){
   let totalIncome = allAnchors.reduce((sum,u)=>sum+(u.income||0),0);
   document.getElementById('totalUsers').innerText = allAnchors.length;
   document.getElementById('bannedUsers').innerText = banned.length;
   document.getElementById('totalIncome').innerText = totalIncome.toFixed(0);
 }
-
-// TERMS EDITOR
 function switchEditTab(tab){
   document.getElementById('termsEditor').style.display = tab==='terms'? 'block' : 'none';
   document.getElementById('privacyEditor').style.display = tab==='privacy'? 'block' : 'none';
 }
-
 function saveContent(){
   localStorage.setItem('keke_terms', document.getElementById('termsEditor').value);
   localStorage.setItem('keke_privacy', document.getElementById('privacyEditor').value);
-  disableEdit(); // ADDED: lock again after save
+  disableEdit();
   showAlert('Saved & Locked', 'success');
 }
-
-// REMOVED: clearAll function
-
-// INIT
 document.getElementById('termsEditor').value = localStorage.getItem('keke_terms') || DEFAULT_TERMS;
 document.getElementById('privacyEditor').value = localStorage.getItem('keke_privacy') || DEFAULT_PRIVACY;
 loadAnchors();
 loadWithdrawals();
+loadReferralStats();
+loadWithdrawalsFirebase();
 </script>
 </body>
 </html>
