@@ -4,6 +4,7 @@
 // FIX: Inbox NEVER waits for Firebase. Shows instantly.
 // FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
 // FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
+// NEW: Follow + Friend buttons INSIDE Chat header
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileFemale(){
@@ -71,6 +72,27 @@ function getFemaleChatUsers(){
     }
     return true;
   });
+}
+// ===== FOLLOW INSIDE CHAT =====
+async function updateChatFollowUI(){
+  let btn=document.getElementById('chatFollowBtn'); let u=(window.ChatManager && ChatManager.currentChatUser);
+  if(!btn||!u||!myProfile) return;
+  let db=getDB(); if(!db) return;
+  try{
+    let s=await db.ref('follows/'+myProfile.id+'/'+u.id).once('value');
+    let isF=!!s.val();
+    btn.textContent=isF?'✓ Following':'+ Follow';
+    btn.style.background=isF?'#666':'#2196F3';
+  }catch(e){}
+}
+async function toggleFollowInChat(){
+  let u=(window.ChatManager && ChatManager.currentChatUser); if(!u) return;
+  if(typeof toggleFollow==='function'){ await toggleFollow(u); updateChatFollowUI(); return; }
+  if(typeof showToast!=='undefined') showToast('Reload page - social.js missing');
+}
+async function sendFriendRequestInChat(){
+  let u=(window.ChatManager && ChatManager.currentChatUser); if(!u) return;
+  if(typeof sendFriendRequest==='function'){ sendFriendRequest(u); return; }
 }
 // ===== REAL CALLS - WebRTC HD + RINGTONE + FULL SCREEN =====
 let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false;
@@ -171,7 +193,6 @@ async function _startRealCall(user, type){
     try{ _stopRingtone(); await _peerConn.setRemoteDescription(new RTCSessionDescription(ans)); const st=document.getElementById('callStatusText'); if(st) st.textContent='✅ Connected'; }catch(e){}
   });
   db.ref('calls/'+_currentCallId+'/calleeCandidates').on('child_added', snap=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(snap.val())).catch(()=>{}); });
-  // NEW: If man rejects because he has no coins, tell lady why call cut
   db.ref('calls/'+_currentCallId+'/status').on('value', snap=>{
     if(snap.val()==='ended'){
       db.ref('calls/'+_currentCallId+'/rejectReason').once('value').then(rs=>{
@@ -189,7 +210,6 @@ function _listenForIncomingCalls(){
     db.ref('calls').orderByChild('to').equalTo(myProfile.id).on('child_added', snap=>{
       const call=snap.val(); if(!call||call.status!=='ringing') return;
       if(call.from===myProfile.id) return;
-      // LADY IS FREE - NEVER block incoming call for coins. Man pays.
       _currentCallId=snap.key; _currentCallType=call.type;
       _showCallUI({name:call.fromName||'Someone', avatar:call.fromAvatar||''}, call.type==='video'?'📹 Incoming Video Call... FREE':'📞 Incoming Voice Call... FREE', true);
     });
@@ -237,14 +257,16 @@ const ChatManager = {
     loadFemaleEarnings();
     _listenForIncomingCalls();
     saveTalkedTo(user);
+    if(typeof recordProfileVisit==='function'){ try{ recordProfileVisit(user); }catch(e){} }
     this.currentChatUser=user; this.closeInbox();
     let old=document.getElementById('chatPopup'); if(old) old.remove();
     if(this._listener && this.currentChatId){ try{ getDB().ref('chats/'+this.currentChatId+'/messages').off('value', this._listener); }catch(e){} }
     this.currentChatId=getChatId(myProfile.id, user.id);
-    let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;display:flex;flex-direction:column;color:#000;height:100dvh"><div style="display:flex;align-items:center;gap:10px;padding:12px;background:#FFA500"><button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><img src="${user.avatar||''}" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${typeof shortName!=='undefined'?shortName(user.name):user.name}</b><div style="font-size:11px;color:#2E7D32">● Online • FREE • You earn</div></div><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📞</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📹</button></div><div id="chatMessages" style="flex:1;min-height:0;overflow-y:auto;padding:15px 15px 10px;background:#f5f5f5"></div><div style="background:#fff;border-top:1px solid #eee;padding:8px 10px calc(8px + env(safe-area-inset-bottom))"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><button onclick="ChatManager.startVoiceMessage(ChatManager.currentChatUser.name)" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#f0f0f0;font-size:20px;cursor:pointer;line-height:1" title="Voice message">🎤</button><input id="chatInput" placeholder="Type message... FREE" style="flex:1;min-width:0;padding:13px 16px;border-radius:25px;border:none;background:#f0f0f0;color:#000;font-size:15px;outline:none"><button onclick="ChatManager.toggleEmojiPanel()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:none;font-size:26px;cursor:pointer;line-height:1" title="Emoji">😊</button><button onclick="ChatManager.sendChatMessage()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#FF8C00;color:#fff;font-size:18px;cursor:pointer;line-height:1" title="Send">✈️</button></div><div id="emojiPanel" style="display:none;flex-wrap:wrap;gap:8px;padding:8px 4px;border-top:1px solid #eee"><div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 4px 4px"><b style="font-size:13px;color:#888">Emojis</b><button onclick="ChatManager.closeEmojiPanel()" style="background:#eee;border:none;padding:6px 14px;border-radius:20px;font-weight:700;cursor:pointer;color:#000">← Back</button></div>${['😊','😂','❤️','😍','👋','🔥','😘','🥰','😉','👍','🙏','💋','😢','😎','🎉','💖','🌹','😇','🤗','😜'].map(e=>`<button onclick="ChatManager.insertEmoji('${e}')" style="background:none;border:none;font-size:26px;cursor:pointer;padding:4px">${e}</button>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 10px 2px"><button onclick="ChatManager.openGallery(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Gallery">🖼️</button><button onclick="ChatManager.openCamera(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Camera">📷</button><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Voice call">📞</button><button onclick="ChatManager.openGiftPanel(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Gift">🎁</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Video call">📹</button></div></div></div><input type="file" id="photoCameraInput_${user.name}" accept="image/*" capture="environment" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')"><input type="file" id="photoGalleryInput_${user.name}" accept="image/*" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')">`;
+    let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#f5f5f5;z-index:99999;display:flex;flex-direction:column;color:#000;height:100dvh"><div style="display:flex;align-items:center;gap:6px;padding:12px;background:#FFA500"><button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer">← Back</button><img src="${user.avatar||''}" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${typeof shortName!=='undefined'?shortName(user.name):user.name}</b><div style="font-size:11px;color:#2E7D32">● Online • FREE • You earn</div></div><button id="chatFollowBtn" onclick="toggleFollowInChat()" style="background:#2196F3;color:#fff;border:none;padding:9px 12px;border-radius:20px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap">+ Follow</button><button onclick="sendFriendRequestInChat()" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer" title="Friend Request">🤝</button><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📞</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:#fff;border:none;padding:10px;border-radius:50%;cursor:pointer">📹</button></div><div id="chatMessages" style="flex:1;min-height:0;overflow-y:auto;padding:15px 15px 10px;background:#f5f5f5"></div><div style="background:#fff;border-top:1px solid #eee;padding:8px 10px calc(8px + env(safe-area-inset-bottom))"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><button onclick="ChatManager.startVoiceMessage(ChatManager.currentChatUser.name)" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#f0f0f0;font-size:20px;cursor:pointer;line-height:1" title="Voice message">🎤</button><input id="chatInput" placeholder="Type message... FREE" style="flex:1;min-width:0;padding:13px 16px;border-radius:25px;border:none;background:#f0f0f0;color:#000;font-size:15px;outline:none"><button onclick="ChatManager.toggleEmojiPanel()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:none;font-size:26px;cursor:pointer;line-height:1" title="Emoji">😊</button><button onclick="ChatManager.sendChatMessage()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#FF8C00;color:#fff;font-size:18px;cursor:pointer;line-height:1" title="Send">✈️</button></div><div id="emojiPanel" style="display:none;flex-wrap:wrap;gap:8px;padding:8px 4px;border-top:1px solid #eee"><div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 4px 4px"><b style="font-size:13px;color:#888">Emojis</b><button onclick="ChatManager.closeEmojiPanel()" style="background:#eee;border:none;padding:6px 14px;border-radius:20px;font-weight:700;cursor:pointer;color:#000">← Back</button></div>${['😊','😂','❤️','😍','👋','🔥','😘','🥰','😉','👍','🙏','💋','😢','😎','🎉','💖','🌹','😇','🤗','😜'].map(e=>`<button onclick="ChatManager.insertEmoji('${e}')" style="background:none;border:none;font-size:26px;cursor:pointer;padding:4px">${e}</button>`).join('')}</div><div style="display:flex;justify-content:space-between;align-items:center;padding:4px 10px 2px"><button onclick="ChatManager.openGallery(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Gallery">🖼️</button><button onclick="ChatManager.openCamera(ChatManager.currentChatUser.name)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Camera">📷</button><button onclick="ChatManager.startVoiceCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Voice call">📞</button><button onclick="ChatManager.openGiftPanel(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Gift">🎁</button><button onclick="ChatManager.startVideoCall(ChatManager.currentChatUser)" style="background:none;border:none;font-size:28px;cursor:pointer;padding:6px;line-height:1" title="Video call">📹</button></div></div></div><input type="file" id="photoCameraInput_${user.name}" accept="image/*" capture="environment" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')"><input type="file" id="photoGalleryInput_${user.name}" accept="image/*" style="display:none" onchange="ChatManager.handlePhotoSelected(this.files[0],'${user.name}')">`;
     document.body.insertAdjacentHTML('beforeend', html);
     this.enableChatProtection();
     this.startListening();
+    updateChatFollowUI();
     let inp=document.getElementById('chatInput'); if(inp) inp.addEventListener('keydown',e=>{if(e.key==='Enter') ChatManager.sendChatMessage();});
   },
   _chatProtected:false,
