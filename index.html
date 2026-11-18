@@ -94,6 +94,14 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
   <div class="section">
     <h3>👤 My Profile</h3>
     <div style="text-align:center"><img id="profileAvatar" src="logo-192.png" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #FFD700"></div>
+    <!-- SOCIAL STATS - TAP TO OPEN LIST -->
+    <div style="display:flex;justify-content:space-around;text-align:center;margin:16px 0;padding:12px 0;border-top:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0">
+      <div onclick="openSocialList('friends')" style="cursor:pointer"><b id="meFriends" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Friends</div></div>
+      <div onclick="openSocialList('following')" style="cursor:pointer"><b id="meFollowing" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Following</div></div>
+      <div onclick="openSocialList('followers')" style="cursor:pointer"><b id="meFollowers" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Followers</div></div>
+      <div onclick="openSocialList('visitors')" style="cursor:pointer"><b id="meVisitors" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Visitors</div></div>
+    </div>
+    <div style="text-align:center;margin-bottom:12px"><button class="btn btn-orange" onclick="openSocialList('requests')">🤝 Friend Requests</button></div>
     <label>Full Name</label><input id="editName">
     <label>City / Estate</label><input id="editCity" placeholder="e.g. Ruiru">
     <label>Age</label><input id="editAge" type="number" placeholder="18+">
@@ -111,6 +119,22 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
     </div>
     <button class="btn" style="width:100%;margin-top:14px;background:#D32F2F;color:#fff" onclick="logout()">🚪 Log Out</button>
   </div>
+  <!-- REFERRAL BOX -->
+  <div id="referralBox" style="background:#000;padding:16px;border-radius:16px;color:#fff;margin:0 10px 10px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b style="font-size:16px">🎁 Invite & Earn</b>
+      <span id="myReferralEarned" style="font-size:12px;color:#F59E0B;font-weight:700">0 coins earned</span>
+    </div>
+    <p style="font-size:12px;color:#888;margin:6px 0 12px">Male joins with your code + first purchase = <b style="color:#fff">YOU get +100 coins</b> • <span id="myReferralCount">0 joined</span></p>
+    <div style="font-size:13px;color:#888;margin-bottom:6px">Your Code</div>
+    <div id="myReferralCode" onclick="copyReferralCode()" style="background:#111;border:1px solid #333;padding:12px;border-radius:10px;font-size:18px;font-weight:800;letter-spacing:1px;cursor:pointer">PT...</div>
+    <div style="font-size:13px;color:#888;margin:12px 0 6px">Your Link</div>
+    <div id="myReferralLink" onclick="copyReferralLink()" style="background:#111;border:1px solid #333;padding:12px;border-radius:10px;font-size:13px;word-break:break-all;cursor:pointer">...</div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button onclick="copyReferralLink()" style="flex:1;background:#25D366;color:#fff;border:none;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">📋 Copy</button>
+      <button onclick="shareReferralLink()" style="flex:1;background:#F59E0B;color:#000;border:none;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">🔗 Share</button>
+    </div>
+  </div>
 </div>
 </div>
 <div class="bottom-nav">
@@ -118,6 +142,26 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
   <button onclick="openInboxSafe()">💬<br>Chats</button>
   <button onclick="showPage('income',this)">💰<br>Earnings</button>
   <button onclick="showPage('profile',this)">👤<br>Profile</button>
+</div>
+<!-- BOY PROFILE POPUP - WITH FOLLOW -->
+<div id="boyProfilePopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;align-items:flex-end;justify-content:center">
+  <div style="width:100%;max-width:650px;background:#fff;border-radius:25px 25px 0 0;padding:20px;max-height:92vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center"><b id="boyProfileName" style="font-size:20px">Boy</b><button onclick="closeBoyProfile()" style="border:none;background:none;font-size:30px;cursor:pointer">×</button></div>
+    <div style="text-align:center;margin:14px 0"><img id="boyProfileAvatar" src="logo-192.png" style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid #FFD700"></div>
+    <p id="boyProfileCity" style="text-align:center;color:#888;font-size:14px"></p>
+    <p id="boyProfileBio" style="text-align:center;color:#333;margin:10px 0"></p>
+    <div style="display:flex;gap:8px;margin:14px 0">
+      <button id="boyFollowBtn" onclick="toggleFollowFromBoyProfile()" style="flex:1;background:#2196F3;color:#fff;border:none;padding:13px;border-radius:25px;font-weight:800;font-size:16px;cursor:pointer">+ Follow</button>
+      <button onclick="sendFriendRequestFromBoyProfile()" style="background:#333;color:#fff;border:none;padding:13px 16px;border-radius:25px;font-weight:700;cursor:pointer">🤝 Friend</button>
+    </div>
+    <div style="display:flex;justify-content:space-around;text-align:center;margin-bottom:10px">
+      <div><b id="boyCountFollowers" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Followers</div></div>
+      <div><b id="boyCountFollowing" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Following</div></div>
+      <div><b id="boyCountFriends" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Friends</div></div>
+      <div><b id="boyCountVisitors" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Visitors</div></div>
+    </div>
+    <div style="display:flex;gap:8px"><button class="btn btn-orange" style="flex:1" onclick="chatFromBoyProfile()">💬 Chat</button><button class="btn btn-grey" style="flex:1" onclick="closeBoyProfile()">Close</button></div>
+  </div>
 </div>
 <div id="withdrawPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:flex-end;justify-content:center">
   <div style="width:100%;max-width:650px;background:#fff;border-radius:25px 25px 0 0;padding:20px;max-height:92vh;overflow-y:auto">
@@ -139,7 +183,6 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
-// FIXED: Real Firebase config - same project as Male, NOT dummy
 const firebaseConfig = {
   apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
   authDomain: "patanisha-49561.firebaseapp.com",
@@ -152,6 +195,8 @@ const firebaseConfig = {
 };
 try{ firebase.initializeApp(firebaseConfig); window.PatanishaDB = firebase.database(); window.PatanishaDBType='rtdb'; }catch(e){ console.log('Firebase init',e); }
 </script>
+<script src="social.js"></script>
+<script src="referral.js"></script>
 <script src="chat-manager/female.js?v=1006"></script>
 <script>
 const KES_PER_1000_COINS = 30;
@@ -163,7 +208,6 @@ function withdrawNetKES(c){ return coinsToKES(c)-withdrawFeeKES(c); }
 function shortName(n){ if(!n) return 'User'; let p=String(n).trim().split(' '); return p.length>1 ? p[0]+' '+p[1][0]+'.' : p[0]; }
 function showToast(m){ let t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:12px 18px;border-radius:20px;z-index:999999;font-size:14px;max-width:90%;text-align:center'; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
 function openInboxSafe(){ if(window.ChatManager && window.ChatManager.openInbox) window.ChatManager.openInbox(); else { showToast('Opening chats...'); setTimeout(()=>{ if(window.ChatManager) window.ChatManager.openInbox(); },800); } }
-// FIXED: End call always closes, even from female page
 function endCall(){
   try{ if(window.ChatManager && window.ChatManager.endCall) window.ChatManager.endCall(); }catch(e){}
   document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); });
@@ -171,6 +215,7 @@ function endCall(){
 let myProfile = null, users = [], currentFilter='all';
 try{ myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile_female')||localStorage.getItem('patanisha_myProfile')||'null'); }catch(e){}
 if(!myProfile){ location.href='register/index.html'; }
+if(!myProfile.referralCode) { myProfile.referralCode = myProfile.displayId || myProfile.id; try{ localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); }catch(e){} }
 let myPin = localStorage.getItem('patanisha_pin_'+(myProfile&&myProfile.id))||'';
 function refreshMe(){
   if(!myProfile) return;
@@ -191,6 +236,8 @@ function refreshMe(){
   document.getElementById('editPin').value = myPin||'';
   document.getElementById('profileMpesa').textContent = myProfile.mpesa||'Not set';
   document.getElementById('withdrawPhone').value = myProfile.mpesa||'';
+  if(typeof refreshSocialCounts==='function') refreshSocialCounts().then(c=>{ if(c){ document.getElementById('meFriends').textContent=c.friends; document.getElementById('meFollowing').textContent=c.following; document.getElementById('meFollowers').textContent=c.followers; document.getElementById('meVisitors').textContent=c.visitors; } }).catch(()=>{});
+  if(typeof renderReferralBox==='function') renderReferralBox();
 }
 function saveProfile(){
   myProfile.name=document.getElementById('editName').value.trim()||myProfile.name;
@@ -211,6 +258,7 @@ function showPage(p,btn){
   document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   if(p==='income') renderIncome();
+  if(p==='profile') refreshMe();
   window.scrollTo(0,0);
 }
 function filterGender(f,btn){
@@ -219,6 +267,40 @@ function filterGender(f,btn){
   if(btn) btn.classList.add('active');
   renderBoys();
 }
+// ===== BOY PROFILE + FOLLOW =====
+let _currentBoy=null;
+function openBoyProfile(idx){
+  let u=users[idx]; if(!u) return; _currentBoy=u;
+  if(typeof recordProfileVisit==='function') recordProfileVisit(u);
+  document.getElementById('boyProfileName').textContent=shortName(u.name)+' ♂ '+(u.age||'');
+  document.getElementById('boyProfileAvatar').src=u.avatar||'logo-192.png';
+  document.getElementById('boyProfileCity').textContent='📍 '+(u.city||'Ruiru')+' • ID:'+(u.displayId||u.id);
+  document.getElementById('boyProfileBio').textContent=u.bio||'Say Hi 👋';
+  document.getElementById('boyProfilePopup').style.display='flex';
+  updateBoyFollowUI();
+}
+function closeBoyProfile(){ document.getElementById('boyProfilePopup').style.display='none'; }
+async function updateBoyFollowUI(){
+  let u=_currentBoy, btn=document.getElementById('boyFollowBtn'); if(!u||!btn) return;
+  let db=window.PatanishaDB; if(!db||!myProfile) return;
+  try{
+    let s=await db.ref('follows/'+myProfile.id+'/'+u.id).once('value'); let isF=!!s.val();
+    btn.textContent=isF?'✓ Following':'+ Follow'; btn.style.background=isF?'#666':'#2196F3';
+    let f=await db.ref('followers/'+u.id).once('value'); document.getElementById('boyCountFollowers').textContent=f.numChildren();
+    let fg=await db.ref('follows/'+u.id).once('value'); document.getElementById('boyCountFollowing').textContent=fg.numChildren();
+    let fr=await db.ref('friends/'+u.id).once('value'); document.getElementById('boyCountFriends').textContent=fr.numChildren();
+    let v=await db.ref('profileViews/'+u.id).once('value'); document.getElementById('boyCountVisitors').textContent=v.numChildren();
+  }catch(e){}
+}
+async function toggleFollowFromBoyProfile(){
+  let u=_currentBoy; if(!u) return;
+  if(typeof toggleFollow==='function'){ await toggleFollow(u); updateBoyFollowUI(); refreshMe(); return; }
+}
+async function sendFriendRequestFromBoyProfile(){
+  let u=_currentBoy; if(!u) return;
+  if(typeof sendFriendRequest==='function'){ sendFriendRequest(u); return; }
+}
+function chatFromBoyProfile(){ if(!_currentBoy) return; let idx=users.findIndex(x=>x.id===_currentBoy.id); closeBoyProfile(); if(idx>=0 && window.ChatManager) ChatManager.openChatByIndex(idx); }
 function loadBoys(){
   let list=[];
   try{ list=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); }catch(e){}
@@ -240,10 +322,10 @@ function renderBoys(){
   document.getElementById('noBoys').classList.add('hidden');
   box.innerHTML = list.map((u,i)=>{
     let idx = users.findIndex(x=>x.id===u.id);
-    return `<div class="card" onclick="ChatManager.openChatByIndex(${idx})">
+    return `<div class="card" onclick="openBoyProfile(${idx})">
       <div class="avatar-wrap"><img src="${u.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><span class="${u.online?'dot-blue':'dot-grey'}"></span></div>
       <div class="info"><b>${shortName(u.name)} ♂ ${u.age||''}</b><span>📍 ${u.city||'Ruiru'} • ${u.online?'● Online':'○ Offline'}<br>${(u.bio||'Say Hi 👋').slice(0,40)}</span></div>
-      <div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div>
+      <div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button><button class="btn btn-pink" onclick="event.stopPropagation();openBoyProfile(${idx})">👤 View</button></div>
     </div>`;
   }).join('');
 }
