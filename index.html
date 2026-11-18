@@ -23,9 +23,10 @@ body{background:#f5f5f5;padding-bottom:80px;overflow-x:hidden}
 .topbar .me b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .me span{font-size:12px;color:#333}
 .coin-pill{background:#fff;padding:8px 12px;border-radius:20px;font-weight:800;font-size:13px;white-space:nowrap}
-.tabs{display:flex;gap:8px;padding:10px;overflow-x:auto}
-.tabs button{border:none;background:#fff;padding:10px 16px;border-radius:20px;font-weight:700;cursor:pointer;white-space:nowrap}
+.tabs{display:flex;gap:8px;padding:10px;overflow-x:auto;align-items:center}
+.tabs button{border:none;background:#fff;padding:10px 16px;border-radius:20px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .tabs button.active{background:#FF8C00;color:#fff}
+.search-btn{margin-left:auto!important;background:#FF8C00!important;color:#fff!important}
 .card{background:#fff;margin:10px;border-radius:15px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,.05);cursor:pointer}
 .card img{width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700;flex-shrink:0}
 .avatar-wrap{position:relative;flex-shrink:0}
@@ -66,10 +67,17 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
   <img src="logo-192.png">
 </div>
 <div class="tabs">
-  <button class="active" onclick="filterGender('all',this)">All Boys</button>
-  <button onclick="filterGender('online',this)">● Online</button>
-  <button onclick="showPage('income')">💰 My Earnings</button>
-  <button onclick="openWithdraw()">🏧 Withdraw</button>
+  <button class="active" onclick="filterFemaleTab('recommend',this)">Recommend</button>
+  <button onclick="filterFemaleTab('nearby',this)">Nearby</button>
+  <button onclick="filterFemaleTab('online',this)">● Online</button>
+  <button class="search-btn" onclick="openFemaleSearch()">🔍 Search</button>
+</div>
+<div id="femaleSearchBar" style="display:none;padding:0 10px 10px">
+  <div style="display:flex;gap:8px;background:#fff;padding:8px;border-radius:25px">
+    <input id="femaleSearchInput" placeholder="Search by ID e.g. PT585065" style="flex:1;margin:0;border:none;background:transparent;outline:none">
+    <button class="btn btn-orange" onclick="searchBoyById()">Search</button>
+    <button class="btn btn-grey" onclick="closeFemaleSearch()">✕</button>
+  </div>
 </div>
 <div id="page-home">
   <div class="notice">💡 <b>How you earn:</b> Boys pay to chat you. You get coins. <b>1000 coins = KES 30.</b> Withdraw min 5000 coins. Fee: KES 100 = KES 5.</div>
@@ -80,6 +88,7 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
   <div class="section">
     <h3>💰 My Earnings</h3>
     <div class="row"><span>Balance</span><b>🪙 <span id="incomeBalance">0</span> coins</b></div>
+    <div class="row"><span>🎁 Bonus Income</span><b id="incomeBonus">0 coins</b></div>
     <div class="row"><span>Value (1000 = KES 30)</span><b id="incomeValue">KES 0.00</b></div>
     <div class="row"><span>After 5% fee if you withdraw all</span><b id="incomeNet">KES 0.00</b></div>
     <div style="display:flex;gap:8px;margin-top:14px">
@@ -94,7 +103,6 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
   <div class="section">
     <h3>👤 My Profile</h3>
     <div style="text-align:center"><img id="profileAvatar" src="logo-192.png" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #FFD700"></div>
-    <!-- SOCIAL STATS - TAP TO OPEN LIST -->
     <div style="display:flex;justify-content:space-around;text-align:center;margin:16px 0;padding:12px 0;border-top:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0">
       <div onclick="openSocialList('friends')" style="cursor:pointer"><b id="meFriends" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Friends</div></div>
       <div onclick="openSocialList('following')" style="cursor:pointer"><b id="meFollowing" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Following</div></div>
@@ -102,6 +110,7 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
       <div onclick="openSocialList('visitors')" style="cursor:pointer"><b id="meVisitors" style="font-size:18px">0</b><div style="font-size:11px;color:#888">Visitors</div></div>
     </div>
     <div style="text-align:center;margin-bottom:12px"><button class="btn btn-orange" onclick="openSocialList('requests')">🤝 Friend Requests</button></div>
+    <div class="row" onclick="copyMyId()" style="cursor:pointer"><span>My ID</span><b id="profileID">- 📋 Copy</b></div>
     <label>Full Name</label><input id="editName">
     <label>City / Estate</label><input id="editCity" placeholder="e.g. Ruiru">
     <label>Age</label><input id="editAge" type="number" placeholder="18+">
@@ -119,7 +128,6 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
     </div>
     <button class="btn" style="width:100%;margin-top:14px;background:#D32F2F;color:#fff" onclick="logout()">🚪 Log Out</button>
   </div>
-  <!-- REFERRAL BOX -->
   <div id="referralBox" style="background:#000;padding:16px;border-radius:16px;color:#fff;margin:0 10px 10px">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <b style="font-size:16px">🎁 Invite & Earn</b>
@@ -143,7 +151,6 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
   <button onclick="showPage('income',this)">💰<br>Earnings</button>
   <button onclick="showPage('profile',this)">👤<br>Profile</button>
 </div>
-<!-- BOY PROFILE POPUP - WITH FOLLOW -->
 <div id="boyProfilePopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;align-items:flex-end;justify-content:center">
   <div style="width:100%;max-width:650px;background:#fff;border-radius:25px 25px 0 0;padding:20px;max-height:92vh;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center"><b id="boyProfileName" style="font-size:20px">Boy</b><button onclick="closeBoyProfile()" style="border:none;background:none;font-size:30px;cursor:pointer">×</button></div>
@@ -151,7 +158,7 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
     <p id="boyProfileCity" style="text-align:center;color:#888;font-size:14px"></p>
     <p id="boyProfileBio" style="text-align:center;color:#333;margin:10px 0"></p>
     <div style="display:flex;gap:8px;margin:14px 0">
-      <button id="boyFollowBtn" onclick="toggleFollowFromBoyProfile()" style="flex:1;background:#2196F3;color:#fff;border:none;padding:13px;border-radius:25px;font-weight:800;font-size:16px;cursor:pointer">+ Follow</button>
+      <button id="boyFollowBtn" onclick="localToggleFollowFemale()" style="flex:1;background:#2196F3;color:#fff;border:none;padding:13px;border-radius:25px;font-weight:800;font-size:16px;cursor:pointer">+ Follow</button>
       <button onclick="sendFriendRequestFromBoyProfile()" style="background:#333;color:#fff;border:none;padding:13px 16px;border-radius:25px;font-weight:700;cursor:pointer">🤝 Friend</button>
     </div>
     <div style="display:flex;justify-content:space-around;text-align:center;margin-bottom:10px">
@@ -207,6 +214,36 @@ function withdrawFeeKES(c){ return coinsToKES(c)*FEE_RATE; }
 function withdrawNetKES(c){ return coinsToKES(c)-withdrawFeeKES(c); }
 function shortName(n){ if(!n) return 'User'; let p=String(n).trim().split(' '); return p.length>1 ? p[0]+' '+p[1][0]+'.' : p[0]; }
 function showToast(m){ let t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:12px 18px;border-radius:20px;z-index:999999;font-size:14px;max-width:90%;text-align:center'; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
+function copyMyId(){ var id = myProfile ? (myProfile.displayId||myProfile.id||'') : ''; if(!id) return; try{ navigator.clipboard.writeText(id); }catch(e){} showToast('✅ ID copied: '+id); }
+function localToggleFollowFemale(){
+  var u=_currentBoy; if(!u) return;
+  if(!myProfile.following) myProfile.following=[];
+  var idx=myProfile.following.indexOf(u.id);
+  var btn=document.getElementById('boyFollowBtn');
+  if(idx>=0){ myProfile.following.splice(idx,1); if(btn){ btn.textContent='+ Follow'; btn.style.background='#2196F3'; } showToast('Unfollowed '+shortName(u.name)); }
+  else { myProfile.following.push(u.id); if(btn){ btn.textContent='✓ Following'; btn.style.background='#666'; } showToast('✅ Following '+shortName(u.name)); }
+  try{ localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); }catch(e){}
+  if(typeof refreshSocialCounts==='function') refreshSocialCounts().catch(()=>{});
+}
+function isOnlineNow(u){
+  if(!u) return false;
+  if(u.online===true && u.lastSeen && (Date.now()-u.lastSeen < 120000)) return true;
+  if(u.online===true && !u.lastSeen) return true;
+  var ls = u.lastSeen || u.onlineAt || 0;
+  return ls && (Date.now() - ls < 120000);
+}
+function startPresence(){
+  if(!myProfile || !window.PatanishaDB) return;
+  var ref = PatanishaDB.ref('users/'+myProfile.id);
+  function markOnline(){
+    try{ ref.update({online:true, lastSeen:Date.now()}); }catch(e){}
+    try{ myProfile.online=true; myProfile.lastSeen=Date.now(); }catch(e){}
+  }
+  markOnline();
+  setInterval(markOnline, 30000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) markOnline(); });
+  window.addEventListener('beforeunload', function(){ try{ ref.update({online:false, lastSeen:Date.now()}); }catch(e){} });
+}
 function openInboxSafe(){ if(window.ChatManager && window.ChatManager.openInbox) window.ChatManager.openInbox(); else { showToast('Opening chats...'); setTimeout(()=>{ if(window.ChatManager) window.ChatManager.openInbox(); },800); } }
 function endCall(){
   try{ if(window.ChatManager && window.ChatManager.endCall) window.ChatManager.endCall(); }catch(e){}
@@ -226,6 +263,9 @@ function refreshMe(){
   document.getElementById('profileCoins').textContent = myProfile.coins||0;
   document.getElementById('profileValue').textContent = 'KES '+coinsToKES(myProfile.coins||0).toFixed(2);
   document.getElementById('incomeBalance').textContent = myProfile.coins||0;
+  var _bonus = myProfile.referralEarned || myProfile.referralEarnedCoins || myProfile.bonusCoins || 0;
+  var _be = document.getElementById('incomeBonus'); if(_be) _be.textContent = _bonus + ' coins';
+  var _pid = document.getElementById('profileID'); if(_pid) _pid.textContent = (myProfile.displayId||myProfile.id||'-') + ' 📋 Copy';
   document.getElementById('incomeValue').textContent = 'KES '+coinsToKES(myProfile.coins||0).toFixed(2);
   document.getElementById('incomeNet').textContent = 'KES '+withdrawNetKES(myProfile.coins||0).toFixed(2);
   document.getElementById('editName').value = myProfile.name||'';
@@ -261,13 +301,25 @@ function showPage(p,btn){
   if(p==='profile') refreshMe();
   window.scrollTo(0,0);
 }
-function filterGender(f,btn){
-  currentFilter=f;
+function filterFemaleTab(tab,btn){
+  currentFilter=tab;
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
+  closeFemaleSearch();
   renderBoys();
 }
-// ===== BOY PROFILE + FOLLOW =====
+function filterGender(f,btn){ filterFemaleTab(f==='online'?'online':'recommend',btn); }
+function openFemaleSearch(){ document.getElementById('femaleSearchBar').style.display='block'; var i=document.getElementById('femaleSearchInput'); if(i) i.focus(); }
+function closeFemaleSearch(){ var b=document.getElementById('femaleSearchBar'); if(b) b.style.display='none'; }
+function searchBoyById(){
+  var q=document.getElementById('femaleSearchInput').value.trim().toUpperCase();
+  if(!q){ showToast('Enter ID e.g. PT585065'); return; }
+  var found = users.find(u=>((u.displayId||u.id||'').toUpperCase()===q) || ((u.displayId||u.id||'').toUpperCase().includes(q)) || ((u.name||'').toUpperCase().includes(q)));
+  if(!found){ showToast('No boy found with ID: '+q); return; }
+  var idx = users.findIndex(x=>x.id===found.id);
+  document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${found.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${shortName(found.name)} ♂ ${found.age||''}</b><span>📍 ${found.city||'Ruiru'} • ID:${found.displayId||found.id}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
+  document.getElementById('noBoys').classList.add('hidden');
+}
 let _currentBoy=null;
 function openBoyProfile(idx){
   let u=users[idx]; if(!u) return; _currentBoy=u;
@@ -282,20 +334,17 @@ function openBoyProfile(idx){
 function closeBoyProfile(){ document.getElementById('boyProfilePopup').style.display='none'; }
 async function updateBoyFollowUI(){
   let u=_currentBoy, btn=document.getElementById('boyFollowBtn'); if(!u||!btn) return;
-  let db=window.PatanishaDB; if(!db||!myProfile) return;
+  var _isF = (myProfile.following||[]).indexOf(u.id)>=0;
+  btn.textContent=_isF?'✓ Following':'+ Follow'; btn.style.background=_isF?'#666':'#2196F3';
   try{
-    let s=await db.ref('follows/'+myProfile.id+'/'+u.id).once('value'); let isF=!!s.val();
-    btn.textContent=isF?'✓ Following':'+ Follow'; btn.style.background=isF?'#666':'#2196F3';
+    let db=window.PatanishaDB; if(!db||!myProfile) return;
     let f=await db.ref('followers/'+u.id).once('value'); document.getElementById('boyCountFollowers').textContent=f.numChildren();
     let fg=await db.ref('follows/'+u.id).once('value'); document.getElementById('boyCountFollowing').textContent=fg.numChildren();
     let fr=await db.ref('friends/'+u.id).once('value'); document.getElementById('boyCountFriends').textContent=fr.numChildren();
     let v=await db.ref('profileViews/'+u.id).once('value'); document.getElementById('boyCountVisitors').textContent=v.numChildren();
   }catch(e){}
 }
-async function toggleFollowFromBoyProfile(){
-  let u=_currentBoy; if(!u) return;
-  if(typeof toggleFollow==='function'){ await toggleFollow(u); updateBoyFollowUI(); refreshMe(); return; }
-}
+async function toggleFollowFromBoyProfile(){ localToggleFollowFemale(); }
 async function sendFriendRequestFromBoyProfile(){
   let u=_currentBoy; if(!u) return;
   if(typeof sendFriendRequest==='function'){ sendFriendRequest(u); return; }
@@ -317,14 +366,16 @@ function loadBoys(){
 }
 function renderBoys(){
   let box=document.getElementById('boysList');
-  let list = currentFilter==='online' ? users.filter(u=>u.online) : users;
+  let list = users;
+  if(currentFilter==='nearby'){ let myTown=(myProfile.city||'Ruiru').trim().toLowerCase(); list = users.filter(u=>(u.city||'').trim().toLowerCase()===myTown); }
+  else if(currentFilter==='online'){ list = users.filter(u=>isOnlineNow(u)); }
   if(!list.length){ document.getElementById('noBoys').classList.remove('hidden'); box.innerHTML=''; return; }
   document.getElementById('noBoys').classList.add('hidden');
   box.innerHTML = list.map((u,i)=>{
     let idx = users.findIndex(x=>x.id===u.id);
     return `<div class="card" onclick="openBoyProfile(${idx})">
-      <div class="avatar-wrap"><img src="${u.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><span class="${u.online?'dot-blue':'dot-grey'}"></span></div>
-      <div class="info"><b>${shortName(u.name)} ♂ ${u.age||''}</b><span>📍 ${u.city||'Ruiru'} • ${u.online?'● Online':'○ Offline'}<br>${(u.bio||'Say Hi 👋').slice(0,40)}</span></div>
+      <div class="avatar-wrap"><img src="${u.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><span class="${isOnlineNow(u)?'dot-blue':'dot-grey'}"></span></div>
+      <div class="info"><b>${shortName(u.name)} ♂ ${u.age||''}</b><span>📍 ${u.city||'Ruiru'} • ${isOnlineNow(u)?'● Online':'○ Offline'}<br>${(u.bio||'Say Hi 👋').slice(0,40)}</span></div>
       <div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button><button class="btn btn-pink" onclick="event.stopPropagation();openBoyProfile(${idx})">👤 View</button></div>
     </div>`;
   }).join('');
@@ -367,6 +418,7 @@ function submitWithdraw(){
   closeWithdraw();
 }
 refreshMe();
+startPresence();
 loadBoys();
 if(typeof loadFemaleEarnings==='function'){ try{ loadFemaleEarnings(); }catch(e){} }
 </script>
