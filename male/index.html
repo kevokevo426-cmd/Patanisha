@@ -63,11 +63,6 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
   <img id="meAvatar" src="../logo-192.png" onclick="showPage('profile')">
   <div class="me"><b id="meName">Hi 👋</b><span>1st msg FREE • Then 10 coins</span></div>
   <div class="coin-pill" onclick="openRecharge()">🪙 <span id="meCoins">0</span></div>
-  <button class="btn btn-blue" onclick="openInboxSafe()">💬</button>
-</div>
-<div class="banner" onclick="openSayHiSetup()">
-  <div class="banner-text"><b>Set up 3 Say hi texts</b><span>Get more replies from ladies</span></div>
-  <span style="background:#FF5252;color:#fff;padding:10px 18px;border-radius:20px;font-weight:800;cursor:pointer">Go</span>
 </div>
 
 <!-- TOP TABS: Recommend / Nearby / Online / Search -->
@@ -82,11 +77,6 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
   <button class="btn btn-grey" onclick="clearSearch()">✕</button>
 </div>
 
-<div class="tabs">
-  <button class="active" onclick="showPage('home',this)">All Ladies</button>
-  <button onclick="showPage('income')">💰 My Coins</button>
-  <button onclick="openRecharge()">💎 Recharge</button>
-</div>
 <div id="page-home">
   <div class="notice">💡 <b>How it works:</b> 1st message to each lady is FREE. Then 10 coins / msg. Voice 50/min • Video 100/min. Recharge: KES 100 = 1000 Coins.</div>
   <div id="ladiesList"></div>
@@ -147,8 +137,8 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
     <label>Coins to Buy (1000 coins = KES 100)</label>
     <input id="rechargeCoins" type="number" placeholder="e.g. 1000" value="1000" oninput="updateRechargePreview()">
     <div id="rechargePreview" style="margin:10px 0;color:#8B949E;font-size:14px">You pay: KES 100</div>
-    <label>Your M-Pesa Number</label>
-    <input id="rechargePhone" type="tel" placeholder="07XXXXXXXX">
+    <label>Your M-Pesa Name</label>
+    <input id="rechargePhone" type="text" placeholder="e.g. JOHN KAMAU">
     <button onclick="submitRecharge()" style="width:100%;padding:16px;border:none;border-radius:16px;background:#2196F3;color:#fff;font-size:18px;font-weight:700;cursor:pointer;margin-top:10px">I Have Sent</button>
     <p style="color:#8B949E;font-size:12px;margin-top:10px;text-align:center">Send to Till / Paybill shown by Admin. Admin approves, coins added.</p>
   </div>
@@ -347,11 +337,11 @@ function updateRechargePreview(){
 }
 function submitRecharge(){
   let coins=Number(document.getElementById('rechargeCoins').value||0);
-  let phone=document.getElementById('rechargePhone').value.trim();
+  let mpesaName=document.getElementById('rechargePhone').value.trim();
   if(!coins||coins<100){ alert('Min 100 coins'); return; }
-  if(!/^0\d{9}$/.test(phone)){ alert('Enter valid M-Pesa e.g. 0712345678'); return; }
+  if(!mpesaName || mpesaName.length < 3){ alert('Enter your M-Pesa Name as shown on M-Pesa'); return; }
   if(window.PatanishaDB){
-    PatanishaDB.ref('recharges').push({userId:myProfile.id,name:myProfile.name,phone:phone,coins:coins,amountKES:coins/10,status:'pending',createdAt:Date.now()});
+    PatanishaDB.ref('recharges').push({userId:myProfile.id,name:myProfile.name,mpesaName:mpesaName,phone:mpesaName,coins:coins,amountKES:coins/10,status:'pending',createdAt:Date.now()});
   }
   // Referral bonus: if this male was referred, pay referrer +100 once
   try{ if(typeof payReferralOnFirstPurchase==='function') payReferralOnFirstPurchase(myProfile); }catch(e){}
