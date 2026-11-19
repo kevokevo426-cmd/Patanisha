@@ -87,7 +87,7 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
   </div>
   <div class="step" id="step2"><h1>Introduce Yourself</h1><div class="form-group"><label>Full Name</label><input type="text" id="name"></div><div class="form-group"><label>Date of Birth</label><input type="date" id="dob"></div><div class="form-group"><label>City</label><input type="text" id="city" placeholder="Ruiru, Nairobi"></div><div class="form-group"><label>Bio</label><textarea id="bio" rows="2"></textarea></div><div class="btn-row"><button class="btn btn-outline" onclick="goBack(1)">← Back</button><button class="btn" onclick="goToStep3()">Next</button></div></div>
   <div class="step" id="step3"><div class="hobbies-header"><h1>Choose Hobbies</h1><div class="hobbies-counter" id="hobbyCounter">0/5</div></div><p class="hobbies-instruct">Please pick exactly 5 hobbies</p><div id="hobbiesList"></div><div class="btn-row"><button class="btn btn-yellow" onclick="skipHobbies()">Skip</button><button class="btn" onclick="goToStep4()">Next</button></div></div>
-  <div class="step" id="step4"><h1>Verification</h1><p class="verify-instruct">Choose Avatar + Upload up to 3 photos (0 photos is OK). No naked / sexual photos — they are auto-rejected.</p><div class="form-group"><label>Profile Avatar</label><img id="avatarPrev" src="https://via.placeholder.com/120/FFD600/000?text=Tap" class="avatar-preview"><input type="file" id="avatar" accept="image/*" style="display:none"></div><div class="form-group"><label>Upload Photos <small id="photoCount">0/3</small> — optional</label><div class="photo-grid" id="photoGrid"><div class="photo-box" onclick="addPhoto()">+</div></div></div><div class="btn-row"><button class="btn btn-outline" onclick="goBack(3)">← Back</button><button class="btn" id="finishBtn" onclick="goToStep5OrFinish()">Next</button></div></div>
+  <div class="step" id="step4"><h1>Verification</h1><p class="verify-instruct">Choose Avatar + Upload up to 3 photos (0 photos is OK). Photos are auto-compressed. No naked / sexual photos.</p><div class="form-group"><label>Profile Avatar</label><img id="avatarPrev" src="https://via.placeholder.com/120/FFD600/000?text=Tap" class="avatar-preview"><input type="file" id="avatar" accept="image/*" style="display:none"></div><div class="form-group"><label>Upload Photos <small id="photoCount">0/3</small> — optional</label><div class="photo-grid" id="photoGrid"><div class="photo-box" onclick="addPhoto()">+</div></div></div><div class="btn-row"><button class="btn btn-outline" onclick="goBack(3)">← Back</button><button class="btn" id="finishBtn" onclick="goToStep5OrFinish()">Next</button></div></div>
   <div class="step" id="step5">
     <h1>📸 Last Step — Real Selfie Verification</h1>
     <p class="verify-instruct">Ladies only. Take a clear selfie, face visible, no filter. No naked photos. Admin will check it and approve you.</p>
@@ -124,6 +124,51 @@ function showToast(msg){
 }
 function togglePassword(id,el){const input=document.getElementById(id);if(input.type==="password"){input.type="text";el.innerText="🙈";}else{input.type="password";el.innerText="👁️";}}
 function switchAuth(type){document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab-auth').forEach(t=>t.classList.remove('active'));if(type==='signin'){document.getElementById('signinStep').classList.add('active');document.getElementById('tabSignIn').classList.add('active');}else{document.getElementById('step1').classList.add('active');document.getElementById('tabSignUp').classList.add('active');}}
+// ===== FIX QUOTA: compress every photo + quota-safe save =====
+function compressImage(dataUrl, maxSize){
+  return new Promise(function(resolve){
+    try{
+      var img=new Image();
+      img.onload=function(){
+        try{
+          var max=maxSize||600;
+          var w=img.width, h=img.height;
+          if(w>max){ h=Math.round(h*max/w); w=max; }
+          if(h>max){ w=Math.round(w*max/h); h=max; }
+          var c=document.createElement('canvas'); c.width=w; c.height=h;
+          c.getContext('2d').drawImage(img,0,0,w,h);
+          resolve(c.toDataURL('image/jpeg',0.6));
+        }catch(e){ resolve(dataUrl); }
+      };
+      img.onerror=function(){ resolve(dataUrl); };
+      img.src=dataUrl;
+    }catch(e){ resolve(dataUrl); }
+  });
+}
+// Save that NEVER crashes on quota: if full profile too big, drop photos, then drop selfie, then keep text only
+function safeSetProfile(profile){
+  var str=JSON.stringify(profile);
+  try{ localStorage.setItem('patanisha_myProfile', str); return true; }catch(e){ console.log('quota 1', e); }
+  try{
+    var p2=Object.assign({}, profile, {photos:[]});
+    localStorage.setItem('patanisha_myProfile', JSON.stringify(p2));
+    showToast('⚠️ Photos too large - saved without gallery photos. Use smaller photos.');
+    profile.photos=[]; return true;
+  }catch(e){ console.log('quota 2', e); }
+  try{
+    var p3=Object.assign({}, profile, {photos:[], verificationSelfie:'', avatar:'https://via.placeholder.com/120/FFD600/000?text=Tap'});
+    localStorage.setItem('patanisha_myProfile', JSON.stringify(p3));
+    showToast('⚠️ Photos too large - saved without photos. Use camera photo, not screenshot.');
+    profile.photos=[]; profile.verificationSelfie=''; profile.avatar=p3.avatar; return true;
+  }catch(e){
+    // Last resort: clear old junk that is eating space
+    try{
+      Object.keys(localStorage).forEach(function(k){ if(k.indexOf('patanisha_msgs_')===0 || k.indexOf('patanisha_missed_')===0) localStorage.removeItem(k); });
+      localStorage.setItem('patanisha_myProfile', JSON.stringify(Object.assign({}, profile, {photos:[], verificationSelfie:''})));
+      profile.photos=[]; profile.verificationSelfie=''; return true;
+    }catch(e2){ return false; }
+  }
+}
 // ===== NSFW CHECK: preload + 8s timeout, NEVER hang =====
 let _nsfwModel=null, _nsfwLoading=null, _photoChecking=false;
 function setChecking(on){
@@ -237,8 +282,9 @@ document.getElementById('avatar').onchange=function(e){
   let file=e.target.files[0]; if(!file) return;
   let reader=new FileReader();
   reader.onload=async function(ev){
-    if(!(await isPhotoSafe(ev.target.result))) return;
-    document.getElementById('avatarPrev').src=ev.target.result; userData.avatar=ev.target.result;
+    var compressed = await compressImage(ev.target.result, 400);
+    if(!(await isPhotoSafe(compressed))) return;
+    document.getElementById('avatarPrev').src=compressed; userData.avatar=compressed;
   };
   reader.readAsDataURL(file);
 };
@@ -247,8 +293,9 @@ document.getElementById('photoInput').onchange=function(e){
   let file=e.target.files[0]; if(!file||uploadedPhotos.length>=MAX_PHOTOS) return;
   let reader=new FileReader();
   reader.onload=async function(ev){
-    if(!(await isPhotoSafe(ev.target.result))) return;
-    uploadedPhotos.push(ev.target.result); renderPhotos();
+    var compressed = await compressImage(ev.target.result, 600);
+    if(!(await isPhotoSafe(compressed))) return;
+    uploadedPhotos.push(compressed); renderPhotos();
   };
   reader.readAsDataURL(file);
 };
@@ -259,12 +306,12 @@ document.getElementById('selfieInput').onchange=function(e){
   let file=e.target.files[0]; if(!file) return;
   let reader=new FileReader();
   reader.onload=async function(ev){
-    if(!(await isPhotoSafe(ev.target.result))) return;
-    document.getElementById('selfiePrev').src=ev.target.result; userData.verificationSelfie=ev.target.result;
+    var compressed = await compressImage(ev.target.result, 400);
+    if(!(await isPhotoSafe(compressed))) return;
+    document.getElementById('selfiePrev').src=compressed; userData.verificationSelfie=compressed;
   };
   reader.readAsDataURL(file);
 };
-// FIX B: saveProfile NEVER dies silently - shows error instead of hanging
 function saveProfile(){
   try{
     if(typeof _photoChecking!=='undefined' && _photoChecking){ showToast('⏳ Still checking photo, wait 2 sec then tap again'); return; }
@@ -297,21 +344,27 @@ function saveProfile(){
     if(userData.dob){ let birth = new Date(userData.dob); userData.age = new Date().getFullYear() - birth.getFullYear(); } else { userData.age = 20; }
     if(!userData.city) userData.city = "Ruiru";
     if(!userData.avatar) userData.avatar = document.getElementById('avatarPrev').src;
-    localStorage.setItem('patanisha_myProfile', JSON.stringify(userData));
-    if(userData.gender === 'Male'){
-      localStorage.setItem('patanisha_myProfile_male', JSON.stringify(userData));
-    } else {
-      localStorage.setItem('patanisha_myProfile_female', JSON.stringify(userData));
-    }
-    let all = JSON.parse(localStorage.getItem('patanisha_allAccounts') || '[]');
-    all = all.filter(a => a.email !== userData.email);
-    all.push(userData);
-    localStorage.setItem('patanisha_allAccounts', JSON.stringify(all));
-    let listKey = userData.gender === 'Male' ? 'patanishaUsers' : 'patanishaUsers_male';
-    let list = JSON.parse(localStorage.getItem(listKey) || '[]');
-    list = list.filter(u => u.email !== userData.email && u.id !== userData.id);
-    list.unshift(userData);
-    localStorage.setItem(listKey, JSON.stringify(list));
+    // FIX QUOTA: use safe save, and store a SMALL copy in allAccounts (no gallery photos there)
+    if(!safeSetProfile(userData)){ showToast('❌ Storage full - clear browser data and try with 1 small photo'); return; }
+    try{
+      if(userData.gender === 'Male') localStorage.setItem('patanisha_myProfile_male', JSON.stringify(userData));
+      else localStorage.setItem('patanisha_myProfile_female', JSON.stringify(userData));
+    }catch(e){}
+    try{
+      let all = JSON.parse(localStorage.getItem('patanisha_allAccounts') || '[]');
+      all = all.filter(a => a.email !== userData.email);
+      // allAccounts keeps text only - photos would blow quota again
+      var slim = Object.assign({}, userData, {photos:[], verificationSelfie:''});
+      all.push(slim);
+      localStorage.setItem('patanisha_allAccounts', JSON.stringify(all));
+    }catch(e){ console.log('allAccounts quota', e); }
+    try{
+      let listKey = userData.gender === 'Male' ? 'patanishaUsers' : 'patanishaUsers_male';
+      let list = JSON.parse(localStorage.getItem(listKey) || '[]');
+      list = list.filter(u => u.email !== userData.email && u.id !== userData.id);
+      list.unshift(Object.assign({}, userData, {photos:[]}));
+      localStorage.setItem(listKey, JSON.stringify(list));
+    }catch(e){ console.log('list quota', e); }
     if(userData.gender==='Female'){
       try{
         let reqs=JSON.parse(localStorage.getItem('patanisha_verificationRequests')||'[]');
@@ -346,7 +399,7 @@ function saveProfile(){
     }, 2500);
   }catch(err){
     console.log('saveProfile error', err);
-    showToast('❌ Error: ' + (err && err.message ? err.message : err) + ' - try again');
+    showToast('❌ Error: ' + (err && err.message ? err.message : err) + ' - try with 1 small photo');
     alert('Save failed: ' + (err && err.message ? err.message : err));
   }
 }
