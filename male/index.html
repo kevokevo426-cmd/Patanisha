@@ -208,7 +208,6 @@ let filteredUsers = [];
 let currentHomeTab = 'recommend';
 function showToast(msg){ let t=document.getElementById('appToast'); t.innerText=msg; t.style.display='block'; clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.display='none',2500); }
 function shortName(name){ if(!name) return 'User'; let n = String(name).split(' ')[0]; if(n.length>12) n=n.substring(0,12)+'...'; return n; }
-// FIXED: WhatsApp last seen + 5 min online window
 function formatLastSeen(ts){
   if(!ts) return 'last seen a long time ago';
   var d=new Date(ts), now=new Date();
@@ -257,8 +256,6 @@ function startPresence(){
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) markOnline(); });
   window.addEventListener('beforeunload', function(){ try{ ref.update({online:false, lastSeen:Date.now()}); }catch(e){} });
 }
-// FIXED: Follow - Lucus following a lady now also writes Firebase, and
-// Follow Requests from ladies are handled below
 function localToggleFollow(){
   if(!currentProfile || !currentProfile.id) return;
   if(!myProfile.following) myProfile.following=[];
@@ -279,7 +276,6 @@ function localToggleFollow(){
   try{ localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile)); }catch(e){}
   if(typeof refreshSocialCounts==='function') refreshSocialCounts();
 }
-// FIXED: Follow Requests - Lucus sees Kemmy here and Accepts
 function openFollowRequests(){
   if(!myProfile || !window.PatanishaDB) return;
   var old=document.getElementById('followReqPopup'); if(old) old.remove();
@@ -287,7 +283,6 @@ function openFollowRequests(){
   div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999999;display:flex;align-items:flex-end;justify-content:center';
   div.innerHTML='<div style="width:100%;max-width:650px;background:#161B22;color:#fff;border-radius:25px 25px 0 0;padding:16px;max-height:85vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:19px">👥 Follow Requests</b><button onclick="document.getElementById(\'followReqPopup\').remove()" style="border:none;background:none;color:#fff;font-size:28px;cursor:pointer">×</button></div><div id="followReqList" style="margin-top:12px;color:#8B949E">Loading...</div></div>';
   document.body.appendChild(div);
-  // Requests may be stored under my internal id OR my displayId - check both
   var keys=[myProfile.id, myProfile.displayId||myProfile.id];
   var seen={};
   var render=function(arr){
@@ -331,7 +326,6 @@ function declineFollowRequest(fromId){
   showToast('Declined');
   openFollowRequests();
 }
-// FIXED: Credit lady when Lucus pays - this is what makes her Earnings History appear
 function creditLadyEarnings(ladyId, amount, reason){
   try{
     if(!ladyId || !amount || !window.PatanishaDB) return;
@@ -626,7 +620,7 @@ refreshTopHeader();
 </script>
 <script src="../referral.js"></script>
 <script src="../social.js"></script>
-<script src="chat-manager.js?v=1004"></script>
+<script src="chat-manager.js?v=1005"></script>
 <script>
 setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000);
 </script>
