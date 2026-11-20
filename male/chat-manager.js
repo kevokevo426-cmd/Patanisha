@@ -6,6 +6,8 @@
 // FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
 // FIX: Chat header CLEAN - only Back, Photo, Name, Coins, Follow on top. All other buttons at bottom.
 // NEW: Call events - Missed / Rejected / Insufficient / Ended - saved to chat + Call Log popup
+// FIXED: Earnings now actually CREDIT lady's users/<id>/coins, not just push earnings row.
+// FIXED: 1st FREE message credits 0. Paid message / gift / call minute credits lady.
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileMale(){
@@ -58,6 +60,34 @@ function deductCoins(amount, reason, toUser){
   let hc=document.getElementById('chatHeaderCoins'); if(hc) hc.textContent='🪙 '+(myProfile.coins||0);
   return true;
 }
+// ===== FIXED: Credit lady - writes earnings + actually credits users/<id>/coins =====
+// lady may be an object {id, displayId} or a string id.
+// Female reads earnings/<myProfile.id> where myProfile.id is her INTERNAL Firebase key,
+// so we credit the internal id. If displayId differs we ALSO check users/<displayId>
+// and credit it only if that node exists, so PT... vs internal-key mismatch can't lose money.
+function creditLady(lady, amount, reason){
+  try{
+    if(!lady || !amount || !getDB()) return;
+    var db = getDB();
+    var ladyId = (typeof lady === 'string') ? lady : (lady.id || lady.displayId || '');
+    var dispId = (typeof lady === 'object' && lady.displayId) ? lady.displayId : null;
+    if(!ladyId) return;
+    var payload = {amount:Number(amount), reason:reason||'Chat', fromId:myProfile?myProfile.id:'', fromName:myProfile?myProfile.name||'':'', ts:Date.now()};
+    db.ref('earnings/'+ladyId).push(payload).catch(function(){});
+    db.ref('coinHistory/'+ladyId).push(payload).catch(function(){});
+    db.ref('users/'+ladyId+'/coins').transaction(function(c){ return (Number(c)||0)+Number(amount); });
+    // Also write earnings row under displayId so Female sees it even if her id === displayId
+    if(dispId && dispId!==ladyId){
+      db.ref('earnings/'+dispId).push(payload).catch(function(){});
+      db.ref('coinHistory/'+dispId).push(payload).catch(function(){});
+      // Only credit coins if users/<displayId> actually exists - avoids creating orphan stub
+      db.ref('users/'+dispId).once('value').then(function(s){
+        if(s.exists()) db.ref('users/'+dispId+'/coins').transaction(function(c){ return (Number(c)||0)+Number(amount); });
+      }).catch(function(){});
+    }
+  }catch(e){ console.log('creditLady', e); }
+}
+window.creditLadyEarnings = function(ladyId, amount, reason){ creditLady(ladyId, amount, reason); };
 // ===== CALL EVENTS: Missed / Rejected / Insufficient / Ended =====
 function formatCallTime(s){ s=Math.floor(s||0); if(s<60) return s+' sec'; return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 function recordCallEvent(toUser, type, status, seconds){
@@ -288,6 +318,9 @@ function _startCallBilling(){
         if(typeof showToast!=='undefined') showToast('Out of coins - call ended');
         if(!_callEventRecorded && ChatManager.currentChatUser){ _callEventRecorded=true; recordCallEvent(ChatManager.currentChatUser, _currentCallType, 'insufficient', _callSeconds); }
         ChatManager.endCall();
+      } else {
+        // FIXED: Lady earns what Lucus paid for this minute
+        if(ChatManager.currentChatUser) creditLady(ChatManager.currentChatUser, cost, (_currentCallType==='video'?'Video Call':'Voice Call')+' from '+(myProfile?myProfile.name||'':''));
       }
     }
   },1000);
@@ -397,7 +430,6 @@ const ChatManager = {
         if(item){ item.lastMsg=meta.lastMsg||''; item.lastTs=meta.lastTs||item.lastTs; list.sort((a,b)=>b.lastTs-a.lastTs); this._renderInboxList(list); }
       }).catch(()=>{});
     });
-    // NEW: Discover chats from Firebase - even if never talked on THIS phone
     db.ref('chats').once('value').then(s=>{
       let found=[];
       s.forEach(child=>{
@@ -553,7 +585,8 @@ const ChatManager = {
     let chatId=getChatId(myProfile.id, to.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:to.id,to:to.name,text:message,type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs = [...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId, this._msgs); this.renderMessages(this._msgs);
-    db.ref('earnings/'+to.id).push({amount:CHAT_COST, reason:'Chat from '+myProfile.name, ts:Date.now()}).catch(()=>{});
+    // FIXED: Only paid messages credit lady, and credit her coins balance too
+    if(!isFirst) creditLady(to, CHAT_COST, 'Chat from '+(myProfile?myProfile.name||'':''));
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:to.id,aName:myProfile.name,bName:to.name,lastMsg:message,lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
     let inp=document.getElementById('chatInput'); if(inp) inp.placeholder='Type message... 10 coins';
@@ -718,7 +751,8 @@ const ChatManager = {
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,text:gift.icon+' Sent '+gift.name+' gift',type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
-    db.ref('earnings/'+toUser.id).push({amount:gift.coins, reason:'Gift '+gift.name+' from '+myProfile.name, ts:Date.now()}).catch(()=>{});
+    // FIXED: Gift now credits lady's balance too, not just earnings row
+    creditLady(toUser, gift.coins, 'Gift '+gift.name+' from '+(myProfile?myProfile.name||'':''));
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:gift.icon+' Gift',lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
     if(document.getElementById(giftPanelId)) document.getElementById(giftPanelId).remove();
