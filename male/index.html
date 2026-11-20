@@ -343,8 +343,15 @@ function copyMyId(){
   showToast('✅ ID copied: '+id);
 }
 function refreshTopHeader(){ if(!myProfile) return; var av=document.getElementById('topAvatar'); if(av) av.src=myProfile.avatar||'https://via.placeholder.com/80'; var nm=document.getElementById('topName'); if(nm) nm.textContent='Hi, '+shortName(myProfile.name)+' 👋'; var id=document.getElementById('topID'); if(id) id.textContent='ID: '+(myProfile.displayId||myProfile.id||'-'); var cn=document.getElementById('topCoins'); if(cn) cn.textContent=myProfile.coins||0; }
+// FIXED: Ladies are saved as "Lady" not "Female" - only skip definite males
 function getFilteredUsers(){
-  let base = users.filter(u => u.gender && u.gender.toLowerCase().trim() === 'female');
+  let base = users.filter(u => {
+    if(!u) return false;
+    if((u.displayId||u.id)===(myProfile.displayId||myProfile.id)) return false;
+    let g = (u.gender||'').toString().toLowerCase().trim();
+    if(g==='male' || g==='man' || g==='m') return false;
+    return true;
+  });
   if(currentHomeTab === 'nearby'){ let myTown = (myProfile.city||'Ruiru').trim().toLowerCase(); return base.filter(u => (u.city||'').trim().toLowerCase() === myTown); }
   if(currentHomeTab === 'online'){ return base.filter(u=>isOnlineNow(u)); }
   return base;
@@ -473,10 +480,11 @@ function openChatList(){ if(window.ChatManager) window.ChatManager.openInbox(); 
 function openChatForUser(id){ let u = users.find(x=>(x.displayId||x.id)===id) || (window.ChatManager ? window.ChatManager.getChatUsers().find(x=>x.id===id) : null); if(u && window.ChatManager) window.ChatManager.openChat(u); }
 function openSearchById(){ document.getElementById('searchByIdBar').style.display='block'; let i=document.getElementById('searchIdInput'); if(i) i.focus(); }
 function closeSearchById(){ document.getElementById('searchByIdBar').style.display='none'; renderUsers(); }
+// FIXED: Search - only skip definite males, Lady/Female all pass
 function searchUserById(){
   let q = document.getElementById('searchIdInput').value.trim().toUpperCase();
   if(!q){ showToast('Enter ID e.g. PT585065'); return; }
-  let all = users.filter(u=>u.gender && u.gender.toLowerCase().trim()==='female');
+  let all = users.filter(u=>{ let g=(u.gender||'').toString().toLowerCase().trim(); return !(g==='male'||g==='man'||g==='m'); });
   let found = all.find(u => ((u.displayId||u.id||'').toUpperCase()===q) || ((u.displayId||u.id||'').toUpperCase().includes(q)) || (u.name && u.name.toUpperCase().includes(q)));
   if(found){
     filteredUsers=[found]; document.getElementById('userList').innerHTML = filteredUsers.map((u,i)=>`<div class="card" onclick="openProfile(0)"><div class="avatar"><img src="${u.avatar}"><div class="${isOnlineNow(u)?'online':'offline'}"></div></div><div class="card-info"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">ID:${u.displayId||u.id} • ${isOnlineNow(u)?'● Online':formatLastSeen(u.lastSeen)}</div></div></div>`).join('');
@@ -489,8 +497,9 @@ function searchUserById(){
       let v=null, key=null;
       allSnap.forEach(function(c){ let vv=c.val()||{}; if((vv.displayId||vv.id||c.key)===q) { v=vv; key=c.key; } });
       if(!v){ showToast('No user found with ID: '+q); return; }
-      if(v.gender && v.gender.toLowerCase().trim()!=='female'){ showToast('No user found with ID: '+q); return; }
-      let u={name:v.name||'User',gender:'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:v.photos||[],friends:[],id:key,displayId:q,activityScore:v.activityScore||0,online:v.online,lastSeen:v.lastSeen};
+      let gg=(v.gender||'').toString().toLowerCase().trim();
+      if(gg==='male'||gg==='man'||gg==='m'){ showToast('No user found with ID: '+q); return; }
+      let u={name:v.name||'User',gender:v.gender||'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:v.photos||[],friends:[],id:key,displayId:q,activityScore:v.activityScore||0,online:v.online,lastSeen:v.lastSeen};
       if(!users.find(x=>(x.displayId||x.id)===q)) users.push(u);
       filteredUsers=[u]; document.getElementById('userList').innerHTML = filteredUsers.map((uu,i)=>`<div class="card" onclick="openProfile(0)"><div class="avatar"><img src="${uu.avatar}"><div class="${isOnlineNow(uu)?'online':'offline'}"></div></div><div class="card-info"><h3>${shortName(uu.name)} ♀</h3><div class="friends-count">ID:${uu.displayId||uu.id} • ${isOnlineNow(uu)?'● Online':formatLastSeen(uu.lastSeen)}</div></div></div>`).join('');
     }).catch(()=>{ showToast('No user found with ID: '+q); });
@@ -577,17 +586,19 @@ function logoutUser(){
   localStorage.removeItem('patanisha_myProfile_male');
   window.location.replace('../register/index.html');
 }
+// FIXED: Load - only skip definite males, keep original gender value so Lady stays Lady
 function loadUsersFromFirebase(){
   try{
     let db=window.PatanishaDB; if(!db) return;
     db.ref('users').once('value').then(snap=>{
       snap.forEach(c=>{
         let v=c.val()||{}; let realId=v.displayId||v.id||c.key;
-        if(v.gender && v.gender.toLowerCase().trim()!=='female') return;
+        let gg=(v.gender||'').toString().toLowerCase().trim();
+        if(gg==='male' || gg==='man' || gg==='m') return;
         if(realId===myProfile.id || realId===(myProfile.displayId||myProfile.id)) return;
         if(!v.name && !v.avatar) return;
         let ex=users.find(x=>(x.displayId||x.id)===realId);
-        let obj={name:v.name||'User',gender:'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:v.photos||[],friends:[],id:c.key,displayId:realId,activityScore:v.activityScore||0,online:v.online,lastSeen:v.lastSeen};
+        let obj={name:v.name||'User',gender:v.gender||'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:v.photos||[],friends:[],id:c.key,displayId:realId,activityScore:v.activityScore||0,online:v.online,lastSeen:v.lastSeen};
         if(ex){ Object.assign(ex, obj); }
         else users.push(obj);
       });
@@ -620,7 +631,7 @@ refreshTopHeader();
 </script>
 <script src="../referral.js"></script>
 <script src="../social.js"></script>
-<script src="chat-manager.js?v=1005"></script>
+<script src="chat-manager.js?v=1006"></script>
 <script>
 setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000);
 </script>
