@@ -260,7 +260,7 @@ function getFilteredUsers(){
 function renderUsers(){
   filteredUsers = getFilteredUsers();
   let list = document.getElementById('userList');
-  if(filteredUsers.length===0){ list.innerHTML='<div class="empty">No ladies found yet<br><span style="font-size:12px">'+(currentHomeTab==='online'?'No ladies online right now':'No Female users in '+(myProfile.city||'Ruiru')+' yet')+'</span></div>'; return; }
+  if(filteredUsers.length===0){ list.innerHTML='<div class="empty">No ladies found yet<br><span style="font-size:12px">'+(currentHomeTab==='online'?'No ladies online right now':currentHomeTab==='nearby'?'No Female users in '+(myProfile.city||'Ruiru')+' yet — try Recommend':'No ladies yet — pull to refresh')+'</span></div>'; return; }
   list.innerHTML = filteredUsers.map((u,i)=>`<div class="card" onclick="openProfile(${i})"><div class="avatar"><img src="${u.avatar||'https://via.placeholder.com/80'}"><div class="${isOnlineNow(u)?'online':'offline'}"></div></div><div class="card-info"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">${(u.friends||[]).length} friends • ID:${u.id||''} • ${isOnlineNow(u)?'● Online':'○ Offline'}</div><div style="font-size:12px;color:#8B949E">📍 ${u.city||'Ruiru'} • Tap to view</div>${u.bio?`<div style="font-size:12px;color:#aaa;margin-top:4px">${u.bio.substring(0,60)}</div>`:''}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();openProfile(${i});startChat()">💬 Chat</button></div></div>`).join('');
 }
 function switchTab(tab, el){ currentHomeTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); renderUsers(); }
@@ -471,16 +471,15 @@ function loadUsersFromFirebase(){
   try{
     let db=window.PatanishaDB; if(!db) return;
     db.ref('users').once('value').then(snap=>{
-      let changed=false;
       snap.forEach(c=>{
         let v=c.val()||{}; if(!v.id) v.id=c.key;
         if(v.gender && v.gender.toLowerCase().trim()!=='female') return;
         if(v.id===myProfile.id) return;
         let ex=users.find(x=>x.id===v.id);
-        if(ex){ ex.name=v.name||ex.name; ex.avatar=v.avatar||ex.avatar; ex.city=v.city||ex.city; ex.bio=v.bio||ex.bio; ex.age=v.age||ex.age; ex.online=v.online; ex.lastSeen=v.lastSeen; }
-        else { users.push({name:v.name||'User',gender:'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:[],friends:[],id:v.id,activityScore:v.activityScore||0,online:v.online,lastSeen:v.lastSeen}); changed=true; }
+        if(ex){ ex.name=v.name||ex.name; ex.avatar=v.avatar||ex.avatar; ex.city=v.city||ex.city; ex.bio=v.bio||ex.bio; ex.age=v.age||ex.age; ex.online=v.online; ex.lastSeen=v.lastSeen; if(v.photos) ex.photos=v.photos; }
+        else { users.push({name:v.name||'User',gender:'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:v.photos||[],friends:[],id:v.id,activityScore:v.activityScore||0,online:v.online,lastSeen:v.lastSeen}); }
       });
-      if(changed) renderUsers();
+      renderUsers();
     }).catch(()=>{});
   }catch(e){}
 }
