@@ -7,6 +7,22 @@
 <link rel="apple-touch-icon" href="../logo-180.png">
 <meta name="theme-color" content="#2196F3">
 <link rel="manifest" href="../manifest.json">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
+    authDomain: "patanisha-49561.firebaseapp.com",
+    databaseURL: "https://patanisha-49561-default-rtdb.firebaseio.com",
+    projectId: "patanisha-49561",
+    storageBucket: "patanisha-49561.firebasestorage.app",
+    messagingSenderId: "363879415134",
+    appId: "1:363879415134:web:81b99ab93290a3e45723cf",
+    measurementId: "G-GLXLGVWLHF"
+  };
+  try{ if(!firebase.apps.length) firebase.initializeApp(firebaseConfig); window.PatanishaDB = firebase.database(); window.PatanishaDBType='rtdb'; }catch(e){ console.log('Firebase init',e); }
+  function getDB(){ if(window.PatanishaDB) return window.PatanishaDB; try{ if(typeof firebase!=='undefined' && firebase.database){ window.PatanishaDB=firebase.database(); return window.PatanishaDB; } }catch(e){} return null; }
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
@@ -148,7 +164,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 </div>
 <div style="padding:0 0 20px"><div class="menu-item" onclick="openSocialList('requests')">🤝 Friend Requests</div><div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div><div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div><div class="menu-item" onclick="window.location='../about.html#terms'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='../about.html#privacy'">🔒 Privacy Policy</div><button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button><button onclick="askLogout()" style="width:calc(100% - 30px);margin:0 15px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
 <div class="popup" id="infoPopup"><span class="close-btn" onclick="closePopup('infoPopup')">×</span><div class="popup-content" style="text-align:left;padding:25px"><h3 style="text-align:center;margin-bottom:20px;color:#2196F3">Coin Rates</h3><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Chat</b><p style="color:#8B949E;font-size:13px">1st message FREE, then 10 Coins per message</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📞 Voice Call</b><p style="color:#8B949E;font-size:13px">50 Coins per minute</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📹 Video Call</b><p style="color:#8B949E;font-size:13px">100 Coins per minute</p></div><div style="background:#21262D;padding:15px;border-radius:12px"><b>🔄 Recharge Rate</b><p style="color:#8B949E;font-size:13px">KES 100 = 1000 Coins</p></div></div></div>
-<div class="popup" id="rechargePopup"><span class="close-btn" onclick="closePopup('rechargePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Recharge Coins</h3><p style="font-size:12px;color:#8B949E;margin-bottom:10px">Rate: KES 100 = 1000 Coins</p><div class="form-group"><label>Send M-Pesa to:</label><input type="text" id="adminMpesa" value="0718422377" readonly style="font-weight:bold;color:#4CAF50"></div><div class="form-group"><label>Enter Amount KES</label><input type="number" id="rechargeAmount" placeholder="100" onkeyup="calcCoins()"></div><div class="form-group"><label>You will get</label><input type="text" id="rechargeCoins" readonly style="background:#21262D"></div><div class="form-group"><label>Your M-Pesa Name</label><input type="text" id="rechargeMpesa" placeholder="e.g. JOHN KAMAU"></div><button class="btn" onclick="submitRecharge()">I Have Sent</button></div></div>
+<div class="popup" id="rechargePopup"><span class="close-btn" onclick="closePopup('rechargePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Recharge Coins</h3><p style="font-size:12px;color:#8B949E;margin-bottom:10px">Rate: KES 100 = 1000 Coins</p><div class="form-group"><label>Send M-Pesa to:</label><input type="text" id="adminMpesa" value="0718422377" readonly style="font-weight:bold;color:#4CAF50"></div><div class="form-group"><label>Enter Amount KES</label><input type="number" id="rechargeAmount" placeholder="100" onkeyup="calcCoins()"></div><div class="form-group"><label>You will get</label><input type="text" id="rechargeCoins" readonly style="background:#21262D"></div><div class="form-group"><label>Your M-Pesa Name</label><input type="text" id="rechargeMpesa" placeholder="e.g. JOHN KAMAU"></div><div class="form-group"><label>M-Pesa Code (from SMS)</label><input type="text" id="rechargeCode" placeholder="e.g. QK7X..." style="text-transform:uppercase"></div><p style="font-size:12px;color:#8B949E;padding:0 20px">After Admin approves, coins appear automatically. Check Recharge History for status.</p><button class="btn" onclick="submitRecharge()">I Have Sent</button></div></div>
 <div class="popup" id="usagePopup"><span class="close-btn" onclick="closePopup('usagePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Coin Usage</h3><div id="usageList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="rechargeHistoryPopup"><span class="close-btn" onclick="closePopup('rechargeHistoryPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Recharge History</h3><div id="rechargeList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="coinsPopup"><div class="popup-content" style="text-align:left;padding:0">
@@ -393,15 +409,19 @@ function calcCoins(){ let amt = parseInt(document.getElementById('rechargeAmount
 function submitRecharge(){
   let amt = parseInt(document.getElementById('rechargeAmount').value||'0');
   let mpesaName = document.getElementById('rechargeMpesa').value.trim();
+  let mpesaCode = (document.getElementById('rechargeCode') ? document.getElementById('rechargeCode').value.trim().toUpperCase() : '');
   if(!amt || amt < 100){ showToast('Minimum KES 100'); return; }
   if(!mpesaName || mpesaName.length < 3){ showToast('Enter your M-Pesa Name as shown on M-Pesa'); return; }
+  if(!mpesaCode){ showToast('Enter M-Pesa Code from SMS (e.g. QK7X...)'); return; }
+  let coins = amt*10;
   if(!myProfile.recharges) myProfile.recharges=[];
-  myProfile.recharges.unshift({amount:amt, coins:amt*10, mpesa:mpesaName, mpesaName:mpesaName, date:new Date().toLocaleString(), status:'pending'});
+  myProfile.recharges.unshift({amount:amt, amountKES:amt, coins:coins, mpesa:mpesaName, mpesaName:mpesaName, mpesaCode:mpesaCode, code:mpesaCode, date:new Date().toLocaleString(), status:'pending', createdAt:Date.now()});
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
   localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile));
   let payments = JSON.parse(localStorage.getItem('payments')||'[]');
-  payments.unshift({userId:myProfile.id, email:myProfile.email||'', txCode:mpesaName, mpesaName:mpesaName, amount:amt, coins:amt*10, status:'pending', createdAt:new Date().toLocaleString()});
+  payments.unshift({userId:myProfile.id, email:myProfile.email||'', txCode:mpesaCode, mpesaName:mpesaName, amount:amt, coins:coins, status:'pending', createdAt:new Date().toLocaleString()});
   localStorage.setItem('payments', JSON.stringify(payments));
+  try{ let db=getDB(); if(db){ db.ref('deposits').push({userId:myProfile.id, name:myProfile.name, email:myProfile.email||'', phone:mpesaName, amount:amt, amountKES:amt, coins:coins, mpesaCode:mpesaCode, code:mpesaCode, status:'pending', createdAt:Date.now()}); db.ref('users/'+myProfile.id).update({name:myProfile.name, email:myProfile.email||'', coins:Number(myProfile.coins||0), gender:'Male'}); } }catch(e){ console.log('deposit push',e); }
   try{ if(typeof payReferralOnFirstPurchase==='function') payReferralOnFirstPurchase(myProfile); }catch(e){}
   closePopup('rechargePopup'); showToast('✅ Recharge submitted - wait for approval');
   renderRecharges();
@@ -480,7 +500,7 @@ refreshTopHeader();
     appId: "1:363879415134:web:81b99ab93290a3e45723cf",
     measurementId: "G-GLXLGVWLHF"
   };
-  firebase.initializeApp(firebaseConfig);
+  if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   window.PatanishaDB = firebase.database();
   window.PatanishaDBType = 'rtdb';
   loadUsersFromFirebase();
