@@ -273,9 +273,12 @@ async function openUserDetail(userId){
     ['Banned?', banned.includes(userId)?'YES - BANNED':'No'],
   ];
   document.getElementById('detailRows').innerHTML=rows.map(r=>`<div class="detail-row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
-  let photos=(u.photos||[]).filter(Boolean);
+  // FIX PHOTOS: Firebase may store photos as object {0:...,1:...}, not array - convert it. And open in-page, not window.open(data:) which goes blank.
+  let _rawPhotos = u.photos || [];
+  let photos = Array.isArray(_rawPhotos) ? _rawPhotos.filter(Boolean) : Object.keys(_rawPhotos).sort().map(k=>_rawPhotos[k]).filter(Boolean);
   if(!photos.length && u.avatar) photos=[u.avatar];
-  document.getElementById('detailPhotos').innerHTML = photos.length ? photos.map(p=>`<img src="${p}" onclick="window.open('${p}','_blank')">`).join('') : '<p style="color:#888">No photos</p>';
+  window._detailPhotos = photos;
+  document.getElementById('detailPhotos').innerHTML = photos.length ? photos.map((p,i)=>`<img src="${p}" onclick="openDetailPhoto(${i})" style="cursor:zoom-in">`).join('') : '<p style="color:#888">No photos - user has not uploaded any yet</p>';
   document.getElementById('detailBio').textContent='Bio: '+(u.bio||'No bio');
   document.getElementById('detailActivity').innerHTML=`<div class="detail-row"><span>Friends</span><b>${(u.friends||[]).length}</b></div><div class="detail-row"><span>Following</span><b>${(u.following||[]).length}</b></div><div class="detail-row"><span>Followers</span><b>${(u.followers||[]).length}</b></div><div class="detail-row"><span>Visitors</span><b>${(u.visitors||[]).length}</b></div><div class="detail-row"><span>Referral Earned</span><b>${u.referralEarned||u.referralEarnedCoins||0} coins</b></div>`;
   document.getElementById('detailApproveBtn').style.display = (u.gender==='Female')?'inline-block':'none';
@@ -293,6 +296,19 @@ async function openUserDetail(userId){
   }
 }
 function closeUserDetail(){ document.getElementById('userDetailOverlay').style.display='none'; }
+function openDetailPhoto(i){
+  let photos = window._detailPhotos || [];
+  if(!photos[i]) return;
+  let old = document.getElementById('detailPhotoViewer'); if(old) old.remove();
+  let div = document.createElement('div');
+  div.id = 'detailPhotoViewer';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px';
+  div.innerHTML = '<button onclick="document.getElementById(\'detailPhotoViewer\').remove()" style="align-self:flex-end;background:#fff;border:none;padding:10px 16px;border-radius:20px;font-weight:800;cursor:pointer;margin-bottom:10px">✕ Close</button><img src="" style="max-width:100%;max-height:85vh;object-fit:contain;border-radius:12px"><div style="color:#fff;margin-top:10px;font-size:13px" id="detailPhotoCount"></div>';
+  div.onclick = function(e){ if(e.target===div) div.remove(); };
+  document.body.appendChild(div);
+  div.querySelector('img').src = photos[i];
+  document.getElementById('detailPhotoCount').textContent = (i+1)+' / '+photos.length;
+}
 async function adjustCoinsDetail(){
   let amt=parseInt(document.getElementById('detailCoinsAdjust').value||'0');
   if(!amt || !_detailId) return showAlert('Enter coins amount','error');
@@ -323,7 +339,7 @@ async function resetWithdrawalPin(){
   if(!/^\d{4,6}$/.test(pin)) return showAlert('PIN must be 4-6 digits','error');
   if(!confirm('Reset Withdrawal PIN for '+_detailId+' to: '+pin+' ?')) return;
   let db=getDB();
-  if(db){ try{ await db.ref('users/'+_DetailId+'/withdrawalPin').set(pin); await db.ref('users/'+_detailId+'/pin').set(pin); await db.ref('users/'+_detailId+'/pinResetAt').set(Date.now()); }catch(e){} }
+  if(db){ try{ await db.ref('users/'+_DetailId+'/withdrawalPin').set(pin); await db.ref('users/'+_DetailId+'/pin').set(pin); await db.ref('users/'+_detailId+'/pinResetAt').set(Date.now()); }catch(e){} }
   // Local fallback - Female app on same phone reads patanisha_pin_<id>
   try{ localStorage.setItem('patanisha_pin_'+_detailId, pin); }catch(e){}
   document.getElementById('detailResetMsg').textContent='✅ Withdrawal PIN reset to: '+pin+' — tell lady on WhatsApp';
