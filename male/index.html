@@ -9,6 +9,7 @@
 <link rel="manifest" href="../manifest.json">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
@@ -20,8 +21,9 @@
     appId: "1:363879415134:web:81b99ab93290a3e45723cf",
     measurementId: "G-GLXLGVWLHF"
   };
-  try{ if(!firebase.apps.length) firebase.initializeApp(firebaseConfig); window.PatanishaDB = firebase.database(); window.PatanishaDBType='rtdb'; }catch(e){ console.log('Firebase init',e); }
+  try{ if(!firebase.apps.length) firebase.initializeApp(firebaseConfig); window.PatanishaDB = firebase.database(); window.PatanishaDBType='rtdb'; try{ window.PatanishaFS = firebase.firestore(); }catch(e){} }catch(e){ console.log('Firebase init',e); }
   function getDB(){ if(window.PatanishaDB) return window.PatanishaDB; try{ if(typeof firebase!=='undefined' && firebase.database){ window.PatanishaDB=firebase.database(); return window.PatanishaDB; } }catch(e){} return null; }
+  function getFS(){ if(window.PatanishaFS) return window.PatanishaFS; try{ if(typeof firebase!=='undefined' && firebase.firestore){ window.PatanishaFS=firebase.firestore(); return window.PatanishaFS; } }catch(e){} return null; }
 </script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
@@ -343,7 +345,6 @@ function copyMyId(){
   showToast('✅ ID copied: '+id);
 }
 function refreshTopHeader(){ if(!myProfile) return; var av=document.getElementById('topAvatar'); if(av) av.src=myProfile.avatar||'https://via.placeholder.com/80'; var nm=document.getElementById('topName'); if(nm) nm.textContent='Hi, '+shortName(myProfile.name)+' 👋'; var id=document.getElementById('topID'); if(id) id.textContent='ID: '+(myProfile.displayId||myProfile.id||'-'); var cn=document.getElementById('topCoins'); if(cn) cn.textContent=myProfile.coins||0; }
-// FIXED: Ladies are saved as "Lady" not "Female" - only skip definite males
 function getFilteredUsers(){
   let base = users.filter(u => {
     if(!u) return false;
@@ -436,28 +437,6 @@ function openProfile(idx){
   document.getElementById('profilePopup').style.display = 'block';
   if(typeof recordProfileVisit==='function') recordProfileVisit(currentProfile);
   var _fb=document.getElementById('profileFollowBtn'); if(_fb){ var _f=(myProfile.following||[]).indexOf(currentProfile.displayId||currentProfile.id)>=0; _fb.textContent=_f?'✓ Following':'+ Follow'; _fb.style.background=_f?'#666':'#2196F3'; }
-  try{
-    let db = window.PatanishaDB;
-    if(db && currentProfile.id){
-      db.ref('users/'+currentProfile.id+'/photos').once('value').then(snap=>{
-        let fbPhotos = snap.val();
-        if(fbPhotos && fbPhotos.length){
-          let photos = fbPhotos.filter(Boolean);
-          if(photos.length===0) return;
-          window._currentProfilePhotos = photos;
-          currentProfile.photos = photos;
-          document.getElementById('profilePhotos').innerHTML = photos.map((p,i)=>`<img src="${p}" onclick="openPhotoViewer(window._currentProfilePhotos,${i})">`).join('');
-        }
-      });
-      db.ref('users/'+currentProfile.id).once('value').then(snap=>{
-        let v=snap.val(); if(!v) return;
-        if(v.bio) document.getElementById('profileBio').innerText=v.bio;
-        if(v.avatar){ document.getElementById('profileCover').src=v.avatar; document.getElementById('profileAvatarBig').src=v.avatar; }
-        if(v.lastSeen!=null) currentProfile.lastSeen=v.lastSeen;
-        if(v.online!=null) currentProfile.online=v.online;
-      });
-    }
-  }catch(e){}
 }
 function closeProfile(){ document.getElementById('profilePopup').style.display = 'none'; }
 function startChat(){
@@ -480,7 +459,6 @@ function openChatList(){ if(window.ChatManager) window.ChatManager.openInbox(); 
 function openChatForUser(id){ let u = users.find(x=>(x.displayId||x.id)===id) || (window.ChatManager ? window.ChatManager.getChatUsers().find(x=>x.id===id) : null); if(u && window.ChatManager) window.ChatManager.openChat(u); }
 function openSearchById(){ document.getElementById('searchByIdBar').style.display='block'; let i=document.getElementById('searchIdInput'); if(i) i.focus(); }
 function closeSearchById(){ document.getElementById('searchByIdBar').style.display='none'; renderUsers(); }
-// FIXED: Search - only skip definite males, Lady/Female all pass
 function searchUserById(){
   let q = document.getElementById('searchIdInput').value.trim().toUpperCase();
   if(!q){ showToast('Enter ID e.g. PT585065'); return; }
@@ -491,15 +469,15 @@ function searchUserById(){
     return;
   }
   try{
-    let db=getDB(); if(!db){ showToast('No user found with ID: '+q); return; }
-    showToast('Searching Firebase for '+q+'...');
-    db.ref('users').once('value').then(allSnap=>{
+    let fs=getFS(); if(!fs){ showToast('No user found with ID: '+q); return; }
+    showToast('Searching Firestore for '+q+'...');
+    fs.collection('users').get().then(snap=>{
       let v=null, key=null;
-      allSnap.forEach(function(c){ let vv=c.val()||{}; if((vv.displayId||vv.id||c.key)===q) { v=vv; key=c.key; } });
+      snap.forEach(function(doc){ let vv=doc.data()||{}; let rid=vv.userId||vv.displayId||vv.id||doc.id; if(String(rid).toUpperCase()===q || String(doc.id).toUpperCase()===q){ v=vv; key=doc.id; } });
       if(!v){ showToast('No user found with ID: '+q); return; }
       let gg=(v.gender||'').toString().toLowerCase().trim();
       if(gg==='male'||gg==='man'||gg==='m'){ showToast('No user found with ID: '+q); return; }
-      let u={name:v.name||'User',gender:v.gender||'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:v.photos||[],friends:[],id:key,displayId:q,activityScore:v.activityScore||0,online:v.online,lastSeen:v.lastSeen};
+      let u={name:v.username||v.name||'User',gender:v.gender||'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.photo||v.avatar||'https://via.placeholder.com/80',photos:v.photos||[],friends:[],id:key,displayId:v.userId||q,activityScore:0,online:v.online,lastSeen:v.lastSeen};
       if(!users.find(x=>(x.displayId||x.id)===q)) users.push(u);
       filteredUsers=[u]; document.getElementById('userList').innerHTML = filteredUsers.map((uu,i)=>`<div class="card" onclick="openProfile(0)"><div class="avatar"><img src="${uu.avatar}"><div class="${isOnlineNow(uu)?'online':'offline'}"></div></div><div class="card-info"><h3>${shortName(uu.name)} ♀</h3><div class="friends-count">ID:${uu.displayId||uu.id} • ${isOnlineNow(uu)?'● Online':formatLastSeen(uu.lastSeen)}</div></div></div>`).join('');
     }).catch(()=>{ showToast('No user found with ID: '+q); });
@@ -586,32 +564,35 @@ function logoutUser(){
   localStorage.removeItem('patanisha_myProfile_male');
   window.location.replace('../register/index.html');
 }
-// FIXED: Load - only skip definite males, keep original gender value so Lady stays Lady
+// FIXED: Real data is in Firestore, NOT Realtime Database. Firestore fields: username/photo/userId/gender
 function loadUsersFromFirebase(){
   try{
-    let db=window.PatanishaDB; if(!db) return;
-    db.ref('users').once('value').then(snap=>{
-      snap.forEach(c=>{
-        let v=c.val()||{}; let realId=v.displayId||v.id||c.key;
+    let fs=getFS(); if(!fs){ showToast('Firestore SDK not loaded'); return; }
+    fs.collection('users').get().then(snap=>{
+      showToast('Firestore users: '+snap.size);
+      snap.forEach(doc=>{
+        let v=doc.data()||{};
+        let realId=v.userId||v.displayId||v.id||doc.id;
         let gg=(v.gender||'').toString().toLowerCase().trim();
         if(gg==='male' || gg==='man' || gg==='m') return;
         if(realId===myProfile.id || realId===(myProfile.displayId||myProfile.id)) return;
-        if(!v.name && !v.avatar) return;
+        if(!v.username && !v.name && !v.photo && !v.avatar) return;
         let ex=users.find(x=>(x.displayId||x.id)===realId);
-        let obj={name:v.name||'User',gender:v.gender||'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.avatar||'https://via.placeholder.com/80',photos:v.photos||[],friends:[],id:c.key,displayId:realId,activityScore:v.activityScore||0,online:v.online,lastSeen:v.lastSeen};
+        let obj={name:v.username||v.name||'Lady',gender:v.gender||'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.photo||v.avatar||'https://via.placeholder.com/80',photos:v.photos||[v.photo||v.avatar].filter(Boolean),friends:[],id:doc.id,displayId:realId,activityScore:0,online:v.online,lastSeen:v.lastSeen||0};
         if(ex){ Object.assign(ex, obj); }
         else users.push(obj);
       });
       try{ localStorage.setItem('patanisha_allAccounts', JSON.stringify(users)); }catch(e){}
       renderUsers();
-    }).catch((e)=>{ console.log('loadUsers err',e); });
-  }catch(e){}
+    }).catch((e)=>{ showToast('Firestore READ FAILED: '+(e.message||e)); });
+  }catch(e){ showToast('Load error: '+e); }
 }
 renderUsers();
 refreshTopHeader();
 </script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
@@ -626,12 +607,13 @@ refreshTopHeader();
   if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   window.PatanishaDB = firebase.database();
   window.PatanishaDBType = 'rtdb';
+  try{ window.PatanishaFS = firebase.firestore(); }catch(e){}
   loadUsersFromFirebase();
   if(typeof startPresence==='function') startPresence();
 </script>
 <script src="../referral.js"></script>
 <script src="../social.js"></script>
-<script src="chat-manager.js?v=1006"></script>
+<script src="chat-manager.js?v=1007"></script>
 <script>
 setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000);
 </script>
