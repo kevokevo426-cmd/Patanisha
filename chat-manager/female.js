@@ -1,11 +1,8 @@
 // ===== chat-manager/female.js - FEMALE FREE - HD VIDEO 720p + FULL SCREEN + RINGTONE + VOICE RECORDER =====
 // Female: Chat / Photo / Voice / Gifts = ALL FREE
 // RULE: Lady calls Man = MAN PAYS. If man <50 coins, call is rejected, lady sees "He has insufficient coins"
-// FIX: Inbox NEVER waits for Firebase. Shows instantly.
-// FIX: Inbox ALSO discovers chats from Firebase - even if never talked on THIS phone
-// FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
-// FIX: Chat header CLEAN - only Back, Photo, Name, Coins, Follow on top. All other buttons at bottom.
-// NEW: Call events - Missed / Rejected / Insufficient / Ended - saved to chat + Call Log popup
+// INCOME: Only last 7 days kept. Older than 7 days auto-deleted. Swipe left on a row to delete it.
+// FIX: Double missed calls deduped. Inbox never waits for Firebase.
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileFemale(){
@@ -34,12 +31,154 @@ function getCachedMsgs(chatId){
 function saveCachedMsgs(chatId, msgs){
   try{ localStorage.setItem('patanisha_msgs_'+chatId, JSON.stringify((msgs||[]).slice(-100))); }catch(e){}
 }
-// ===== CALL EVENTS: Missed / Rejected / Insufficient / Ended =====
+
+// ===== INCOME HISTORY - LAST 7 DAYS ONLY + SWIPE TO DELETE =====
+const INCOME_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+function incomeCutoff(){ return Date.now() - INCOME_RETENTION_MS; }
+
+// Auto-delete anything older than 7 days - Firebase + local
+async function pruneOldIncome(){
+  if(!myProfile || !myProfile.id) return;
+  const db = getDB(); if(!db) return;
+  const cutoff = incomeCutoff();
+  const ids = [myProfile.id];
+  if(myProfile.displayId && myProfile.displayId !== myProfile.id) ids.push(myProfile.displayId);
+  for(const uid of ids){
+    for(const node of ['earnings','coinHistory']){
+      try{
+        const snap = await db.ref(node+'/'+uid).once('value');
+        const updates = {};
+        let hasOld = false;
+        snap.forEach(c => {
+          const v = c.val() || {};
+          const ts = v.ts || v.createdAt || 0;
+          if(ts && ts < cutoff){ updates[c.key] = null; hasOld = true; }
+        });
+        if(hasOld) await db.ref(node+'/'+uid).update(updates);
+      }catch(e){ console.log('prune income', e); }
+    }
+  }
+  // Local prune
+  try{
+    ['patanisha_earnings_','patanisha_income_'].forEach(prefix => {
+      const k = prefix + myProfile.id;
+      let arr = JSON.parse(localStorage.getItem(k) || '[]');
+      const kept = arr.filter(x => (x.ts||0) >= cutoff);
+      if(kept.length !== arr.length) localStorage.setItem(k, JSON.stringify(kept));
+    });
+  }catch(e){}
+}
+window.pruneOldIncome = pruneOldIncome;
+
+// Delete ONE income entry - called by swipe Delete button
+async function deleteIncomeEntry(fbKey, node){
+  if(!myProfile || !myProfile.id) return;
+  const db = getDB();
+  const targetNode = node || 'earnings';
+  try{
+    if(db) await db.ref(targetNode+'/'+myProfile.id+'/'+fbKey).remove();
+    // Also try coinHistory with same key (same entry is in both)
+    if(db && targetNode === 'earnings') await db.ref('coinHistory/'+myProfile.id+'/'+fbKey).remove().catch(()=>{});
+    if(db && targetNode === 'coinHistory') await db.ref('earnings/'+myProfile.id+'/'+fbKey).remove().catch(()=>{});
+  }catch(e){}
+  // Remove row from UI instantly
+  const row = document.getElementById('income-row-'+fbKey);
+  if(row) row.remove();
+  // Update total
+  if(typeof refreshIncomeTotal === 'function') refreshIncomeTotal();
+  if(typeof showToast !== 'undefined') showToast('🗑️ Income entry deleted');
+}
+window.deleteIncomeEntry = deleteIncomeEntry;
+
+// Swipe handling - swipe left on row reveals Delete
+let _swipeStartX = 0, _swipeRow = null;
+function incomeTouchStart(e, key){
+  _swipeStartX = (e.touches ? e.touches[0].clientX : e.clientX);
+  _swipeRow = document.getElementById('income-row-'+key);
+}
+function incomeTouchMove(e, key){
+  if(!_swipeRow) return;
+  const x = (e.touches ? e.touches[0].clientX : e.clientX);
+  const dx = x - _swipeStartX;
+  if(dx < 0 && dx > -90){
+    const inner = _swipeRow.querySelector('.income-inner');
+    if(inner) inner.style.transform = 'translateX('+dx+'px)';
+  }
+}
+function incomeTouchEnd(e, key){
+  if(!_swipeRow) return;
+  const inner = _swipeRow.querySelector('.income-inner');
+  if(!inner) return;
+  const m = /translateX\((-?\d+)px\)/.exec(inner.style.transform || '');
+  const dx = m ? parseInt(m[1]) : 0;
+  if(dx < -45){
+    inner.style.transform = 'translateX(-80px)';
+    inner.style.transition = 'transform .2s';
+  } else {
+    inner.style.transform = 'translateX(0px)';
+    inner.style.transition = 'transform .2s';
+  }
+  _swipeRow = null;
+}
+window.incomeTouchStart = incomeTouchStart;
+window.incomeTouchMove = incomeTouchMove;
+window.incomeTouchEnd = incomeTouchEnd;
+
+// Show Income History popup - last 7 days only, swipe to delete
+async function showIncomeHistory(){
+  if(document.getElementById('incomePopup')) return;
+  await pruneOldIncome();
+  const db = getDB();
+  let list = [];
+  if(db && myProfile && myProfile.id){
+    try{
+      const snap = await db.ref('earnings/'+myProfile.id).once('value');
+      snap.forEach(c => { const v = c.val() || {}; v._key = c.key; v._node = 'earnings'; list.push(v); });
+    }catch(e){}
+  }
+  const cutoff = incomeCutoff();
+  list = list.filter(x => (x.ts||0) >= cutoff).sort((a,b) => (b.ts||0)-(a.ts||0));
+  const total = list.reduce((s,x) => s + (Number(x.amount)||0), 0);
+  const rows = list.length ? list.map(x => {
+    const when = new Date(x.ts||Date.now()).toLocaleString();
+    const label = x.reason || 'Chat';
+    return `<div id="income-row-${x._key}" style="position:relative;overflow:hidden;background:#fff;border-radius:12px;margin-bottom:8px">
+      <div style="position:absolute;right:0;top:0;bottom:0;width:80px;background:#D32F2F;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;cursor:pointer" onclick="deleteIncomeEntry('${x._key}','${x._node}')">🗑️ Delete</div>
+      <div class="income-inner" style="position:relative;background:#fff;padding:12px;display:flex;gap:10px;align-items:center;touch-action:pan-y"
+        ontouchstart="incomeTouchStart(event,'${x._key}')" ontouchmove="incomeTouchMove(event,'${x._key}')" ontouchend="incomeTouchEnd(event,'${x._key}')"
+        onmousedown="incomeTouchStart(event,'${x._key}')" onmousemove="incomeTouchMove(event,'${x._key}')" onmouseup="incomeTouchEnd(event,'${x._key}')">
+        <div style="font-size:26px">${label.includes('Video')?'📹':label.includes('Voice')?'📞':label.includes('Gift')?'🎁':'💬'}</div>
+        <div style="flex:1;min-width:0"><b style="display:block;font-size:14px">${String(label).replace(/</g,'&lt;')}</b><span style="font-size:12px;color:#888">${when} • From ${String(x.fromName||'').replace(/</g,'&lt;')}</span></div>
+        <b style="color:#25D366;font-size:16px;white-space:nowrap">+${Number(x.amount)||0}</b>
+        <span style="font-size:12px;color:#999">← swipe</span>
+      </div>
+    </div>`;
+  }).join('') : `<div style="text-align:center;padding:30px;color:#888">No income in last 7 days<br><span style="font-size:12px">Older income is auto-deleted after 7 days</span></div>`;
+
+  const div = document.createElement('div'); div.id = 'incomePopup';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999999;display:flex;align-items:flex-end;justify-content:center';
+  div.innerHTML = `<div style="width:100%;max-width:650px;background:#f5f5f5;border-radius:25px 25px 0 0;padding:16px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:19px">💰 Income - Last 7 Days</b><button onclick="document.getElementById('incomePopup').remove()" style="border:none;background:none;font-size:28px;cursor:pointer">×</button></div>
+    <div style="background:#25D366;color:#fff;padding:12px;border-radius:12px;text-align:center;margin-bottom:12px"><b style="font-size:20px">Total: +${total} coins</b><div style="font-size:12px;opacity:.9">${list.length} entries • Older than 7 days auto-deleted • Swipe left to delete</div></div>
+    ${rows}
+    <button onclick="document.getElementById('incomePopup').remove()" style="width:100%;padding:14px;border:none;border-radius:14px;background:#eee;font-weight:800;cursor:pointer;margin-top:4px">Close</button>
+  </div>`;
+  document.body.appendChild(div);
+}
+window.showIncomeHistory = showIncomeHistory;
+function refreshIncomeTotal(){ /* total recalculated on next open */ }
+
+// ===== CALL EVENTS: DEDUPED =====
 function formatCallTime(s){ s=Math.floor(s||0); if(s<60) return s+' sec'; return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+const _recordedCallEvents = new Set();
 function recordCallEvent(toUser, type, status, seconds){
   if(!myProfile || !toUser || !toUser.id) return;
-  if(window._lastCallEventKey === _currentCallId+'_'+status) return;
-  window._lastCallEventKey = _currentCallId+'_'+status;
+  const callId = window._activeCallIdForEvent || _currentCallId || 'unknown';
+  const bucket = Math.floor(Date.now()/60000);
+  const key = callId+'_'+status+'_'+toUser.id+'_'+bucket;
+  if(_recordedCallEvents.has(key)) return;
+  _recordedCallEvents.add(key);
+  if(_recordedCallEvents.size>50){ const first=_recordedCallEvents.values().next().value; _recordedCallEvents.delete(first); }
   var labels={
     missed:'📞 Missed '+(type==='video'?'Video':'Voice')+' call from '+(myProfile.name||''),
     rejected:'📵 '+(type==='video'?'Video':'Voice')+' call rejected / declined by '+(toUser.name||''),
@@ -48,7 +187,7 @@ function recordCallEvent(toUser, type, status, seconds){
     cancelled:'📞 Missed '+(type==='video'?'Video':'Voice')+' call from '+(myProfile.name||'')
   };
   var text=labels[status]||labels.missed;
-  var entry={fromId:myProfile.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',toId:toUser.id,toName:toUser.name||'',type:type||'voice',status:status||'missed',seconds:seconds||0,text:text,ts:Date.now()};
+  var entry={fromId:myProfile.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',toId:toUser.id,toName:toUser.name||'',type:type||'voice',status:status||'missed',seconds:seconds||0,text:text,ts:Date.now(),callId:callId};
   try{
     if(window.PatanishaDB){
       window.PatanishaDB.ref('missedCalls/'+toUser.id).push(entry);
@@ -77,6 +216,12 @@ function callEventIcon(e){ if(e.status==='rejected'||e.callStatus==='rejected') 
 function callEventTitle(e){ if(e.status==='rejected'||e.callStatus==='rejected') return 'Rejected'; if(e.status==='insufficient'||e.callStatus==='insufficient') return 'Insufficient Coins'; if(e.status==='ended'||e.callStatus==='ended') return 'Call Ended'; return 'Missed '+(e.type==='video'||e.callType==='video'?'Video':'Voice')+' Call'; }
 function showMissedCallsPopup(list){
   if(!list||!list.length) return; if(document.getElementById('missedPopup')) return;
+  const seen=new Set();
+  list=list.filter(m=>{
+    const k=(m.callId||'')+'_'+(m.status||m.callStatus||'')+'_'+(m.fromId||'')+'_'+(m.toId||'');
+    if(seen.has(k)) return false; seen.add(k); return true;
+  });
+  if(!list.length) return;
   var html=list.map(function(m,i){
     var when=new Date(m.ts||Date.now()).toLocaleString();
     return `<div style="display:flex;gap:10px;align-items:center;background:#fff;padding:12px;border-radius:12px;margin-bottom:8px">
@@ -143,7 +288,6 @@ function getFemaleChatUsers(){
     return true;
   });
 }
-// ===== FOLLOW INSIDE CHAT =====
 async function updateChatFollowUI(){
   let btn=document.getElementById('chatFollowBtn'); let u=(window.ChatManager && ChatManager.currentChatUser);
   if(!btn||!u||!myProfile) return;
@@ -168,6 +312,7 @@ async function sendFriendRequestInChat(){
 let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false, _callTimer=null, _callSeconds=0;
 let _ringtoneTimer=null, _ringCtx=null;
 let _callConnected=false, _callAnswered=false, _callEventRecorded=false;
+let _billingStarted=false;
 function _callDB(){ return getDB(); }
 function _playRingtone(){
   try{
@@ -239,12 +384,17 @@ function _showCallUI(user, status, isIncoming){
 function _cleanupCall(){
   _stopRingtone();
   if(_callTimer){ clearInterval(_callTimer); _callTimer=null; }
+  _billingStarted=false;
   if(_peerConn){ try{_peerConn.close();}catch(e){} _peerConn=null; }
   if(_localStream){ try{ _localStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} _localStream=null; }
   document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); });
+  window._activeCallIdForEvent = _currentCallId;
   _currentCallId=null; _callConnected=false; _callAnswered=false;
 }
+// Female never pays - timer only, no deduct
 function _startCallBilling(){
+  if(_billingStarted) return;
+  _billingStarted=true;
   _callSeconds=0;
   if(_callTimer) clearInterval(_callTimer);
   _callTimer=setInterval(()=>{
@@ -254,9 +404,10 @@ function _startCallBilling(){
 }
 async function _startRealCall(user, type){
   if(!user || !user.id){ if(typeof showToast!=='undefined') showToast('Select a person first'); return false; }
-  _currentCallType=type; _isMuted=false; _callConnected=false; _callAnswered=false; _callEventRecorded=false; window._lastCallEventKey=null;
+  _currentCallType=type; _isMuted=false; _callConnected=false; _callAnswered=false; _callEventRecorded=false; _billingStarted=false;
   const db=_callDB(); if(!db){ if(typeof showToast!=='undefined') showToast('Firebase not loaded'); return false; }
   _currentCallId=getChatId(myProfile.id, user.id)+'_'+Date.now();
+  window._activeCallIdForEvent=_currentCallId;
   _showCallUI(user, type==='video'?'📹 Video Calling...':'📞 Voice Calling...', false);
   try{
     _localStream=await navigator.mediaDevices.getUserMedia(_hdConstraints(type));
@@ -271,11 +422,12 @@ async function _startRealCall(user, type){
   await db.ref('calls/'+_currentCallId).set({from:myProfile.id,to:user.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',type,offer:{type:offer.type,sdp:offer.sdp},status:'ringing',createdAt:Date.now()});
   var _thisCallId=_currentCallId;
   setTimeout(async function(){
-    if(_thisCallId!==_currentCallId && _currentCallId!==null) return;
+    if(_thisCallId!==window._activeCallIdForEvent) return;
     try{
       var s=await db.ref('calls/'+_thisCallId+'/status').once('value');
       if(s.val()==='ringing' && !_callAnswered){
         await db.ref('calls/'+_thisCallId+'/status').set('missed');
+        window._activeCallIdForEvent=_thisCallId;
         if(typeof recordCallEvent==='function') recordCallEvent(user, type, 'missed', 0);
         if(typeof showToast!=='undefined') showToast('No answer - Missed call left 📞');
         _cleanupCall();
@@ -292,16 +444,14 @@ async function _startRealCall(user, type){
       db.ref('calls/'+_currentCallId+'/rejectReason').once('value').then(rs=>{
         if(rs.val()==='insufficient_coins'){
           if(typeof showToast!=='undefined') showToast('⚠️ He has insufficient coins (<50). Ask him to recharge.');
-          if(typeof recordCallEvent==='function' && !_callEventRecorded){ _callEventRecorded=true; recordCallEvent(user, type, 'insufficient', _callSeconds); }
+          if(typeof recordCallEvent==='function' && !_callEventRecorded){ _callEventRecorded=true; window._activeCallIdForEvent=_currentCallId; recordCallEvent(user, type, 'insufficient', _callSeconds); }
         } else if(rs.val()==='rejected'){
-          if(typeof recordCallEvent==='function' && !_callEventRecorded){ _callEventRecorded=true; recordCallEvent(user, type, 'rejected', 0); }
+          if(typeof recordCallEvent==='function' && !_callEventRecorded){ _callEventRecorded=true; window._activeCallIdForEvent=_currentCallId; recordCallEvent(user, type, 'rejected', 0); }
         }
       }).catch(()=>{});
       _cleanupCall();
     }
-    if(snap.val()==='missed' && !_callAnswered){
-      _cleanupCall();
-    }
+    if(snap.val()==='missed' && !_callAnswered){ _cleanupCall(); }
   });
   return true;
 }
@@ -312,16 +462,9 @@ function _listenForIncomingCalls(){
     db.ref('calls').orderByChild('to').equalTo(myProfile.id).on('child_added', snap=>{
       const call=snap.val(); if(!call||call.status!=='ringing') return;
       if(call.from===myProfile.id) return;
-      _currentCallId=snap.key; _currentCallType=call.type; _callConnected=false; _callAnswered=false; _callEventRecorded=false; window._lastCallEventKey=null;
+      _currentCallId=snap.key; window._activeCallIdForEvent=snap.key;
+      _currentCallType=call.type; _callConnected=false; _callAnswered=false; _callEventRecorded=false; _billingStarted=false;
       _showCallUI({name:call.fromName||'Someone', avatar:call.fromAvatar||''}, call.type==='video'?'📹 Incoming Video Call...':'📞 Incoming Voice Call...', true);
-      var _thisId=snap.key;
-      setTimeout(async function(){
-        try{
-          var s=await db.ref('calls/'+_thisId+'/status').once('value');
-          if(s.val()==='ringing' && document.getElementById('callScreen')){
-          }
-        }catch(e){}
-      }, 35000);
     });
   }catch(e){}
 }
@@ -541,6 +684,7 @@ const ChatManager = {
         var snap=await db.ref('calls/'+_currentCallId).once('value');
         var call=snap.val()||{};
         var otherUser = ChatManager.currentChatUser || {id: call.from===myProfile.id?call.to:call.from, name: call.from===myProfile.id?'':call.fromName, avatar: call.fromAvatar||''};
+        window._activeCallIdForEvent=_currentCallId;
         if(call.status==='ringing' && call.to===myProfile.id && !_callAnswered){
           if(!_callEventRecorded){ _callEventRecorded=true; recordCallEvent({id:call.from,name:call.fromName,avatar:call.fromAvatar}, call.type||_currentCallType||'voice','rejected',0); }
           try{ await db.ref('calls/'+_currentCallId+'/rejectReason').set('rejected'); }catch(e){}
@@ -662,3 +806,4 @@ window.ChatManager = ChatManager;
 window.chatsLoading = false;
 try{ _listenForIncomingCalls(); }catch(e){}
 try{ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000); }catch(e){}
+try{ setTimeout(function(){ if(typeof pruneOldIncome==='function') pruneOldIncome(); }, 3000); }catch(e){}
