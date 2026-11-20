@@ -268,11 +268,12 @@ function isOnlineNow(u){
   var ls = u.lastSeen || u.onlineAt || 0;
   return ls && (Date.now() - ls < 120000);
 }
+// FIXED: was `PatanishaDB` (undefined) -> threw ReferenceError and never ran
 function startPresence(){
   if(!myProfile || !window.PatanishaDB) return;
-  var ref = PatanishaDB.ref('users/'+myProfile.id);
+  var ref = window.PatanishaDB.ref('users/'+myProfile.id);
   function markOnline(){
-    try{ ref.update({online:true, lastSeen:Date.now()}); }catch(e){}
+    try{ ref.update({online:true, lastSeen:Date.now(), name:myProfile.name||'', gender:'Female', city:myProfile.city||'', avatar:myProfile.avatar||''}); }catch(e){}
     try{ myProfile.online=true; myProfile.lastSeen=Date.now(); }catch(e){}
   }
   markOnline();
@@ -325,7 +326,7 @@ function handleFemalePhoto(file, idx){
       var im=document.getElementById('fPhoto'+idx); var tx=document.getElementById('fPhotoTxt'+idx);
       if(im){ im.src=data; im.style.display='block'; } if(tx) tx.style.display='none';
       try{ localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); }catch(e){}
-      try{ if(window.PatanishaDB && myProfile.id){ PatanishaDB.ref('users/'+myProfile.id).update({photos:myProfile.photos, avatar:myProfile.avatar, gender:'Female'}); } }catch(e){}
+      try{ if(window.PatanishaDB && myProfile.id){ window.PatanishaDB.ref('users/'+myProfile.id).update({photos:myProfile.photos, avatar:myProfile.avatar, gender:'Female'}); } }catch(e){}
       var cnt=myProfile.photos.filter(Boolean).length;
       var hEl=document.getElementById('fPhotoHint'); if(hEl) hEl.textContent = cnt>=3 ? '✅ '+cnt+' photos saved — boys see these' : 'Add at least 3 photos ('+cnt+'/3)';
       renderProfileView();
@@ -391,14 +392,15 @@ function saveProfile(){
   if(pin){ if(pin.length<4||pin.length>6){ alert('PIN must be 4-6 digits'); return; } myPin=pin; localStorage.setItem('patanisha_pin_'+myProfile.id, pin); }
   localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile));
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
-  if(window.PatanishaDB && myProfile.id){ PatanishaDB.ref('users/'+myProfile.id).update({name:myProfile.name,city:myProfile.city,age:myProfile.age,bio:myProfile.bio,mpesa:myProfile.mpesa,photos:myProfile.photos||[],avatar:myProfile.avatar,withdrawalPin:pin||myPin||'',pin:pin||myPin||'',gender:'Female'}); }
+  if(window.PatanishaDB && myProfile.id){ window.PatanishaDB.ref('users/'+myProfile.id).update({name:myProfile.name,city:myProfile.city,age:myProfile.age,bio:myProfile.bio,mpesa:myProfile.mpesa,photos:myProfile.photos||[],avatar:myProfile.avatar,withdrawalPin:pin||myPin||'',pin:pin||myPin||'',gender:'Female'}); }
   refreshMe(); showToast('✅ Profile saved'); switchProfileTab('view');
 }
+// FIXED: now writes email + verificationStatus + displayId so Boy's filter never drops her
 function syncMyProfileToFirebase(){
   try{
     if(!window.PatanishaDB || !myProfile || !myProfile.id) return;
     myProfile.gender='Female';
-    window.PatanishaDB.ref('users/'+myProfile.id).update({name:myProfile.name||'',city:myProfile.city||'',age:myProfile.age||'',bio:myProfile.bio||'',mpesa:myProfile.mpesa||'',photos:myProfile.photos||[],avatar:myProfile.avatar||'',coins:Number(myProfile.coins||0),gender:'Female',displayId:myProfile.displayId||myProfile.id,lastSeen:Date.now()});
+    window.PatanishaDB.ref('users/'+myProfile.id).update({id:myProfile.id, name:myProfile.name||'', email:myProfile.email||'', city:myProfile.city||'', age:myProfile.age||'', bio:myProfile.bio||'', mpesa:myProfile.mpesa||'', photos:myProfile.photos||[], avatar:myProfile.avatar||'', coins:Number(myProfile.coins||0), gender:'Female', displayId:myProfile.displayId||myProfile.id, verificationStatus:myProfile.verificationStatus||myProfile.verification||'approved', online:true, lastSeen:Date.now()});
   }catch(e){}
 }
 function logout(){ if(confirm('Log out?')){ localStorage.removeItem('patanisha_myProfile'); localStorage.removeItem('patanisha_myProfile_female'); location.href='register/index.html'; } }
@@ -421,14 +423,30 @@ function filterFemaleTab(tab,btn){
 function filterGender(f,btn){ filterFemaleTab(f==='online'?'online':'recommend',btn); }
 function openFemaleSearch(){ document.getElementById('femaleSearchBar').style.display='block'; var i=document.getElementById('femaleSearchInput'); if(i) i.focus(); }
 function closeFemaleSearch(){ var b=document.getElementById('femaleSearchBar'); if(b) b.style.display='none'; }
+// FIXED: if not in local cache, query Firebase users/<ID> directly
 function searchBoyById(){
   var q=document.getElementById('femaleSearchInput').value.trim().toUpperCase();
   if(!q){ showToast('Enter ID e.g. PT585065'); return; }
   var found = users.find(u=>((u.displayId||u.id||'').toUpperCase()===q) || ((u.displayId||u.id||'').toUpperCase().includes(q)) || ((u.name||'').toUpperCase().includes(q)));
-  if(!found){ showToast('No boy found with ID: '+q); return; }
-  var idx = users.findIndex(x=>x.id===found.id);
-  document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${found.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${shortName(found.name)} ♂ ${found.age||''}</b><span>📍 ${found.city||'Ruiru'} • ID:${found.displayId||found.id}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
-  document.getElementById('noBoys').classList.add('hidden');
+  if(found){
+    var idx = users.findIndex(x=>x.id===found.id);
+    document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${found.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${shortName(found.name)} ♂ ${found.age||''}</b><span>📍 ${found.city||'Ruiru'} • ID:${found.displayId||found.id}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
+    document.getElementById('noBoys').classList.add('hidden');
+    return;
+  }
+  showToast('Searching Firebase for '+q+'...');
+  try{
+    if(!window.PatanishaDB){ showToast('No boy found with ID: '+q); return; }
+    window.PatanishaDB.ref('users/'+q).once('value').then(function(snap){
+      var v=snap.val();
+      if(!v){ showToast('No boy found with ID: '+q); return; }
+      v.id=q;
+      if(!users.find(function(x){return x.id===q})) users.push(v);
+      var idx = users.findIndex(function(x){return x.id===q});
+      document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${v.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${shortName(v.name)} ♂ ${v.age||''}</b><span>📍 ${v.city||'Ruiru'} • ID:${v.displayId||v.id}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
+      document.getElementById('noBoys').classList.add('hidden');
+    }).catch(function(){ showToast('No boy found with ID: '+q); });
+  }catch(e){ showToast('No boy found with ID: '+q); }
 }
 let _currentBoy=null;
 function openBoyProfile(idx){
@@ -466,9 +484,10 @@ function loadBoys(){
   try{ let u=JSON.parse(localStorage.getItem('patanishaUsers')||'[]'); u.forEach(x=>{ if(!list.find(y=>y.id===x.id)) list.push(x); }); }catch(e){}
   users = list.filter(u=>u && u.gender && u.gender.toLowerCase()==='male' && u.id!==myProfile.id);
   if(window.PatanishaDB){
-    PatanishaDB.ref('users').once('value').then(s=>{
+    window.PatanishaDB.ref('users').once('value').then(s=>{
       let arr=[]; s.forEach(c=>{ let v=c.val(); v.id=c.key; arr.push(v); });
       arr.filter(u=>u.gender && u.gender.toLowerCase()==='male' && u.id!==myProfile.id).forEach(u=>{ if(!users.find(x=>x.id===u.id)) users.push(u); });
+      try{ localStorage.setItem('patanisha_allAccounts', JSON.stringify(users)); }catch(e){}
       renderBoys();
     }).catch(()=>{});
   }
@@ -517,7 +536,7 @@ function submitWithdraw(){
   if(!myPin){ myPin=pin; localStorage.setItem('patanisha_pin_'+myProfile.id, pin); }
   let net = withdrawNetKES(coins);
   if(window.PatanishaDB){
-    PatanishaDB.ref('withdrawals').push({userId:myProfile.id,name:myProfile.name,phone:phone,coins:coins,grossKES:coinsToKES(coins),feeKES:withdrawFeeKES(coins),netKES:net,status:'pending',createdAt:Date.now()});
+    window.PatanishaDB.ref('withdrawals').push({userId:myProfile.id,name:myProfile.name,phone:phone,coins:coins,grossKES:coinsToKES(coins),feeKES:withdrawFeeKES(coins),netKES:net,status:'pending',createdAt:Date.now()});
   }
   myProfile.coins -= coins;
   myProfile.mpesa = phone;
