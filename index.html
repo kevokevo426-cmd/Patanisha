@@ -236,7 +236,7 @@ const firebaseConfig = {
   appId: "1:363879415134:web:81b99ab93290a3e45723cf",
   measurementId: "G-GLXLGVWLHF"
 };
-try{ firebase.initializeApp(firebaseConfig); window.PatanishaDB = firebase.database(); window.PatanishaDBType='rtdb'; }catch(e){ console.log('Firebase init',e); }
+try{ if(!firebase.apps.length) firebase.initializeApp(firebaseConfig); window.PatanishaDB = firebase.database(); window.PatanishaDBType='rtdb'; }catch(e){ console.log('Firebase init',e); }
 </script>
 <script src="social.js"></script>
 <script src="referral.js"></script>
@@ -279,6 +279,15 @@ function startPresence(){
   setInterval(markOnline, 30000);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) markOnline(); });
   window.addEventListener('beforeunload', function(){ try{ ref.update({online:false, lastSeen:Date.now()}); }catch(e){} });
+}
+// NEW: listen for Admin Reset PIN / Reset Password / coins change - live, no re-login needed
+function syncFromFirebase(){
+  if(!myProfile || !window.PatanishaDB) return;
+  try{
+    window.PatanishaDB.ref('users/'+myProfile.id+'/withdrawalPin').on('value', function(s){ if(s.val()){ myPin=String(s.val()); try{ localStorage.setItem('patanisha_pin_'+myProfile.id, myPin); }catch(e){} var _p=document.getElementById('editPin'); if(_p) _p.value=myPin; } });
+    window.PatanishaDB.ref('users/'+myProfile.id+'/password').on('value', function(s){ if(s.val() && s.val()!==myProfile.password){ myProfile.password=s.val(); try{ localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); }catch(e){} showToast('🔑 Admin updated your login password'); } });
+    window.PatanishaDB.ref('users/'+myProfile.id+'/coins').on('value', function(s){ var v=s.val(); if(v!=null && Number(v)!==Number(myProfile.coins||0)){ myProfile.coins=Number(v); try{ localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); }catch(e){} refreshMe(); } });
+  }catch(e){}
 }
 function switchProfileTab(tab){
   document.getElementById('profileViewTab').classList.toggle('hidden', tab!=='view');
@@ -383,7 +392,7 @@ function saveProfile(){
   if(pin){ if(pin.length<4||pin.length>6){ alert('PIN must be 4-6 digits'); return; } myPin=pin; localStorage.setItem('patanisha_pin_'+myProfile.id, pin); }
   localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile));
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
-  if(window.PatanishaDB && myProfile.id){ PatanishaDB.ref('users/'+myProfile.id).update({name:myProfile.name,city:myProfile.city,age:myProfile.age,bio:myProfile.bio,mpesa:myProfile.mpesa,photos:myProfile.photos||[],avatar:myProfile.avatar}); }
+  if(window.PatanishaDB && myProfile.id){ PatanishaDB.ref('users/'+myProfile.id).update({name:myProfile.name,city:myProfile.city,age:myProfile.age,bio:myProfile.bio,mpesa:myProfile.mpesa,photos:myProfile.photos||[],avatar:myProfile.avatar,withdrawalPin:pin||myPin||'',pin:pin||myPin||''}); }
   refreshMe(); showToast('✅ Profile saved'); switchProfileTab('view');
 }
 function logout(){ if(confirm('Log out?')){ localStorage.removeItem('patanisha_myProfile'); localStorage.removeItem('patanisha_myProfile_female'); location.href='register/index.html'; } }
@@ -514,6 +523,7 @@ function submitWithdraw(){
 }
 refreshMe();
 startPresence();
+syncFromFirebase();
 loadBoys();
 if(typeof loadFemaleEarnings==='function'){ try{ loadFemaleEarnings(); }catch(e){} }
 setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000);
