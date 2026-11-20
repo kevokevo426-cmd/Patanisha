@@ -2,7 +2,7 @@
 // Female: Chat / Photo / Voice / Gifts = ALL FREE
 // RULE: Lady calls Man = MAN PAYS. If man <50 coins, call is rejected, lady sees "He has insufficient coins"
 // FIX: Inbox NEVER waits for Firebase. Shows instantly.
-// FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
+// FIX: Inbox ALSO discovers chats from Firebase - even if never talked on THIS phone
 // FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
 // FIX: Chat header CLEAN - only Back, Photo, Name, Coins, Follow on top. All other buttons at bottom.
 // NEW: Call events - Missed / Rejected / Insufficient / Ended - saved to chat + Call Log popup
@@ -38,7 +38,6 @@ function saveCachedMsgs(chatId, msgs){
 function formatCallTime(s){ s=Math.floor(s||0); if(s<60) return s+' sec'; return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 function recordCallEvent(toUser, type, status, seconds){
   if(!myProfile || !toUser || !toUser.id) return;
-  // Prevent double-record for same call
   if(window._lastCallEventKey === _currentCallId+'_'+status) return;
   window._lastCallEventKey = _currentCallId+'_'+status;
   var labels={
@@ -55,7 +54,6 @@ function recordCallEvent(toUser, type, status, seconds){
       window.PatanishaDB.ref('missedCalls/'+toUser.id).push(entry);
       var chatId=[String(myProfile.id),String(toUser.id)].sort().join('_');
       window.PatanishaDB.ref('chats/'+chatId+'/messages').push({fromId:'system',from:'System',toId:toUser.id,text:text,type:'call-event',callType:type,callStatus:status,seconds:seconds||0,ts:Date.now(),time:new Date().toLocaleTimeString()});
-      // Update inbox last message so inbox shows the event
       window.PatanishaDB.ref('chats/'+chatId+'/meta').update({lastMsg:text,lastTs:Date.now()}).catch(()=>{});
     }
   }catch(e){}
@@ -63,7 +61,6 @@ function recordCallEvent(toUser, type, status, seconds){
     var k='patanisha_missed_'+toUser.id; var arr=JSON.parse(localStorage.getItem(k)||'[]'); arr.unshift(entry); localStorage.setItem(k, JSON.stringify(arr.slice(0,30)));
     var k2='patanisha_missed_'+myProfile.id; var arr2=JSON.parse(localStorage.getItem(k2)||'[]'); arr2.unshift(entry); localStorage.setItem(k2, JSON.stringify(arr2.slice(0,30)));
   }catch(e){}
-  // Also show instantly in current chat if open
   try{
     if(window.ChatManager && ChatManager.currentChatUser && (ChatManager.currentChatUser.id===toUser.id || ChatManager.currentChatUser.id===myProfile.id)){
       var sysMsg={fromId:'system',from:'System',toId:toUser.id,text:text,type:'call-event',callType:type,callStatus:status,seconds:seconds||0,ts:Date.now(),time:new Date().toLocaleTimeString()};
@@ -133,8 +130,12 @@ function getFemaleChatUsers(){
     pageUsers.forEach(pu=>{ if(pu && !list.find(x=>x.id===pu.id)) list.push(pu); });
   }catch(e){}
   try{ getTalkedTo().forEach(t=>{ if(!list.find(x=>x.id===t.id)) list.push(t); }); }catch(e){}
+  try{ (window.ChatManager && window.ChatManager._firebaseChatUsers||[]).forEach(t=>{ if(!list.find(x=>x.id===t.id)) list.push(t); }); }catch(e){}
   return list.filter(u=>{
-    if(u.gender && u.gender.toLowerCase().trim()!=='male' && !getTalkedTo().find(x=>x.id===u.id)) return false;
+    if(!u || !u.id) return false;
+    if(getTalkedTo().find(x=>x.id===u.id)) return true;
+    try{ if((window.ChatManager && window.ChatManager._firebaseChatUsers||[]).find(x=>x.id===u.id)) return true; }catch(e){}
+    if(u.gender && u.gender.toLowerCase().trim()!=='male') return false;
     if(typeof myProfile!=='undefined' && myProfile){
       if(u.email && myProfile.email && u.email.toLowerCase()===myProfile.email.toLowerCase()) return false;
       if(u.id && myProfile.id && u.id===myProfile.id) return false;
@@ -268,7 +269,6 @@ async function _startRealCall(user, type){
   _peerConn.onicecandidate=e=>{ if(e.candidate) db.ref('calls/'+_currentCallId+'/callerCandidates').push(e.candidate.toJSON()); };
   const offer=await _peerConn.createOffer(); await _peerConn.setLocalDescription(offer);
   await db.ref('calls/'+_currentCallId).set({from:myProfile.id,to:user.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',type,offer:{type:offer.type,sdp:offer.sdp},status:'ringing',createdAt:Date.now()});
-  // MISSED: no answer in 35s
   var _thisCallId=_currentCallId;
   setTimeout(async function(){
     if(_thisCallId!==_currentCallId && _currentCallId!==null) return;
@@ -314,13 +314,11 @@ function _listenForIncomingCalls(){
       if(call.from===myProfile.id) return;
       _currentCallId=snap.key; _currentCallType=call.type; _callConnected=false; _callAnswered=false; _callEventRecorded=false; window._lastCallEventKey=null;
       _showCallUI({name:call.fromName||'Someone', avatar:call.fromAvatar||''}, call.type==='video'?'📹 Incoming Video Call...':'📞 Incoming Voice Call...', true);
-      // If she does not pick in 35s, caller side will mark missed. Also mark locally if still ringing.
       var _thisId=snap.key;
       setTimeout(async function(){
         try{
           var s=await db.ref('calls/'+_thisId+'/status').once('value');
           if(s.val()==='ringing' && document.getElementById('callScreen')){
-            // Still ringing - leave it, caller timeout will handle. Do not auto-close yet.
           }
         }catch(e){}
       }, 35000);
@@ -329,6 +327,7 @@ function _listenForIncomingCalls(){
 }
 const ChatManager = {
   getChatUsers(){ return getFemaleChatUsers(); },
+  _firebaseChatUsers:[],
   _renderInboxList(list){
     let content=document.getElementById('inboxContent'); if(!content) return;
     this._inboxList=list;
@@ -359,6 +358,33 @@ const ChatManager = {
         if(item){ item.lastMsg=meta.lastMsg||''; item.lastTs=meta.lastTs||item.lastTs; list.sort((a,b)=>b.lastTs-a.lastTs); this._renderInboxList(list); }
       }).catch(()=>{});
     });
+    db.ref('chats').once('value').then(s=>{
+      let found=[];
+      s.forEach(child=>{
+        let meta=(child.val()||{}).meta||{};
+        if(!meta.aId && !meta.bId) return;
+        if(meta.aId!==myProfile.id && meta.bId!==myProfile.id) return;
+        let otherId = meta.aId===myProfile.id ? meta.bId : meta.aId;
+        let otherName = meta.aId===myProfile.id ? meta.bName : meta.aName;
+        if(!otherId || otherId===myProfile.id) return;
+        found.push({id:otherId, name:otherName||'Boy', avatar:'', lastMsg:meta.lastMsg||'', lastTs:meta.lastTs||0});
+      });
+      if(!found.length) return;
+      ChatManager._firebaseChatUsers = found;
+      let allUsers = this.getChatUsers();
+      found.forEach(f=>{
+        let u=allUsers.find(x=>x.id===f.id);
+        if(u){ f.avatar=u.avatar||f.avatar; f.city=u.city||''; f.name=u.name||f.name; }
+        saveTalkedTo({id:f.id, name:f.name, avatar:f.avatar||''});
+      });
+      let list=this._inboxList||[];
+      found.forEach(f=>{
+        if(!list.find(x=>x.id===f.id)) list.push(f);
+        else { let ex=list.find(x=>x.id===f.id); ex.lastMsg=f.lastMsg||ex.lastMsg; ex.lastTs=Math.max(ex.lastTs||0, f.lastTs||0); }
+      });
+      list.sort((a,b)=>(b.lastTs||0)-(a.lastTs||0));
+      this._renderInboxList(list);
+    }).catch(()=>{});
   },
   openInboxChat(idx){ let u=this._inboxList && this._inboxList[idx]; if(u) this.openChat(u); },
   closeInbox(){ let el=document.getElementById('chatInboxPopup'); if(el) el.remove(); },
@@ -496,7 +522,6 @@ const ChatManager = {
     if(_currentCallType==='video'){ const lv=document.getElementById('localVideo'); if(lv){ lv.srcObject=_localStream; lv.style.display='block'; } }
     const snap=await db.ref('calls/'+_currentCallId).once('value');
     const call=snap.val(); if(!call) return;
-    // Mark as connected in DB so caller knows it was answered
     try{ await db.ref('calls/'+_currentCallId+'/status').set('connected'); }catch(e){}
     _peerConn=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
     _localStream.getTracks().forEach(t=>_peerConn.addTrack(t,_localStream));
@@ -510,23 +535,19 @@ const ChatManager = {
     db.ref('calls/'+_currentCallId+'/callerCandidates').on('child_added', s=>{ if(_peerConn) _peerConn.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{}); });
   },
   async endCall(){
-    // Decide what event to record BEFORE cleanup
     try{
       const db=_callDB();
       if(_currentCallId && db){
         var snap=await db.ref('calls/'+_currentCallId).once('value');
         var call=snap.val()||{};
         var otherUser = ChatManager.currentChatUser || {id: call.from===myProfile.id?call.to:call.from, name: call.from===myProfile.id?'':call.fromName, avatar: call.fromAvatar||''};
-        // Case 1: I am callee and I press 📵 while still ringing = I rejected
         if(call.status==='ringing' && call.to===myProfile.id && !_callAnswered){
           if(!_callEventRecorded){ _callEventRecorded=true; recordCallEvent({id:call.from,name:call.fromName,avatar:call.fromAvatar}, call.type||_currentCallType||'voice','rejected',0); }
           try{ await db.ref('calls/'+_currentCallId+'/rejectReason').set('rejected'); }catch(e){}
         }
-        // Case 2: Connected and talked >5 sec = normal ended
         else if((_callConnected || _callAnswered) && _callSeconds>5){
           if(!_callEventRecorded){ _callEventRecorded=true; recordCallEvent(otherUser, call.type||_currentCallType||'voice','ended',_callSeconds); }
         }
-        // Case 3: Caller hangs up while ringing = missed (handled by timeout too, but record here if not yet)
         else if(call.status==='ringing' && call.from===myProfile.id && !_callAnswered){
           if(!_callEventRecorded){ _callEventRecorded=true; recordCallEvent(otherUser, call.type||_currentCallType||'voice','missed',0); }
         }
