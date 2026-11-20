@@ -104,7 +104,6 @@ input,textarea{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script>
-// ===== Firebase built-in - replaces missing ../firebase-config.js =====
 const firebaseConfig = {
   apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
   authDomain: "patanisha-49561.firebaseapp.com",
@@ -138,7 +137,6 @@ function showToast(msg){
 }
 function togglePassword(id,el){const input=document.getElementById(id);if(input.type==="password"){input.type="text";el.innerText="🙈";}else{input.type="password";el.innerText="👁️";}}
 function switchAuth(type){document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab-auth').forEach(t=>t.classList.remove('active'));if(type==='signin'){document.getElementById('signinStep').classList.add('active');document.getElementById('tabSignIn').classList.add('active');}else{document.getElementById('step1').classList.add('active');document.getElementById('tabSignUp').classList.add('active');}}
-// ===== FIX QUOTA: compress every photo + quota-safe save =====
 function compressImage(dataUrl, maxSize){
   return new Promise(function(resolve){
     try{
@@ -159,7 +157,6 @@ function compressImage(dataUrl, maxSize){
     }catch(e){ resolve(dataUrl); }
   });
 }
-// Save that NEVER crashes on quota: if full profile too big, drop photos, then drop selfie, then keep text only
 function safeSetProfile(profile){
   var str=JSON.stringify(profile);
   try{ localStorage.setItem('patanisha_myProfile', str); return true; }catch(e){ console.log('quota 1', e); }
@@ -175,7 +172,6 @@ function safeSetProfile(profile){
     showToast('⚠️ Photos too large - saved without photos. Use camera photo, not screenshot.');
     profile.photos=[]; profile.verificationSelfie=''; profile.avatar=p3.avatar; return true;
   }catch(e){
-    // Last resort: clear old junk that is eating space
     try{
       Object.keys(localStorage).forEach(function(k){ if(k.indexOf('patanisha_msgs_')===0 || k.indexOf('patanisha_missed_')===0) localStorage.removeItem(k); });
       localStorage.setItem('patanisha_myProfile', JSON.stringify(Object.assign({}, profile, {photos:[], verificationSelfie:''})));
@@ -183,7 +179,6 @@ function safeSetProfile(profile){
     }catch(e2){ return false; }
   }
 }
-// ===== NSFW CHECK: preload + 8s timeout, NEVER hang =====
 let _nsfwModel=null, _nsfwLoading=null, _photoChecking=false;
 function setChecking(on){
   _photoChecking=on;
@@ -232,6 +227,15 @@ async function isPhotoSafe(dataUrl){
     return true;
   } finally { setChecking(false); }
 }
+// ===== FIX: correct age with month/day, auto-edits on every login =====
+function calcAge(dobStr){
+  if(!dobStr) return 20;
+  const b = new Date(dobStr), now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  if(now.getMonth() < b.getMonth() || (now.getMonth() === b.getMonth() && now.getDate() < b.getDate())) age--;
+  return age;
+}
+// ===== FIX: FAST LOGIN - 1 query, 4s max, NO free coins, age auto-edit =====
 async function doSignIn(){
   const email=document.getElementById('loginEmail').value.trim().toLowerCase();
   const pass=document.getElementById('loginPassword').value;
@@ -239,42 +243,39 @@ async function doSignIn(){
   showToast('⏳ Signing in...');
   let savedProfile=null;
   let db=getDB();
-  // 1. Firebase FIRST - freshest password (Admin reset), coins, verificationStatus
   if(db){
     try{
-      let timeout=new Promise(res=>setTimeout(()=>res(null),8000));
+      let timeout=new Promise(res=>setTimeout(()=>res(null),4000));
       let snap=await Promise.race([db.ref('users').orderByChild('email').equalTo(email).once('value'), timeout]);
       if(snap){ snap.forEach(c=>{ let v=c.val()||{}; v.id=c.key; savedProfile=v; }); }
-      if(!savedProfile){
-        let snap2=await Promise.race([db.ref('users').once('value'), timeout]);
-        if(snap2){ snap2.forEach(c=>{ let v=c.val()||{}; if(v.email && String(v.email).toLowerCase()===email){ v.id=c.key; savedProfile=v; } }); }
-      }
-      if(savedProfile && savedProfile.withdrawalPin){ try{ localStorage.setItem('patanisha_pin_'+savedProfile.id, String(savedProfile.withdrawalPin)); }catch(e){} }
-      if(savedProfile && savedProfile.pin && !savedProfile.withdrawalPin){ try{ localStorage.setItem('patanisha_pin_'+savedProfile.id, String(savedProfile.pin)); }catch(e){} }
     }catch(e){ console.log('firebase signin',e); }
   }
-  // 2. Local fallback - same phone, offline
   if(!savedProfile){
     let all = JSON.parse(localStorage.getItem('patanisha_allAccounts') || '[]');
     savedProfile = all.find(a => a.email && a.email.toLowerCase() === email);
     if(!savedProfile){
-      const m = JSON.parse(localStorage.getItem('patanisha_myProfile_male') || 'null');
-      const f = JSON.parse(localStorage.getItem('patanisha_myProfile_female') || 'null');
       const g = JSON.parse(localStorage.getItem('patanisha_myProfile') || 'null');
-      if(m && m.email && m.email.toLowerCase()===email) savedProfile=m;
-      else if(f && f.email && f.email.toLowerCase()===email) savedProfile=f;
-      else if(g && g.email && g.email.toLowerCase()===email) savedProfile=g;
-    }
-    if(savedProfile && db && savedProfile.id){
-      try{ let ps=await db.ref('users/'+savedProfile.id+'/password').once('value'); if(ps.val()) savedProfile.password=ps.val(); let vs=await db.ref('users/'+savedProfile.id+'/verificationStatus').once('value'); if(vs.val()) savedProfile.verificationStatus=vs.val(); let cs=await db.ref('users/'+savedProfile.id+'/coins').once('value'); if(cs.val()!=null) savedProfile.coins=Number(cs.val()); }catch(e){}
+      if(g && g.email && g.email.toLowerCase()===email) savedProfile=g;
     }
   }
-  if(!savedProfile){ showToast('Invalid email. No account for this email on this link. Use Production link.'); return; }
+  if(!savedProfile){ showToast('No account for this email. Please Sign Up.'); return; }
   if(savedProfile.password !== pass){ showToast('Wrong password - ask Admin to reset it'); return; }
   if(savedProfile.gender==='Female' && savedProfile.verificationStatus && savedProfile.verificationStatus!=='approved'){
     showToast(savedProfile.verificationStatus==='rejected' ? '❌ Your selfie was rejected by Admin. Contact Admin.' : '⏳ Your selfie is waiting for Admin approval. Try again after approval.');
     return;
   }
+  // FIX: Age auto-edit on every login
+  if(savedProfile.dob){
+    const newAge = calcAge(savedProfile.dob);
+    if(newAge !== savedProfile.age){
+      savedProfile.age = newAge;
+      if(db && savedProfile.id) db.ref('users/'+savedProfile.id+'/age').set(newAge).catch(()=>{});
+    }
+  }
+  // FIX: NEVER give coins on login. Bonus was given once at signup only.
+  savedProfile.welcomeBonusGiven = true;
+  if(savedProfile.withdrawalPin){ try{ localStorage.setItem('patanisha_pin_'+savedProfile.id, String(savedProfile.withdrawalPin)); }catch(e){} }
+  if(savedProfile.pin && !savedProfile.withdrawalPin){ try{ localStorage.setItem('patanisha_pin_'+savedProfile.id, String(savedProfile.pin)); }catch(e){} }
   showToast('Welcome back ' + (savedProfile.name||'').split(' ')[0] + '!');
   localStorage.setItem('patanisha_myProfile', JSON.stringify(savedProfile));
   localStorage.setItem(savedProfile.gender==='Male' ? 'patanisha_myProfile_male' : 'patanisha_myProfile_female', JSON.stringify(savedProfile));
@@ -282,20 +283,33 @@ async function doSignIn(){
   setTimeout(()=>{
     if(savedProfile.gender==='Male') window.location.replace('../male/index.html');
     else window.location.replace('../index.html');
-  }, 500);
+  }, 300);
 }
 function askGenderConfirm(gender){tempGender=gender;document.getElementById('confirmText').innerText=`Are you sure you want to select ${gender}?`;document.getElementById('genderConfirm').style.display='flex';}
 function closeConfirm(){document.getElementById('genderConfirm').style.display='none';}
 function confirmGender(){selectedGender=tempGender;document.querySelectorAll('.gender-card').forEach(b=>b.classList.remove('selected'));if(tempGender==='Male')document.querySelectorAll('.gender-card')[0].classList.add('selected');if(tempGender==='Female')document.querySelectorAll('.gender-card')[1].classList.add('selected');closeConfirm();}
-function goToStep2(){
+// ===== FIX: Email duplicate checked in Firebase, not just this phone =====
+async function goToStep2(){
   if(!document.getElementById('email').value.includes('@')||document.getElementById('password').value.length<6||!selectedGender){showToast('Fill all fields and select gender');return;}
   if(document.getElementById('password').value !== document.getElementById('confirmPassword').value){showToast('Passwords do not match');return;}
   var _email=document.getElementById('email').value.trim().toLowerCase();
+  showToast('⏳ Checking email...');
+  var db=getDB();
+  if(db){
+    try{
+      var snap=await db.ref('users').orderByChild('email').equalTo(_email).once('value');
+      var found=null; snap.forEach(c=>{ found=c.val(); });
+      if(found){
+        showToast('❌ This email is already used for a '+(found.gender||'')+' account. Use a different email or Sign In.');
+        return;
+      }
+    }catch(e){ console.log('email check firebase',e); }
+  }
   var _all=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]');
   var _ex=_all.find(a=>a.email && a.email.toLowerCase()===_email);
   if(_ex){
-    if(_ex.gender!==selectedGender){ showToast('❌ This email is already used for a '+_ex.gender+' account. Use a different email.'); }
-    else { showToast('⚠️ This email already has an account. Please Sign In - no second welcome coins.'); switchAuth('signin'); document.getElementById('loginEmail').value=_email; }
+    showToast('❌ This email is already used. Please Sign In.');
+    switchAuth('signin'); document.getElementById('loginEmail').value=_email;
     return;
   }
   userData.email=_email;userData.password=document.getElementById('password').value;userData.gender=selectedGender;document.getElementById('step1').classList.remove('active');document.getElementById('step2').classList.add('active');
@@ -357,12 +371,22 @@ async function saveProfile(){
     var _all0=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]');
     var _dup=_all0.find(a=>a.email && a.email.toLowerCase()===(userData.email||'').toLowerCase());
     if(_dup){ showToast('⚠️ This email already has an account. Please Sign In.'); switchAuth('signin'); document.getElementById('loginEmail').value=userData.email||''; return; }
+    // FIX: Final Firebase duplicate check - stops boy+girl same email race
+    try{
+      let db2=getDB();
+      if(db2){
+        const s=await db2.ref('users').orderByChild('email').equalTo((userData.email||'').toLowerCase()).once('value');
+        let exists=false; s.forEach(()=>{ exists=true; });
+        if(exists){ showToast('❌ This email was just taken. Please Sign In.'); switchAuth('signin'); document.getElementById('loginEmail').value=userData.email||''; return; }
+      }
+    }catch(e){ console.log('saveProfile dup check',e); }
     if(userData.gender==='Female' && !userData.verificationSelfie){ showToast('📸 Please take a selfie for verification'); document.getElementById('step4').classList.remove('active'); document.getElementById('step5').classList.add('active'); return; }
     userData.photos = uploadedPhotos || [];
     userData.id = userData.id || ('PT'+Math.floor(Math.random()*900000+100000));
     userData.displayId = userData.id;
     userData.referralCode = userData.id;
     userData.level = 1;
+    // Welcome coins given ONCE here at signup only, never on login
     userData.coins = userData.gender === 'Male' ? 100 : 20;
     userData.welcomeBonusGiven = true;
     if(userData.gender==='Female'){
@@ -379,10 +403,10 @@ async function saveProfile(){
     userData.createdAt = Date.now();
     userData.distance = "2.5km";
     userData.email = (userData.email||'').trim().toLowerCase();
-    if(userData.dob){ let birth = new Date(userData.dob); userData.age = new Date().getFullYear() - birth.getFullYear(); } else { userData.age = 20; }
+    // FIX: Correct age with month/day
+    userData.age = calcAge(userData.dob);
     if(!userData.city) userData.city = "Ruiru";
     if(!userData.avatar) userData.avatar = document.getElementById('avatarPrev').src;
-    // FIX QUOTA: use safe save, and store a SMALL copy in allAccounts (no gallery photos there)
     if(!safeSetProfile(userData)){ showToast('❌ Storage full - clear browser data and try with 1 small photo'); return; }
     try{
       if(userData.gender === 'Male') localStorage.setItem('patanisha_myProfile_male', JSON.stringify(userData));
@@ -391,7 +415,6 @@ async function saveProfile(){
     try{
       let all = JSON.parse(localStorage.getItem('patanisha_allAccounts') || '[]');
       all = all.filter(a => a.email !== userData.email);
-      // allAccounts keeps text only - photos would blow quota again
       var slim = Object.assign({}, userData, {photos:[], verificationSelfie:''});
       all.push(slim);
       localStorage.setItem('patanisha_allAccounts', JSON.stringify(all));
@@ -403,7 +426,6 @@ async function saveProfile(){
       list.unshift(Object.assign({}, userData, {photos:[]}));
       localStorage.setItem(listKey, JSON.stringify(list));
     }catch(e){ console.log('list quota', e); }
-    // Save BOTH genders to Firebase users/<id> - so Admin sees Male too
     try{
       let db=getDB();
       if(db){
