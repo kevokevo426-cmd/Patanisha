@@ -2,7 +2,7 @@
 // Male: 1st message FREE, then 10 coins/msg, Voice 50/min, Video 100/min
 // RULE: Lady calls Man = MAN PAYS. If man <50 coins, incoming call is auto-rejected with "insufficient_coins"
 // FIX: Inbox NEVER waits for Firebase. Shows instantly.
-// FIX: NEVER db.ref('chats') - only chats/<yourChatId>/meta
+// FIX: Inbox ALSO discovers chats from Firebase - even if never talked on THIS phone
 // FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
 // FIX: Chat header CLEAN - only Back, Photo, Name, Coins, Follow on top. All other buttons at bottom.
 // NEW: Call events - Missed / Rejected / Insufficient / Ended - saved to chat + Call Log popup
@@ -154,8 +154,12 @@ function getMaleChatUsers(){
     pageUsers.forEach(pu=>{ if(pu && !list.find(x=>x.id===pu.id)) list.push(pu); });
   }catch(e){}
   try{ getTalkedTo().forEach(t=>{ if(!list.find(x=>x.id===t.id)) list.push(t); }); }catch(e){}
+  try{ (window.ChatManager && window.ChatManager._firebaseChatUsers||[]).forEach(t=>{ if(!list.find(x=>x.id===t.id)) list.push(t); }); }catch(e){}
   return list.filter(u=>{
-    if(u.gender && u.gender.toLowerCase().trim()!=='female' && !getTalkedTo().find(x=>x.id===u.id)) return false;
+    if(!u || !u.id) return false;
+    if(getTalkedTo().find(x=>x.id===u.id)) return true;
+    try{ if((window.ChatManager && window.ChatManager._firebaseChatUsers||[]).find(x=>x.id===u.id)) return true; }catch(e){}
+    if(u.gender && u.gender.toLowerCase().trim()!=='female') return false;
     if(typeof myProfile!=='undefined' && myProfile){
       if(u.email && myProfile.email && u.email.toLowerCase()===myProfile.email.toLowerCase()) return false;
       if(u.id && myProfile.id && u.id===myProfile.id) return false;
@@ -362,6 +366,7 @@ function _listenForIncomingCalls(){
 }
 const ChatManager = {
   getChatUsers(){ return getMaleChatUsers(); },
+  _firebaseChatUsers:[],
   _renderInboxList(list){
     let content=document.getElementById('inboxContent'); if(!content) return;
     this._inboxList=list;
@@ -392,6 +397,34 @@ const ChatManager = {
         if(item){ item.lastMsg=meta.lastMsg||''; item.lastTs=meta.lastTs||item.lastTs; list.sort((a,b)=>b.lastTs-a.lastTs); this._renderInboxList(list); }
       }).catch(()=>{});
     });
+    // NEW: Discover chats from Firebase - even if never talked on THIS phone
+    db.ref('chats').once('value').then(s=>{
+      let found=[];
+      s.forEach(child=>{
+        let meta=(child.val()||{}).meta||{};
+        if(!meta.aId && !meta.bId) return;
+        if(meta.aId!==myProfile.id && meta.bId!==myProfile.id) return;
+        let otherId = meta.aId===myProfile.id ? meta.bId : meta.aId;
+        let otherName = meta.aId===myProfile.id ? meta.bName : meta.aName;
+        if(!otherId || otherId===myProfile.id) return;
+        found.push({id:otherId, name:otherName||'Lady', avatar:'', lastMsg:meta.lastMsg||'', lastTs:meta.lastTs||0});
+      });
+      if(!found.length) return;
+      ChatManager._firebaseChatUsers = found;
+      let allUsers = this.getChatUsers();
+      found.forEach(f=>{
+        let u=allUsers.find(x=>x.id===f.id);
+        if(u){ f.avatar=u.avatar||f.avatar; f.city=u.city||''; f.name=u.name||f.name; }
+        saveTalkedTo({id:f.id, name:f.name, avatar:f.avatar||''});
+      });
+      let list=this._inboxList||[];
+      found.forEach(f=>{
+        if(!list.find(x=>x.id===f.id)) list.push(f);
+        else { let ex=list.find(x=>x.id===f.id); ex.lastMsg=f.lastMsg||ex.lastMsg; ex.lastTs=Math.max(ex.lastTs||0, f.lastTs||0); }
+      });
+      list.sort((a,b)=>(b.lastTs||0)-(a.lastTs||0));
+      this._renderInboxList(list);
+    }).catch(()=>{});
   },
   openInboxChat(idx){ let u=this._inboxList && this._inboxList[idx]; if(u) this.openChat(u); },
   closeInbox(){ let el=document.getElementById('chatInboxPopup'); if(el) el.remove(); },
