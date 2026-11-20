@@ -251,33 +251,58 @@ function withdrawNetKES(c){ return coinsToKES(c)-withdrawFeeKES(c); }
 function shortName(n){ if(!n) return 'User'; let p=String(n).trim().split(' '); return p.length>1 ? p[0]+' '+p[1][0]+'.' : p[0]; }
 function showToast(m){ let t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:12px 18px;border-radius:20px;z-index:999999;font-size:14px;max-width:90%;text-align:center'; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
 function copyMyId(){ var id = myProfile ? (myProfile.displayId||myProfile.id||'') : ''; if(!id) return; try{ navigator.clipboard.writeText(id); }catch(e){} showToast('✅ ID copied: '+id); }
+// FIXED: Follow now writes to Firebase so Lucus can Accept. Old version only touched localStorage.
 function localToggleFollowFemale(){
   var u=_currentBoy; if(!u) return;
   if(!myProfile.following) myProfile.following=[];
   var idx=myProfile.following.indexOf(u.id);
   var btn=document.getElementById('boyFollowBtn');
-  if(idx>=0){ myProfile.following.splice(idx,1); if(btn){ btn.textContent='+ Follow'; btn.style.background='#2196F3'; } showToast('Unfollowed '+shortName(u.name)); }
-  else { myProfile.following.push(u.id); if(btn){ btn.textContent='✓ Following'; btn.style.background='#666'; } showToast('✅ Following '+shortName(u.name)); }
+  if(idx>=0){
+    myProfile.following.splice(idx,1);
+    if(btn){ btn.textContent='+ Follow'; btn.style.background='#2196F3'; }
+    showToast('Unfollowed '+shortName(u.name));
+    try{ if(window.PatanishaDB){ window.PatanishaDB.ref('followRequests/'+u.id+'/'+myProfile.id).remove(); window.PatanishaDB.ref('followers/'+u.id+'/'+myProfile.id).remove(); window.PatanishaDB.ref('follows/'+myProfile.id+'/'+u.id).remove(); } }catch(e){}
+  } else {
+    myProfile.following.push(u.id);
+    if(btn){ btn.textContent='✓ Following'; btn.style.background='#666'; }
+    showToast('✅ Follow request sent to '+shortName(u.name)+' — he will Accept it');
+    try{
+      if(window.PatanishaDB){
+        window.PatanishaDB.ref('followRequests/'+u.id+'/'+myProfile.id).set({fromId:myProfile.id, fromName:myProfile.name||'', fromAvatar:myProfile.avatar||'', toId:u.id, status:'pending', ts:Date.now()});
+        window.PatanishaDB.ref('followers/'+u.id+'/'+myProfile.id).set({id:myProfile.id, name:myProfile.name||'', avatar:myProfile.avatar||'', status:'pending', ts:Date.now()});
+        window.PatanishaDB.ref('follows/'+myProfile.id+'/'+u.id).set(true);
+      }
+    }catch(e){}
+  }
   try{ localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); }catch(e){}
   if(typeof refreshSocialCounts==='function') refreshSocialCounts().catch(()=>{});
 }
+// FIXED: WhatsApp-style last seen + 5 min online window
+function formatLastSeen(ts){
+  if(!ts) return 'last seen a long time ago';
+  var d=new Date(ts), now=new Date();
+  var time=d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  var sameDay=d.toDateString()===now.toDateString();
+  var y=new Date(now); y.setDate(now.getDate()-1);
+  if(sameDay) return 'last seen today at '+time;
+  if(d.toDateString()===y.toDateString()) return 'last seen yesterday at '+time;
+  return 'last seen '+d.toLocaleDateString([], {day:'numeric', month:'short'})+' at '+time;
+}
 function isOnlineNow(u){
   if(!u) return false;
-  if(u.online===true && u.lastSeen && (Date.now()-u.lastSeen < 120000)) return true;
-  if(u.online===true && !u.lastSeen) return true;
+  if(u.online===true) return true;
   var ls = u.lastSeen || u.onlineAt || 0;
-  return ls && (Date.now() - ls < 120000);
+  return ls && (Date.now() - ls < 300000);
 }
-// FIXED: was `PatanishaDB` (undefined) -> threw ReferenceError and never ran
 function startPresence(){
   if(!myProfile || !window.PatanishaDB) return;
   var ref = window.PatanishaDB.ref('users/'+myProfile.id);
   function markOnline(){
-    try{ ref.update({online:true, lastSeen:Date.now(), name:myProfile.name||'', gender:'Female', city:myProfile.city||'', avatar:myProfile.avatar||''}); }catch(e){}
+    try{ ref.update({online:true, lastSeen:Date.now(), name:myProfile.name||'', gender:'Female', city:myProfile.city||'', avatar:myProfile.avatar||'', displayId:myProfile.displayId||myProfile.id}); }catch(e){}
     try{ myProfile.online=true; myProfile.lastSeen=Date.now(); }catch(e){}
   }
   markOnline();
-  setInterval(markOnline, 30000);
+  setInterval(markOnline, 15000);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) markOnline(); });
   window.addEventListener('beforeunload', function(){ try{ ref.update({online:false, lastSeen:Date.now()}); }catch(e){} });
 }
@@ -395,7 +420,6 @@ function saveProfile(){
   if(window.PatanishaDB && myProfile.id){ window.PatanishaDB.ref('users/'+myProfile.id).update({name:myProfile.name,city:myProfile.city,age:myProfile.age,bio:myProfile.bio,mpesa:myProfile.mpesa,photos:myProfile.photos||[],avatar:myProfile.avatar,withdrawalPin:pin||myPin||'',pin:pin||myPin||'',gender:'Female'}); }
   refreshMe(); showToast('✅ Profile saved'); switchProfileTab('view');
 }
-// FIXED: now writes email + verificationStatus + displayId so Boy's filter never drops her
 function syncMyProfileToFirebase(){
   try{
     if(!window.PatanishaDB || !myProfile || !myProfile.id) return;
@@ -423,27 +447,26 @@ function filterFemaleTab(tab,btn){
 function filterGender(f,btn){ filterFemaleTab(f==='online'?'online':'recommend',btn); }
 function openFemaleSearch(){ document.getElementById('femaleSearchBar').style.display='block'; var i=document.getElementById('femaleSearchInput'); if(i) i.focus(); }
 function closeFemaleSearch(){ var b=document.getElementById('femaleSearchBar'); if(b) b.style.display='none'; }
-// FIXED: if not in local cache, query Firebase users/<ID> directly
 function searchBoyById(){
   var q=document.getElementById('femaleSearchInput').value.trim().toUpperCase();
   if(!q){ showToast('Enter ID e.g. PT585065'); return; }
   var found = users.find(u=>((u.displayId||u.id||'').toUpperCase()===q) || ((u.displayId||u.id||'').toUpperCase().includes(q)) || ((u.name||'').toUpperCase().includes(q)));
   if(found){
     var idx = users.findIndex(x=>x.id===found.id);
-    document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${found.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${shortName(found.name)} ♂ ${found.age||''}</b><span>📍 ${found.city||'Ruiru'} • ID:${found.displayId||found.id}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
+    document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${found.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${shortName(found.name)} ♂ ${found.age||''}</b><span>📍 ${found.city||'Ruiru'} • ID:${found.displayId||found.id} • ${isOnlineNow(found)?'● Online':formatLastSeen(found.lastSeen)}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
     document.getElementById('noBoys').classList.add('hidden');
     return;
   }
   showToast('Searching Firebase for '+q+'...');
   try{
     if(!window.PatanishaDB){ showToast('No boy found with ID: '+q); return; }
-    window.PatanishaDB.ref('users/'+q).once('value').then(function(snap){
-      var v=snap.val();
+    window.PatanishaDB.ref('users').once('value').then(function(all){
+      var v=null;
+      all.forEach(function(c){ var vv=c.val()||{}; if((vv.displayId||vv.id||c.key)==q) { v=vv; v.id=c.key; } });
       if(!v){ showToast('No boy found with ID: '+q); return; }
-      v.id=q;
-      if(!users.find(function(x){return x.id===q})) users.push(v);
-      var idx = users.findIndex(function(x){return x.id===q});
-      document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${v.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${shortName(v.name)} ♂ ${v.age||''}</b><span>📍 ${v.city||'Ruiru'} • ID:${v.displayId||v.id}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
+      if(!users.find(function(x){return x.id===v.id})) users.push(v);
+      var idx = users.findIndex(function(x){return x.id===v.id});
+      document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${v.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${shortName(v.name)} ♂ ${v.age||''}</b><span>📍 ${v.city||'Ruiru'} • ID:${v.displayId||v.id} • ${isOnlineNow(v)?'● Online':formatLastSeen(v.lastSeen)}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
       document.getElementById('noBoys').classList.add('hidden');
     }).catch(function(){ showToast('No boy found with ID: '+q); });
   }catch(e){ showToast('No boy found with ID: '+q); }
@@ -454,7 +477,8 @@ function openBoyProfile(idx){
   if(typeof recordProfileVisit==='function') recordProfileVisit(u);
   document.getElementById('boyProfileName').textContent=shortName(u.name)+' ♂ '+(u.age||'');
   document.getElementById('boyProfileAvatar').src=u.avatar||'logo-192.png';
-  document.getElementById('boyProfileCity').textContent='📍 '+(u.city||'Ruiru')+' • ID:'+(u.displayId||u.id);
+  // PRIVACY: No coins shown for boy. Only ID / city / last seen.
+  document.getElementById('boyProfileCity').textContent='📍 '+(u.city||'Ruiru')+' • ID:'+(u.displayId||u.id)+' • '+(isOnlineNow(u)?'● Online':formatLastSeen(u.lastSeen));
   document.getElementById('boyProfileBio').textContent=u.bio||'Say Hi 👋';
   document.getElementById('boyProfilePopup').style.display='flex';
   updateBoyFollowUI();
@@ -485,7 +509,7 @@ function loadBoys(){
   users = list.filter(u=>u && u.gender && u.gender.toLowerCase()==='male' && u.id!==myProfile.id);
   if(window.PatanishaDB){
     window.PatanishaDB.ref('users').once('value').then(s=>{
-      let arr=[]; s.forEach(c=>{ let v=c.val(); v.id=c.key; arr.push(v); });
+      let arr=[]; s.forEach(c=>{ let v=c.val(); v.id=c.key; v.displayId=v.displayId||v.id; arr.push(v); });
       arr.filter(u=>u.gender && u.gender.toLowerCase()==='male' && u.id!==myProfile.id).forEach(u=>{ if(!users.find(x=>x.id===u.id)) users.push(u); });
       try{ localStorage.setItem('patanisha_allAccounts', JSON.stringify(users)); }catch(e){}
       renderBoys();
@@ -502,19 +526,32 @@ function renderBoys(){
   document.getElementById('noBoys').classList.add('hidden');
   box.innerHTML = list.map((u,i)=>{
     let idx = users.findIndex(x=>x.id===u.id);
+    let status = isOnlineNow(u) ? '● Online' : formatLastSeen(u.lastSeen);
+    // PRIVACY: No boy coins shown here.
     return `<div class="card" onclick="openBoyProfile(${idx})">
       <div class="avatar-wrap"><img src="${u.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><span class="${isOnlineNow(u)?'dot-blue':'dot-grey'}"></span></div>
-      <div class="info"><b>${shortName(u.name)} ♂ ${u.age||''}</b><span>📍 ${u.city||'Ruiru'} • ${isOnlineNow(u)?'● Online':'○ Offline'}<br>${(u.bio||'Say Hi 👋').slice(0,40)}</span></div>
+      <div class="info"><b>${shortName(u.name)} ♂ ${u.age||''}</b><span>📍 ${u.city||'Ruiru'} • ${status}<br>${(u.bio||'Say Hi 👋').slice(0,40)}</span></div>
       <div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button><button class="btn btn-pink" onclick="event.stopPropagation();openBoyProfile(${idx})">👤 View</button></div>
     </div>`;
   }).join('');
 }
+// FIXED: Earnings history now reads Firebase, not empty local income
+function loadFemaleEarnings(){
+  if(!myProfile || !window.PatanishaDB) return Promise.resolve();
+  var paths=['earnings/'+myProfile.id, 'coinHistory/'+myProfile.id, 'income/'+myProfile.id];
+  return Promise.all(paths.map(function(p){ return window.PatanishaDB.ref(p).once('value').then(function(s){ var a=[]; s.forEach(function(c){ var v=c.val()||{}; v.ts=v.ts||v.createdAt||v.date||0; if(typeof v.ts==='string') v.ts=Date.parse(v.ts)||0; v.amount=v.amount||v.coins||v.earned||0; v.reason=v.reason||v.type||'Chat'; a.push(v); }); return a; }).catch(function(){ return []; }); })).then(function(groups){
+    var all=[].concat.apply([], groups);
+    // Also include local fallback if Firebase is empty
+    if(!all.length && myProfile.income && myProfile.income.length) all=myProfile.income;
+    all.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+    var box=document.getElementById('incomeList'); if(!box) return;
+    if(!all.length){ box.innerHTML='<p style="color:#888;font-size:13px">No earnings yet. Chat with boys to earn.</p>'; return; }
+    box.innerHTML=all.slice(0,50).map(function(x){ return '<div class="row"><span>'+(x.reason||'Chat')+' • '+new Date(x.ts||Date.now()).toLocaleDateString()+'</span><b>+'+(x.amount||0)+' coins = KES '+coinsToKES(x.amount||0).toFixed(2)+'</b></div>'; }).join('');
+  });
+}
 function renderIncome(){
   refreshMe();
-  let inc = myProfile.income||[];
-  let box=document.getElementById('incomeList');
-  if(!inc.length){ box.innerHTML='<p style="color:#888;font-size:13px">No earnings yet. Chat with boys to earn.</p>'; return; }
-  box.innerHTML = inc.slice(0,30).map(x=>`<div class="row"><span>${x.reason||'Chat'} • ${new Date(x.ts||Date.now()).toLocaleDateString()}</span><b>+${x.amount||0} coins = KES ${coinsToKES(x.amount||0).toFixed(2)}</b></div>`).join('');
+  loadFemaleEarnings();
 }
 function updateWithdrawPreview(){
   let coins = Number(document.getElementById('withdrawCoins').value||0);
@@ -551,7 +588,7 @@ syncMyProfileToFirebase();
 startPresence();
 syncFromFirebase();
 loadBoys();
-if(typeof loadFemaleEarnings==='function'){ try{ loadFemaleEarnings(); }catch(e){} }
+loadFemaleEarnings();
 setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000);
 </script>
 </body>
