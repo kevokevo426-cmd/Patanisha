@@ -218,12 +218,19 @@ async function saveContent(){
 }
 async function loadTermsFromFirebase(){ let db=getDB(); if(!db) return; try{ let s1=await db.ref('terms/text').once('value'); if(s1.val()){ document.getElementById('termsEditor').value=s1.val(); localStorage.setItem('patanisha_terms', s1.val()); } let s2=await db.ref('privacy/text').once('value'); if(s2.val()){ document.getElementById('privacyEditor').value=s2.val(); localStorage.setItem('patanisha_privacy', s2.val()); } }catch(e){} }
 function showUserBreakdown(){ document.getElementById('userBreakdown').innerHTML=`👩 ${users.length} Female<br>👨 ${maleUsers.length} Male`; setTimeout(()=>{document.getElementById('userBreakdown').innerHTML=''},4000); }
-function sendCoinsToMale(){
+async function sendCoinsToMale(){
   let name=document.getElementById('creditMaleName').value.trim(), id=document.getElementById('creditMaleId').value.trim(), coins=document.getElementById('creditMaleCoins').value.trim();
   if(!name||!id||!coins) return showAlert('Please fill all fields','error');
   let u=maleUsers.find(x=>x.id==id && x.name.toLowerCase()==name.toLowerCase());
+  if(!u){
+    let db=getDB();
+    if(db){ try{ let s=await db.ref('users/'+id).once('value'); if(s.val()){ u=s.val(); u.id=id; maleUsers.push(u); } }catch(e){} }
+  }
   if(!u) return showAlert('Male user not found','error');
-  u.coins=(u.coins||0)+parseInt(coins); localStorage.setItem('patanishaUsers_male', JSON.stringify(maleUsers));
+  let newCoins=(Number(u.coins||0))+parseInt(coins);
+  u.coins=newCoins; localStorage.setItem('patanishaUsers_male', JSON.stringify(maleUsers));
+  let db2=getDB();
+  if(db2){ try{ await db2.ref('users/'+id+'/coins').set(newCoins); }catch(e){ showAlert('⚠️ Saved locally only - Firebase write failed: '+e.message,'error'); } }
   showAlert(`${coins} coins sent to ${name}`,'success');
   document.getElementById('creditMaleName').value=''; document.getElementById('creditMaleId').value=''; document.getElementById('creditMaleCoins').value='';
   loadAnchors();
@@ -292,7 +299,7 @@ async function adjustCoinsDetail(){
   let db=getDB(); if(!db) return showAlert('Firebase not loaded','error');
   let snap=await db.ref('users/'+_detailId+'/coins').once('value');
   let cur=Number(snap.val()||(_detailUser&&_detailUser.coins)||0);
-  await db.ref('users/'+_detailId+'/coins').set(cur+amt);
+  await db.ref('users/'+_DetailId+'/coins').set(cur+amt);
   document.getElementById('detailResetMsg').textContent=`✅ Coins: ${cur} → ${cur+amt}`;
   loadAnchors(); openUserDetail(_detailId);
 }
@@ -305,7 +312,7 @@ async function resetLoginPassword(){
   if(db){ try{ await db.ref('users/'+_detailId+'/password').set(np); await db.ref('users/'+_detailId+'/passwordResetAt').set(Date.now()); }catch(e){} }
   // 2. Local - for same-phone testing
   try{
-    let all=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); let u=all.find(x=>x.id===_detailId); if(u) u.password=np; localStorage.setItem('patanisha_allAccounts', JSON.stringify(all));
+    let all=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); let u=all.find(x=>x.id===_DetailId); if(u) u.password=np; localStorage.setItem('patanisha_allAccounts', JSON.stringify(all));
     ['patanishaUsers','patanishaUsers_male'].forEach(k=>{ let arr=JSON.parse(localStorage.getItem(k)||'[]'); let x=arr.find(y=>y.id===_detailId); if(x) x.password=np; localStorage.setItem(k, JSON.stringify(arr)); });
   }catch(e){}
   document.getElementById('detailResetMsg').textContent='✅ Login password reset to: '+np+' — tell user on WhatsApp';
@@ -316,7 +323,7 @@ async function resetWithdrawalPin(){
   if(!/^\d{4,6}$/.test(pin)) return showAlert('PIN must be 4-6 digits','error');
   if(!confirm('Reset Withdrawal PIN for '+_detailId+' to: '+pin+' ?')) return;
   let db=getDB();
-  if(db){ try{ await db.ref('users/'+_detailId+'/withdrawalPin').set(pin); await db.ref('users/'+_detailId+'/pin').set(pin); await db.ref('users/'+_detailId+'/pinResetAt').set(Date.now()); }catch(e){} }
+  if(db){ try{ await db.ref('users/'+_DetailId+'/withdrawalPin').set(pin); await db.ref('users/'+_detailId+'/pin').set(pin); await db.ref('users/'+_detailId+'/pinResetAt').set(Date.now()); }catch(e){} }
   // Local fallback - Female app on same phone reads patanisha_pin_<id>
   try{ localStorage.setItem('patanisha_pin_'+_detailId, pin); }catch(e){}
   document.getElementById('detailResetMsg').textContent='✅ Withdrawal PIN reset to: '+pin+' — tell lady on WhatsApp';
