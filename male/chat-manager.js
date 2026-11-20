@@ -1,15 +1,10 @@
 // ===== male/chat-manager.js - MALE PAID - HD VIDEO 720p + RINGTONE + AUTO-CUT <50 + VOICE RECORDER =====
-// Male: 1st message FREE, then 10 coins/msg, Voice 50/min, Video 100/min
-// RULE: Lady calls Man = MAN PAYS. If man <50 coins, incoming call is auto-rejected with "insufficient_coins"
-// FIX: Inbox NEVER waits for Firebase. Shows instantly.
-// FIX: Inbox ALSO discovers chats from Firebase - even if never talked on THIS phone
-// FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
-// FIX: Chat header CLEAN - only Back, Photo, Name, Coins, Follow on top. All other buttons at bottom.
-// NEW: Call events - Missed / Rejected / Insufficient / Ended - saved to chat + Call Log popup
-// FIXED: Earnings now actually CREDIT lady's users/<id>/coins, not just push earnings row.
-// FIXED: 1st FREE message credits 0. Paid message / gift / call minute credits lady.
+// RULE: MAN PAYS ALWAYS. Lady calls Man = MAN PAYS. Lady never pays for calls.
+// FIX: Double missed calls - dedupe by callId + status + 60s bucket, single recorder only
+// FIX: Insufficient coins shows POPUP with Recharge button, not just toast + hang
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
+function isMale(){ return myProfile && String(myProfile.gender||'').toLowerCase().startsWith('male'); }
 function saveMyProfileMale(){
   if(typeof myProfile==='undefined'||!myProfile) return;
   localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile));
@@ -60,11 +55,6 @@ function deductCoins(amount, reason, toUser){
   let hc=document.getElementById('chatHeaderCoins'); if(hc) hc.textContent='🪙 '+(myProfile.coins||0);
   return true;
 }
-// ===== FIXED: Credit lady - writes earnings + actually credits users/<id>/coins =====
-// lady may be an object {id, displayId} or a string id.
-// Female reads earnings/<myProfile.id> where myProfile.id is her INTERNAL Firebase key,
-// so we credit the internal id. If displayId differs we ALSO check users/<displayId>
-// and credit it only if that node exists, so PT... vs internal-key mismatch can't lose money.
 function creditLady(lady, amount, reason){
   try{
     if(!lady || !amount || !getDB()) return;
@@ -76,11 +66,9 @@ function creditLady(lady, amount, reason){
     db.ref('earnings/'+ladyId).push(payload).catch(function(){});
     db.ref('coinHistory/'+ladyId).push(payload).catch(function(){});
     db.ref('users/'+ladyId+'/coins').transaction(function(c){ return (Number(c)||0)+Number(amount); });
-    // Also write earnings row under displayId so Female sees it even if her id === displayId
     if(dispId && dispId!==ladyId){
       db.ref('earnings/'+dispId).push(payload).catch(function(){});
       db.ref('coinHistory/'+dispId).push(payload).catch(function(){});
-      // Only credit coins if users/<displayId> actually exists - avoids creating orphan stub
       db.ref('users/'+dispId).once('value').then(function(s){
         if(s.exists()) db.ref('users/'+dispId+'/coins').transaction(function(c){ return (Number(c)||0)+Number(amount); });
       }).catch(function(){});
@@ -88,12 +76,38 @@ function creditLady(lady, amount, reason){
   }catch(e){ console.log('creditLady', e); }
 }
 window.creditLadyEarnings = function(ladyId, amount, reason){ creditLady(ladyId, amount, reason); };
-// ===== CALL EVENTS: Missed / Rejected / Insufficient / Ended =====
+
+// ===== FIX: Insufficient coins POPUP - never just hang =====
+function showInsufficientCoinsPopup(msg){
+  if(document.getElementById('insufficientPopup')) return;
+  var div=document.createElement('div'); div.id='insufficientPopup';
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000000;display:flex;align-items:center;justify-content:center;padding:20px';
+  div.innerHTML=`<div style="background:#fff;color:#111;border-radius:20px;padding:24px;text-align:center;max-width:340px;width:100%">
+    <div style="font-size:48px">⚠️</div>
+    <h2 style="font-size:19px;margin:8px 0">Insufficient Coins</h2>
+    <p style="font-size:14px;color:#555;line-height:1.5">${msg||'You need at least 50 coins to receive / make a call.'}</p>
+    <p style="font-size:14px;font-weight:800;margin:10px 0">Your balance: 🪙 ${myProfile?myProfile.coins||0:0}</p>
+    <button onclick="document.getElementById('insufficientPopup').remove(); if(typeof openRecharge==='function') openRecharge();" style="width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#FFD600,#FF8F00);font-weight:800;font-size:16px;cursor:pointer">💰 Recharge Now</button>
+    <button onclick="document.getElementById('insufficientPopup').remove()" style="width:100%;padding:12px;border:none;background:none;font-weight:700;margin-top:6px;cursor:pointer">Later</button>
+  </div>`;
+  document.body.appendChild(div);
+}
+
+// ===== CALL EVENTS: DEDUPED - one event per callId+status =====
 function formatCallTime(s){ s=Math.floor(s||0); if(s<60) return s+' sec'; return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+// FIX: Dedupe key uses stable callId captured at start, not _currentCallId which becomes null after cleanup.
+// Also dedupe by 60s bucket so timeout + ended-listener + endCall for same call = 1 event.
+const _recordedCallEvents = new Set();
 function recordCallEvent(toUser, type, status, seconds){
   if(!myProfile || !toUser || !toUser.id) return;
-  if(window._lastCallEventKey === _currentCallId+'_'+status) return;
-  window._lastCallEventKey = _currentCallId+'_'+status;
+  const callId = window._activeCallIdForEvent || _currentCallId || 'unknown';
+  const bucket = Math.floor(Date.now()/60000);
+  const key = callId+'_'+status+'_'+toUser.id+'_'+bucket;
+  if(_recordedCallEvents.has(key)) return;
+  _recordedCallEvents.add(key);
+  // Keep set small
+  if(_recordedCallEvents.size>50){ const first=_recordedCallEvents.values().next().value; _recordedCallEvents.delete(first); }
+
   var labels={
     missed:'📞 Missed '+(type==='video'?'Video':'Voice')+' call from '+(myProfile.name||''),
     rejected:'📵 '+(type==='video'?'Video':'Voice')+' call rejected / declined by '+(toUser.name||''),
@@ -102,7 +116,7 @@ function recordCallEvent(toUser, type, status, seconds){
     cancelled:'📞 Missed '+(type==='video'?'Video':'Voice')+' call from '+(myProfile.name||'')
   };
   var text=labels[status]||labels.missed;
-  var entry={fromId:myProfile.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',toId:toUser.id,toName:toUser.name||'',type:type||'voice',status:status||'missed',seconds:seconds||0,text:text,ts:Date.now()};
+  var entry={fromId:myProfile.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',toId:toUser.id,toName:toUser.name||'',type:type||'voice',status:status||'missed',seconds:seconds||0,text:text,ts:Date.now(),callId:callId};
   try{
     if(window.PatanishaDB){
       window.PatanishaDB.ref('missedCalls/'+toUser.id).push(entry);
@@ -131,6 +145,13 @@ function callEventIcon(e){ if(e.status==='rejected'||e.callStatus==='rejected') 
 function callEventTitle(e){ if(e.status==='rejected'||e.callStatus==='rejected') return 'Rejected'; if(e.status==='insufficient'||e.callStatus==='insufficient') return 'Insufficient Coins'; if(e.status==='ended'||e.callStatus==='ended') return 'Call Ended'; return 'Missed '+(e.type==='video'||e.callType==='video'?'Video':'Voice')+' Call'; }
 function showMissedCallsPopup(list){
   if(!list||!list.length) return; if(document.getElementById('missedPopup')) return;
+  // FIX: Dedupe popup list by callId+status so double entries never show twice
+  const seen=new Set();
+  list=list.filter(m=>{
+    const k=(m.callId||'')+'_'+(m.status||m.callStatus||'')+'_'+(m.fromId||'')+'_'+(m.toId||'');
+    if(seen.has(k)) return false; seen.add(k); return true;
+  });
+  if(!list.length) return;
   var html=list.map(function(m,i){
     var when=new Date(m.ts||Date.now()).toLocaleString();
     return `<div style="display:flex;gap:10px;align-items:center;background:#fff;padding:12px;border-radius:12px;margin-bottom:8px">
@@ -197,7 +218,6 @@ function getMaleChatUsers(){
     return true;
   });
 }
-// ===== FOLLOW INSIDE CHAT =====
 async function updateChatFollowUI(){
   let btn=document.getElementById('chatFollowBtn'); let u=(window.ChatManager && ChatManager.currentChatUser);
   if(!btn||!u||!myProfile) return;
@@ -222,6 +242,7 @@ async function sendFriendRequestInChat(){
 let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false, _callTimer=null, _callSeconds=0;
 let _ringtoneTimer=null, _ringCtx=null;
 let _callConnected=false, _callAnswered=false, _callEventRecorded=false;
+let _billingStarted=false;
 function _callDB(){ return getDB(); }
 function _playRingtone(){
   try{
@@ -279,7 +300,7 @@ function _showCallUI(user, status, isIncoming){
     <img src="${user.avatar||''}" style="width:80px;height:80px;border-radius:50%;border:3px solid #25D366;object-fit:cover;margin:0 auto">
     <div style="font-size:22px;font-weight:700;margin-top:8px">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div>
     <div id="callStatusText" style="color:#fff;font-size:15px;margin-top:4px">${status}</div>
-    <div id="callCoinText" style="color:#F59E0B;font-size:14px;font-weight:700;margin-top:4px">Coins: ${myProfile?myProfile.coins||0:0}</div>
+    <div id="callCoinText" style="color:#F59E0B;font-size:14px;font-weight:700;margin-top:4px">Coins: ${myProfile?myProfile.coins||0:0} ${isMale()?'• You pay':''}</div>
   </div>
   <video id="localVideo" autoplay muted playsinline style="position:absolute;bottom:110px;right:14px;width:120px;height:170px;object-fit:cover;border-radius:14px;border:2px solid #fff;display:none;z-index:4;background:#222;filter:brightness(1.25) contrast(1.1)"></video>
   <div style="position:absolute;bottom:0;left:0;right:0;padding:18px;display:flex;gap:16px;justify-content:center;z-index:5;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent)">
@@ -287,39 +308,44 @@ function _showCallUI(user, status, isIncoming){
     <button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button>
     <button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button>
   </div>
-  <div style="position:absolute;bottom:96px;left:0;right:0;text-align:center;font-size:12px;color:#ccc;z-index:4">${_currentCallType==='video'?'Video: 100 coins/min • Auto-ends below 50 coins':'Voice: 50 coins/min • Auto-ends below 50 coins'}</div>`;
+  <div style="position:absolute;bottom:96px;left:0;right:0;text-align:center;font-size:12px;color:#ccc;z-index:4">${_currentCallType==='video'?'Video: 100 coins/min • Auto-ends below 50 coins':'Voice: 50 coins/min • Auto-ends below 50 coins'} ${isMale()?'• Charged to you':''}</div>`;
   cs.style.display='flex';
 }
 function _cleanupCall(){
   _stopRingtone();
   if(_callTimer){ clearInterval(_callTimer); _callTimer=null; }
+  _billingStarted=false;
   if(_peerConn){ try{_peerConn.close();}catch(e){} _peerConn=null; }
   if(_localStream){ try{ _localStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} _localStream=null; }
   document.querySelectorAll('#callScreen').forEach(function(el){ el.style.display='none'; el.remove(); });
+  window._activeCallIdForEvent = _currentCallId;
   _currentCallId=null; _callConnected=false; _callAnswered=false;
 }
+// FIX: MAN PAYS ONLY. If this device is Female, never deduct, never start billing timer.
 function _startCallBilling(){
+  if(_billingStarted) return; // FIX: ontrack + answer both called this before = double billing
+  if(!isMale()) return; // Lady never pays for calls
+  _billingStarted=true;
   _callSeconds=0;
   if(_callTimer) clearInterval(_callTimer);
   _callTimer=setInterval(()=>{
     _callSeconds++;
     if(myProfile && (myProfile.coins||0) < 50){
-      if(typeof showToast!=='undefined') showToast('⚠️ Coins below 50 - call ended. Recharge!');
       if(!_callEventRecorded && ChatManager.currentChatUser){ _callEventRecorded=true; recordCallEvent(ChatManager.currentChatUser, _currentCallType, 'insufficient', _callSeconds); }
       ChatManager.endCall();
+      showInsufficientCoinsPopup('Call ended because your coins went below 50. Recharge to continue calling.');
       return;
     }
-    let ct=document.getElementById('callCoinText'); if(ct) ct.textContent='Coins: '+(myProfile?myProfile.coins||0:0);
+    let ct=document.getElementById('callCoinText'); if(ct) ct.textContent='Coins: '+(myProfile?myProfile.coins||0:0)+' • You pay';
     if(_callSeconds<=60) return;
     if((_callSeconds-60)%60===0){
       let cost=_currentCallType==='video'?VIDEO_COST_PER_MIN:VOICE_COST_PER_MIN;
       let ok=deductCoins(cost, _currentCallType==='video'?'Video Call':'Voice Call', ChatManager.currentChatUser);
       if(!ok){
-        if(typeof showToast!=='undefined') showToast('Out of coins - call ended');
         if(!_callEventRecorded && ChatManager.currentChatUser){ _callEventRecorded=true; recordCallEvent(ChatManager.currentChatUser, _currentCallType, 'insufficient', _callSeconds); }
         ChatManager.endCall();
+        showInsufficientCoinsPopup('Out of coins - call ended. Recharge to call again.');
       } else {
-        // FIXED: Lady earns what Lucus paid for this minute
         if(ChatManager.currentChatUser) creditLady(ChatManager.currentChatUser, cost, (_currentCallType==='video'?'Video Call':'Voice Call')+' from '+(myProfile?myProfile.name||'':''));
       }
     }
@@ -327,10 +353,15 @@ function _startCallBilling(){
 }
 async function _startRealCall(user, type){
   if(!user || !user.id){ if(typeof showToast!=='undefined') showToast('Select a person first'); return false; }
-  if(myProfile && (myProfile.coins||0) < 50){ if(typeof showToast!=='undefined') showToast('Need at least 50 coins to call. Recharge: KES 100 = 1000 Coins'); if(typeof openRecharge==='function') openRecharge(); return false; }
-  _currentCallType=type; _isMuted=false; _callConnected=false; _callAnswered=false; _callEventRecorded=false; window._lastCallEventKey=null;
+  // FIX: Only Male needs 50 coins to START a call. Lady calling is free for her - man pays.
+  if(isMale() && (myProfile.coins||0) < 50){
+    showInsufficientCoinsPopup('You need at least 50 coins to call. Recharge to call.');
+    return false;
+  }
+  _currentCallType=type; _isMuted=false; _callConnected=false; _callAnswered=false; _callEventRecorded=false; _billingStarted=false;
   const db=_callDB(); if(!db){ if(typeof showToast!=='undefined') showToast('Firebase not loaded'); return false; }
   _currentCallId=getChatId(myProfile.id, user.id)+'_'+Date.now();
+  window._activeCallIdForEvent=_currentCallId;
   _showCallUI(user, type==='video'?'📹 Video Calling...':'📞 Voice Calling...', false);
   try{
     _localStream=await navigator.mediaDevices.getUserMedia(_hdConstraints(type));
@@ -345,12 +376,14 @@ async function _startRealCall(user, type){
   await db.ref('calls/'+_currentCallId).set({from:myProfile.id,to:user.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',type,offer:{type:offer.type,sdp:offer.sdp},status:'ringing',createdAt:Date.now()});
   var _thisCallId=_currentCallId;
   setTimeout(async function(){
-    if(_thisCallId!==_currentCallId && _currentCallId!==null) return;
+    if(_thisCallId!==window._activeCallIdForEvent) return;
     try{
       var s=await db.ref('calls/'+_thisCallId+'/status').once('value');
       if(s.val()==='ringing' && !_callAnswered){
         await db.ref('calls/'+_thisCallId+'/status').set('missed');
-        if(typeof recordCallEvent==='function') recordCallEvent(user, type, 'missed', 0);
+        // Only caller records missed - receiver's listener will ignore status=missed, so no double
+        window._activeCallIdForEvent=_thisCallId;
+        recordCallEvent(user, type, 'missed', 0);
         if(typeof showToast!=='undefined') showToast('No answer - Missed call left 📞');
         _cleanupCall();
       }
@@ -365,10 +398,10 @@ async function _startRealCall(user, type){
     if(snap.val()==='ended'){
       db.ref('calls/'+_currentCallId+'/rejectReason').once('value').then(rs=>{
         if(rs.val()==='insufficient_coins'){
-          if(typeof showToast!=='undefined') showToast('⚠️ Insufficient coins - call ended');
-          if(!_callEventRecorded){ _callEventRecorded=true; recordCallEvent(user, type, 'insufficient', _callSeconds); }
+          showInsufficientCoinsPopup('Call ended - insufficient coins. Recharge to call again.');
+          if(!_callEventRecorded){ _callEventRecorded=true; window._activeCallIdForEvent=_currentCallId; recordCallEvent(user, type, 'insufficient', _callSeconds); }
         } else if(rs.val()==='rejected'){
-          if(!_callEventRecorded){ _callEventRecorded=true; recordCallEvent(user, type, 'rejected', 0); }
+          if(!_callEventRecorded){ _callEventRecorded=true; window._activeCallIdForEvent=_currentCallId; recordCallEvent(user, type, 'rejected', 0); }
         }
       }).catch(()=>{});
       _cleanupCall();
@@ -384,15 +417,17 @@ function _listenForIncomingCalls(){
     db.ref('calls').orderByChild('to').equalTo(myProfile.id).on('child_added', snap=>{
       const call=snap.val(); if(!call||call.status!=='ringing') return;
       if(call.from===myProfile.id) return;
-      if((myProfile.coins||0) < 50){
+      // FIX: Only Male needs 50 coins to RECEIVE. Lady receives free - man pays.
+      if(isMale() && (myProfile.coins||0) < 50){
         db.ref('calls/'+snap.key+'/status').set('ended');
         db.ref('calls/'+snap.key+'/rejectReason').set('insufficient_coins');
-        if(typeof recordCallEvent==='function') recordCallEvent({id:call.from,name:call.fromName,avatar:call.fromAvatar}, call.type, 'insufficient', 0);
-        if(typeof showToast!=='undefined') showToast('⚠️ Missed call from '+(call.fromName||'lady')+' - You have <50 coins. Recharge to receive calls!');
-        if(typeof openRecharge==='function') openRecharge();
+        window._activeCallIdForEvent=snap.key;
+        recordCallEvent({id:call.from,name:call.fromName,avatar:call.fromAvatar}, call.type, 'insufficient', 0);
+        showInsufficientCoinsPopup('Missed call from '+(call.fromName||'lady')+' - You have less than 50 coins. Recharge to receive calls!');
         return;
       }
-      _currentCallId=snap.key; _currentCallType=call.type; _callConnected=false; _callAnswered=false; _callEventRecorded=false; window._lastCallEventKey=null;
+      _currentCallId=snap.key; window._activeCallIdForEvent=snap.key;
+      _currentCallType=call.type; _callConnected=false; _callAnswered=false; _callEventRecorded=false; _billingStarted=false;
       _showCallUI({name:call.fromName||'Someone', avatar:call.fromAvatar||''}, call.type==='video'?'📹 Incoming Video Call...':'📞 Incoming Voice Call...', true);
     });
   }catch(e){}
@@ -585,7 +620,6 @@ const ChatManager = {
     let chatId=getChatId(myProfile.id, to.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:to.id,to:to.name,text:message,type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs = [...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId, this._msgs); this.renderMessages(this._msgs);
-    // FIXED: Only paid messages credit lady, and credit her coins balance too
     if(!isFirst) creditLady(to, CHAT_COST, 'Chat from '+(myProfile?myProfile.name||'':''));
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:to.id,aName:myProfile.name,bName:to.name,lastMsg:message,lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
@@ -596,19 +630,20 @@ const ChatManager = {
   startVoiceCall(user){ _listenForIncomingCalls(); return _startRealCall(user,'voice'); },
   startVideoCall(user){ _listenForIncomingCalls(); return _startRealCall(user,'video'); },
   async acceptCall(){
-    if((myProfile.coins||0) < 50){
-      if(typeof showToast!=='undefined') showToast('⚠️ Insufficient coins! Need at least 50 coins to answer. Recharge: KES 100 = 1000 Coins');
+    // FIX: Only Male needs 50 coins to ANSWER. Lady answers free - man pays.
+    if(isMale() && (myProfile.coins||0) < 50){
       const db=_callDB();
       if(_currentCallId && db){
         try{
           await db.ref('calls/'+_currentCallId+'/status').set('ended');
           await db.ref('calls/'+_currentCallId+'/rejectReason').set('insufficient_coins');
           var _c=await db.ref('calls/'+_currentCallId).once('value'); var _cv=_c.val()||{};
-          if(typeof recordCallEvent==='function') recordCallEvent({id:_cv.from,name:_cv.fromName,avatar:_cv.fromAvatar}, _cv.type||_currentCallType||'voice','insufficient',0);
+          window._activeCallIdForEvent=_currentCallId;
+          recordCallEvent({id:_cv.from,name:_cv.fromName,avatar:_cv.fromAvatar}, _cv.type||_currentCallType||'voice','insufficient',0);
         }catch(e){}
       }
       _cleanupCall();
-      if(typeof openRecharge==='function') openRecharge();
+      showInsufficientCoinsPopup('You need at least 50 coins to answer. Recharge to receive calls.');
       return;
     }
     _stopRingtone(); _callAnswered=true; _callConnected=false;
@@ -638,6 +673,7 @@ const ChatManager = {
         var snap=await db.ref('calls/'+_currentCallId).once('value');
         var call=snap.val()||{};
         var otherUser = ChatManager.currentChatUser || {id: call.from===myProfile.id?call.to:call.from, name: call.from===myProfile.id?'':call.fromName, avatar: call.fromAvatar||''};
+        window._activeCallIdForEvent=_currentCallId;
         if(call.status==='ringing' && call.to===myProfile.id && !_callAnswered){
           if(!_callEventRecorded){ _callEventRecorded=true; recordCallEvent({id:call.from,name:call.fromName,avatar:call.fromAvatar}, call.type||_currentCallType||'voice','rejected',0); }
           try{ await db.ref('calls/'+_currentCallId+'/rejectReason').set('rejected'); }catch(e){}
@@ -751,7 +787,6 @@ const ChatManager = {
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,text:gift.icon+' Sent '+gift.name+' gift',type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
-    // FIXED: Gift now credits lady's balance too, not just earnings row
     creditLady(toUser, gift.coins, 'Gift '+gift.name+' from '+(myProfile?myProfile.name||'':''));
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:gift.icon+' Gift',lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
