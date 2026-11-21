@@ -1,8 +1,18 @@
-// ===== chat-manager/female.js - FEMALE FREE - HD VIDEO 720p + FULL SCREEN + RINGTONE + VOICE RECORDER =====
-// Female: Chat / Photo / Voice / Gifts = ALL FREE
-// RULE: Lady calls Man = MAN PAYS. If man <50 coins, call is rejected, lady sees "He has insufficient coins"
-// INCOME: Only last 7 days kept. Older than 7 days auto-deleted. Swipe left on a row to delete it.
-// FIX: Double missed calls deduped. Inbox never waits for Firebase.
+// ===== chat-manager/female.js - FEMALE FREE + ESCROW + BLOCK + INCOME 7 DAYS =====
+// RULE: Lady calls Man = MAN PAYS. Lady gets coins ONLY when SHE REPLIES.
+// If no reply in 60 mins -> coins go BACK to male. Female sees "Delayed reply - refunded"
+// Female: Chat / Photo / Voice / Gifts = FREE to send, but she EARNS only on reply.
+// INCOME: Only last 7 days kept. Older auto-deleted. Swipe left to delete one entry.
+// BLOCK: Block in chat header.
+(function(){
+  try{
+    var p = JSON.parse(localStorage.getItem('patanisha_myProfile') || 'null')
+      || JSON.parse(localStorage.getItem('patanisha_myProfile_male') || 'null');
+    if(p && String(p.gender||'').toLowerCase().startsWith('male')){
+      window.location.replace('../male/index.html');
+    }
+  }catch(e){}
+})();
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
 function saveMyProfileFemale(){
@@ -31,12 +41,111 @@ function getCachedMsgs(chatId){
 function saveCachedMsgs(chatId, msgs){
   try{ localStorage.setItem('patanisha_msgs_'+chatId, JSON.stringify((msgs||[]).slice(-100))); }catch(e){}
 }
+const ESCROW_MS = 60 * 60 * 1000;
+
+// ===== ESCROW - Female side =====
+// When SHE replies, release ALL pending from that boy to herself, even if boy is offline.
+// This is the backup to male's release. Both sides check status=='pending' so no double-pay.
+async function releaseMyPending(fromUser){
+  try{
+    const db = getDB(); if(!db || !myProfile || !fromUser || !fromUser.id) return 0;
+    const snap = await db.ref('pendingEarnings/'+myProfile.id).once('value');
+    let total = 0; const toRelease = [];
+    snap.forEach(c=>{
+      const v = c.val()||{};
+      if(v.status==='pending' && v.fromId===fromUser.id && v.chatId===getChatId(myProfile.id, fromUser.id)){
+        toRelease.push({key:c.key, val:v}); total += Number(v.amount)||0;
+      }
+    });
+    if(!toRelease.length) return 0;
+    for(const item of toRelease){
+      await db.ref('pendingEarnings/'+myProfile.id+'/'+item.key+'/status').set('released');
+      // Credit herself - transaction so no double
+      await db.ref('users/'+myProfile.id+'/coins').transaction(function(c){ return (Number(c)||0)+Number(item.val.amount); });
+      await db.ref('earnings/'+myProfile.id).push({amount:Number(item.val.amount), reason:item.val.reason+' - released on reply', fromId:item.val.fromId, fromName:item.val.fromName, ts:Date.now()});
+      await db.ref('coinHistory/'+myProfile.id).push({amount:Number(item.val.amount), reason:item.val.reason+' - released on reply', fromId:item.val.fromId, fromName:item.val.fromName, ts:Date.now()});
+    }
+    // Update local coins
+    myProfile.coins = (myProfile.coins||0) + total;
+    saveMyProfileFemale();
+    const hc = document.getElementById('chatHeaderCoins'); if(hc) hc.textContent = '🪙 '+(myProfile.coins||0);
+    const chatId = getChatId(myProfile.id, fromUser.id);
+    db.ref('chats/'+chatId+'/messages').push({fromId:'system',from:'System',toId:fromUser.id,text:'✅ '+total+' coins released to you - you replied 💬',type:'call-event',callType:'escrow',callStatus:'ended',seconds:0,ts:Date.now(),time:new Date().toLocaleTimeString()}).catch(()=>{});
+    if(typeof showToast!=='undefined') showToast('✅ +'+total+' coins - you replied to '+fromUser.name);
+    return total;
+  }catch(e){ console.log('releaseMyPending',e); return 0; }
+}
+// Show how much is HELD for her in this chat - "Reply in X mins to earn"
+async function showPendingBanner(otherUser){
+  try{
+    const db = getDB(); if(!db || !myProfile || !otherUser) return;
+    const snap = await db.ref('pendingEarnings/'+myProfile.id).once('value');
+    let total=0, soonest=0;
+    snap.forEach(c=>{
+      const v=c.val()||{};
+      if(v.status==='pending' && v.fromId===otherUser.id){ total+=Number(v.amount)||0; if(!soonest||v.expiresAt<soonest) soonest=v.expiresAt; }
+    });
+    const el=document.getElementById('pendingBanner');
+    if(!el) return;
+    if(total>0){
+      const minsLeft=Math.max(0, Math.ceil((soonest-Date.now())/60000));
+      el.style.display='block';
+      el.innerHTML='⏳ <b>'+total+' coins HELD</b> from '+otherUser.name+' - reply within '+minsLeft+' min to earn! If you don\'t reply, they go back to him.';
+    } else { el.style.display='none'; }
+  }catch(e){}
+}
+// Check if any of HER pending expired (male refunded) - show delayed notice
+async function checkMyExpiredPending(){
+  try{
+    const db=getDB(); if(!db||!myProfile) return;
+    const snap=await db.ref('pendingEarnings/'+myProfile.id).once('value');
+    snap.forEach(c=>{
+      const v=c.val()||{};
+      if(v.status==='refunded' && v._notified!==1){
+        // Mark notified so we don't spam
+        db.ref('pendingEarnings/'+myProfile.id+'/'+c.key+'/_notified').set(1).catch(()=>{});
+      }
+    });
+  }catch(e){}
+}
+
+// ===== BLOCK USER =====
+async function isBlocked(otherId){
+  if(!myProfile || !otherId) return false;
+  try{ const db=getDB(); if(!db) return false; const s=await db.ref('blocks/'+myProfile.id+'/'+otherId).once('value'); return !!s.val(); }catch(e){ return false; }
+}
+async function isBlockedByOther(otherId){
+  if(!myProfile || !otherId) return false;
+  try{ const db=getDB(); if(!db) return false; const s=await db.ref('blocks/'+otherId+'/'+myProfile.id).once('value'); return !!s.val(); }catch(e){ return false; }
+}
+async function updateBlockUI(){
+  const btn=document.getElementById('chatBlockBtn'); const u=(window.ChatManager && ChatManager.currentChatUser);
+  if(!btn||!u) return;
+  const blocked=await isBlocked(u.id);
+  btn.textContent = blocked ? '🚫 Unblock' : '🚫 Block';
+  btn.style.background = blocked ? '#D32F2F' : '#333';
+  const inp=document.getElementById('chatInput');
+  if(inp){ inp.disabled=blocked; inp.placeholder = blocked ? 'You blocked this user - Unblock to chat' : inp.placeholder; }
+}
+async function toggleBlockUser(){
+  const u=(window.ChatManager && ChatManager.currentChatUser); if(!u) return;
+  const db=getDB(); if(!db) return;
+  const blocked=await isBlocked(u.id);
+  if(blocked){
+    await db.ref('blocks/'+myProfile.id+'/'+u.id).remove();
+    showToast('✅ Unblocked '+u.name);
+  } else {
+    if(!confirm('Block '+u.name+'? You will not receive their messages or calls.')) return;
+    await db.ref('blocks/'+myProfile.id+'/'+u.id).set({blockedId:u.id, blockedName:u.name, ts:Date.now()});
+    showToast('🚫 Blocked '+u.name);
+  }
+  updateBlockUI();
+}
+window.toggleBlockUser = toggleBlockUser;
 
 // ===== INCOME HISTORY - LAST 7 DAYS ONLY + SWIPE TO DELETE =====
-const INCOME_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const INCOME_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 function incomeCutoff(){ return Date.now() - INCOME_RETENTION_MS; }
-
-// Auto-delete anything older than 7 days - Firebase + local
 async function pruneOldIncome(){
   if(!myProfile || !myProfile.id) return;
   const db = getDB(); if(!db) return;
@@ -47,18 +156,22 @@ async function pruneOldIncome(){
     for(const node of ['earnings','coinHistory']){
       try{
         const snap = await db.ref(node+'/'+uid).once('value');
-        const updates = {};
-        let hasOld = false;
+        const updates = {}; let hasOld=false;
         snap.forEach(c => {
-          const v = c.val() || {};
-          const ts = v.ts || v.createdAt || 0;
-          if(ts && ts < cutoff){ updates[c.key] = null; hasOld = true; }
+          const v = c.val() || {}; const ts = v.ts || v.createdAt || 0;
+          if(ts && ts < cutoff){ updates[c.key] = null; hasOld=true; }
         });
         if(hasOld) await db.ref(node+'/'+uid).update(updates);
       }catch(e){ console.log('prune income', e); }
     }
+    // Also prune old pending that is already released/refunded older than 7 days
+    try{
+      const psnap = await db.ref('pendingEarnings/'+uid).once('value');
+      const pu={}; let hasP=false;
+      psnap.forEach(c=>{ const v=c.val()||{}; if(v.status!=='pending' && (v.ts||0) < cutoff){ pu[c.key]=null; hasP=true; } });
+      if(hasP) await db.ref('pendingEarnings/'+uid).update(pu);
+    }catch(e){}
   }
-  // Local prune
   try{
     ['patanisha_earnings_','patanisha_income_'].forEach(prefix => {
       const k = prefix + myProfile.id;
@@ -69,79 +182,48 @@ async function pruneOldIncome(){
   }catch(e){}
 }
 window.pruneOldIncome = pruneOldIncome;
-
-// Delete ONE income entry - called by swipe Delete button
 async function deleteIncomeEntry(fbKey, node){
   if(!myProfile || !myProfile.id) return;
-  const db = getDB();
-  const targetNode = node || 'earnings';
+  const db = getDB(); const targetNode = node || 'earnings';
   try{
     if(db) await db.ref(targetNode+'/'+myProfile.id+'/'+fbKey).remove();
-    // Also try coinHistory with same key (same entry is in both)
     if(db && targetNode === 'earnings') await db.ref('coinHistory/'+myProfile.id+'/'+fbKey).remove().catch(()=>{});
     if(db && targetNode === 'coinHistory') await db.ref('earnings/'+myProfile.id+'/'+fbKey).remove().catch(()=>{});
   }catch(e){}
-  // Remove row from UI instantly
-  const row = document.getElementById('income-row-'+fbKey);
-  if(row) row.remove();
-  // Update total
-  if(typeof refreshIncomeTotal === 'function') refreshIncomeTotal();
+  const row = document.getElementById('income-row-'+fbKey); if(row) row.remove();
   if(typeof showToast !== 'undefined') showToast('🗑️ Income entry deleted');
 }
 window.deleteIncomeEntry = deleteIncomeEntry;
-
-// Swipe handling - swipe left on row reveals Delete
 let _swipeStartX = 0, _swipeRow = null;
-function incomeTouchStart(e, key){
-  _swipeStartX = (e.touches ? e.touches[0].clientX : e.clientX);
-  _swipeRow = document.getElementById('income-row-'+key);
-}
+function incomeTouchStart(e, key){ _swipeStartX = (e.touches ? e.touches[0].clientX : e.clientX); _swipeRow = document.getElementById('income-row-'+key); }
 function incomeTouchMove(e, key){
   if(!_swipeRow) return;
   const x = (e.touches ? e.touches[0].clientX : e.clientX);
   const dx = x - _swipeStartX;
-  if(dx < 0 && dx > -90){
-    const inner = _swipeRow.querySelector('.income-inner');
-    if(inner) inner.style.transform = 'translateX('+dx+'px)';
-  }
+  if(dx < 0 && dx > -90){ const inner = _swipeRow.querySelector('.income-inner'); if(inner) inner.style.transform = 'translateX('+dx+'px)'; }
 }
 function incomeTouchEnd(e, key){
   if(!_swipeRow) return;
-  const inner = _swipeRow.querySelector('.income-inner');
-  if(!inner) return;
-  const m = /translateX\((-?\d+)px\)/.exec(inner.style.transform || '');
-  const dx = m ? parseInt(m[1]) : 0;
-  if(dx < -45){
-    inner.style.transform = 'translateX(-80px)';
-    inner.style.transition = 'transform .2s';
-  } else {
-    inner.style.transform = 'translateX(0px)';
-    inner.style.transition = 'transform .2s';
-  }
+  const inner = _swipeRow.querySelector('.income-inner'); if(!inner) return;
+  const m = /translateX\((-?\d+)px\)/.exec(inner.style.transform || ''); const dx = m ? parseInt(m[1]) : 0;
+  if(dx < -45){ inner.style.transform = 'translateX(-80px)'; inner.style.transition = 'transform .2s'; }
+  else { inner.style.transform = 'translateX(0px)'; inner.style.transition = 'transform .2s'; }
   _swipeRow = null;
 }
-window.incomeTouchStart = incomeTouchStart;
-window.incomeTouchMove = incomeTouchMove;
-window.incomeTouchEnd = incomeTouchEnd;
-
-// Show Income History popup - last 7 days only, swipe to delete
+window.incomeTouchStart = incomeTouchStart; window.incomeTouchMove = incomeTouchMove; window.incomeTouchEnd = incomeTouchEnd;
 async function showIncomeHistory(){
   if(document.getElementById('incomePopup')) return;
   await pruneOldIncome();
-  const db = getDB();
-  let list = [];
+  const db = getDB(); let list=[]; let pendingTotal=0;
   if(db && myProfile && myProfile.id){
-    try{
-      const snap = await db.ref('earnings/'+myProfile.id).once('value');
-      snap.forEach(c => { const v = c.val() || {}; v._key = c.key; v._node = 'earnings'; list.push(v); });
-    }catch(e){}
+    try{ const snap = await db.ref('earnings/'+myProfile.id).once('value'); snap.forEach(c => { const v = c.val() || {}; v._key = c.key; v._node = 'earnings'; list.push(v); }); }catch(e){}
+    try{ const psnap = await db.ref('pendingEarnings/'+myProfile.id).once('value'); psnap.forEach(c=>{ const v=c.val()||{}; if(v.status==='pending') pendingTotal+=Number(v.amount)||0; }); }catch(e){}
   }
   const cutoff = incomeCutoff();
   list = list.filter(x => (x.ts||0) >= cutoff).sort((a,b) => (b.ts||0)-(a.ts||0));
   const total = list.reduce((s,x) => s + (Number(x.amount)||0), 0);
   const rows = list.length ? list.map(x => {
-    const when = new Date(x.ts||Date.now()).toLocaleString();
-    const label = x.reason || 'Chat';
+    const when = new Date(x.ts||Date.now()).toLocaleString(); const label = x.reason || 'Chat';
     return `<div id="income-row-${x._key}" style="position:relative;overflow:hidden;background:#fff;border-radius:12px;margin-bottom:8px">
       <div style="position:absolute;right:0;top:0;bottom:0;width:80px;background:#D32F2F;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;cursor:pointer" onclick="deleteIncomeEntry('${x._key}','${x._node}')">🗑️ Delete</div>
       <div class="income-inner" style="position:relative;background:#fff;padding:12px;display:flex;gap:10px;align-items:center;touch-action:pan-y"
@@ -154,19 +236,18 @@ async function showIncomeHistory(){
       </div>
     </div>`;
   }).join('') : `<div style="text-align:center;padding:30px;color:#888">No income in last 7 days<br><span style="font-size:12px">Older income is auto-deleted after 7 days</span></div>`;
-
   const div = document.createElement('div'); div.id = 'incomePopup';
   div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999999;display:flex;align-items:flex-end;justify-content:center';
   div.innerHTML = `<div style="width:100%;max-width:650px;background:#f5f5f5;border-radius:25px 25px 0 0;padding:16px;max-height:85vh;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:19px">💰 Income - Last 7 Days</b><button onclick="document.getElementById('incomePopup').remove()" style="border:none;background:none;font-size:28px;cursor:pointer">×</button></div>
-    <div style="background:#25D366;color:#fff;padding:12px;border-radius:12px;text-align:center;margin-bottom:12px"><b style="font-size:20px">Total: +${total} coins</b><div style="font-size:12px;opacity:.9">${list.length} entries • Older than 7 days auto-deleted • Swipe left to delete</div></div>
+    <div style="background:#25D366;color:#fff;padding:12px;border-radius:12px;text-align:center;margin-bottom:8px"><b style="font-size:20px">Total Earned: +${total} coins</b><div style="font-size:12px;opacity:.9">${list.length} entries • Older than 7 days auto-deleted • Swipe left to delete</div></div>
+    ${pendingTotal>0?`<div style="background:#FF9800;color:#fff;padding:10px;border-radius:12px;text-align:center;margin-bottom:12px">⏳ HELD: ${pendingTotal} coins - reply to boys to release them (60 min)</div>`:''}
     ${rows}
     <button onclick="document.getElementById('incomePopup').remove()" style="width:100%;padding:14px;border:none;border-radius:14px;background:#eee;font-weight:800;cursor:pointer;margin-top:4px">Close</button>
   </div>`;
   document.body.appendChild(div);
 }
 window.showIncomeHistory = showIncomeHistory;
-function refreshIncomeTotal(){ /* total recalculated on next open */ }
 
 // ===== CALL EVENTS: DEDUPED =====
 function formatCallTime(s){ s=Math.floor(s||0); if(s<60) return s+' sec'; return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
@@ -212,8 +293,8 @@ function recordCallEvent(toUser, type, status, seconds){
 function recordMissedCall(toUser, type){ return recordCallEvent(toUser, type, 'missed', 0); }
 function getMissedCalls(){ if(!myProfile) return []; try{ return JSON.parse(localStorage.getItem('patanisha_missed_'+myProfile.id)||'[]'); }catch(e){ return []; } }
 function clearMissedCalls(){ if(!myProfile) return; try{ localStorage.removeItem('patanisha_missed_'+myProfile.id); }catch(e){} try{ if(window.PatanishaDB) window.PatanishaDB.ref('missedCalls/'+myProfile.id).remove(); }catch(e){} }
-function callEventIcon(e){ if(e.status==='rejected'||e.callStatus==='rejected') return '📵'; if(e.status==='insufficient'||e.callStatus==='insufficient') return '⚠️'; if(e.status==='ended'||e.callStatus==='ended') return '✅'; return (e.type==='video'||e.callType==='video')?'📹':'📞'; }
-function callEventTitle(e){ if(e.status==='rejected'||e.callStatus==='rejected') return 'Rejected'; if(e.status==='insufficient'||e.callStatus==='insufficient') return 'Insufficient Coins'; if(e.status==='ended'||e.callStatus==='ended') return 'Call Ended'; return 'Missed '+(e.type==='video'||e.callType==='video'?'Video':'Voice')+' Call'; }
+function callEventIcon(e){ if(e.status==='rejected'||e.callStatus==='rejected') return '📵'; if(e.status==='insufficient'||e.callStatus==='insufficient') return '↩️'; if(e.status==='ended'||e.callStatus==='ended') return '✅'; if(e.callType==='escrow') return '⏳'; return (e.type==='video'||e.callType==='video')?'📹':'📞'; }
+function callEventTitle(e){ if(e.status==='rejected'||e.callStatus==='rejected') return 'Rejected'; if(e.status==='insufficient'||e.callStatus==='insufficient') return 'Refund'; if(e.status==='ended'||e.callStatus==='ended') return 'Call Ended'; return 'Missed '+(e.type==='video'||e.callType==='video'?'Video':'Voice')+' Call'; }
 function showMissedCallsPopup(list){
   if(!list||!list.length) return; if(document.getElementById('missedPopup')) return;
   const seen=new Set();
@@ -308,7 +389,6 @@ async function sendFriendRequestInChat(){
   let u=(window.ChatManager && ChatManager.currentChatUser); if(!u) return;
   if(typeof sendFriendRequest==='function'){ sendFriendRequest(u); return; }
 }
-// ===== REAL CALLS - WebRTC HD + RINGTONE + FULL SCREEN VIDEO =====
 let _peerConn=null, _localStream=null, _currentCallId=null, _currentCallType='voice', _isMuted=false, _callListening=false, _callTimer=null, _callSeconds=0;
 let _ringtoneTimer=null, _ringCtx=null;
 let _callConnected=false, _callAnswered=false, _callEventRecorded=false;
@@ -378,7 +458,7 @@ function _showCallUI(user, status, isIncoming){
     <button onclick="ChatManager.toggleMute()" style="width:60px;height:60px;background:#333;color:#fff;border:none;border-radius:50%;font-size:20px;cursor:pointer">🎤</button>
     <button onclick="ChatManager.endCall()" style="width:70px;height:70px;background:red;border:none;border-radius:50%;font-size:30px;cursor:pointer">📵</button>
   </div>
-  <div style="position:absolute;bottom:96px;left:0;right:0;text-align:center;font-size:12px;color:#ccc;z-index:4">FREE for ladies • Man pays: Voice 50 / Video 100 coins per min</div>`;
+  <div style="position:absolute;bottom:96px;left:0;right:0;text-align:center;font-size:12px;color:#ccc;z-index:4">FREE for ladies • Man pays: Voice 50 / Video 100 coins per min • Reply to earn</div>`;
   cs.style.display='flex';
 }
 function _cleanupCall(){
@@ -391,7 +471,6 @@ function _cleanupCall(){
   window._activeCallIdForEvent = _currentCallId;
   _currentCallId=null; _callConnected=false; _callAnswered=false;
 }
-// Female never pays - timer only, no deduct
 function _startCallBilling(){
   if(_billingStarted) return;
   _billingStarted=true;
@@ -404,6 +483,8 @@ function _startCallBilling(){
 }
 async function _startRealCall(user, type){
   if(!user || !user.id){ if(typeof showToast!=='undefined') showToast('Select a person first'); return false; }
+  if(await isBlocked(user.id)){ showToast('You blocked '+user.name); return false; }
+  if(await isBlockedByOther(user.id)){ showToast('You are blocked by '+user.name); return false; }
   _currentCallType=type; _isMuted=false; _callConnected=false; _callAnswered=false; _callEventRecorded=false; _billingStarted=false;
   const db=_callDB(); if(!db){ if(typeof showToast!=='undefined') showToast('Firebase not loaded'); return false; }
   _currentCallId=getChatId(myProfile.id, user.id)+'_'+Date.now();
@@ -459,9 +540,10 @@ function _listenForIncomingCalls(){
   if(_callListening) return; _callListening=true;
   const db=_callDB(); if(!db||!myProfile) return;
   try{
-    db.ref('calls').orderByChild('to').equalTo(myProfile.id).on('child_added', snap=>{
+    db.ref('calls').orderByChild('to').equalTo(myProfile.id).on('child_added', async snap=>{
       const call=snap.val(); if(!call||call.status!=='ringing') return;
       if(call.from===myProfile.id) return;
+      if(await isBlocked(call.from)){ db.ref('calls/'+snap.key+'/status').set('ended'); db.ref('calls/'+snap.key+'/rejectReason').set('rejected'); return; }
       _currentCallId=snap.key; window._activeCallIdForEvent=snap.key;
       _currentCallType=call.type; _callConnected=false; _callAnswered=false; _callEventRecorded=false; _billingStarted=false;
       _showCallUI({name:call.fromName||'Someone', avatar:call.fromAvatar||''}, call.type==='video'?'📹 Incoming Video Call...':'📞 Incoming Voice Call...', true);
@@ -533,7 +615,7 @@ const ChatManager = {
   closeInbox(){ let el=document.getElementById('chatInboxPopup'); if(el) el.remove(); },
   openChatByIndex(idx){ let u=this.getChatUsers()[idx]; if(u) this.openChat(u); },
   currentChatUser:null, currentChatId:null, _listener:null, _msgs:[],
-  openChat(user){
+  async openChat(user){
     _listenForIncomingCalls();
     saveTalkedTo(user);
     if(typeof recordProfileVisit==='function'){ try{ recordProfileVisit(user); }catch(e){} }
@@ -541,22 +623,27 @@ const ChatManager = {
     let old=document.getElementById('chatPopup'); if(old) old.remove();
     if(this._listener && this.currentChatId){ try{ getDB().ref('chats/'+this.currentChatId+'/messages').off('value', this._listener); }catch(e){} }
     this.currentChatId=getChatId(myProfile.id, user.id);
+    const blocked = await isBlocked(user.id);
+    const blockedBy = await isBlockedByOther(user.id);
     let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#0D1117;z-index:99999;display:flex;flex-direction:column;color:#fff;height:100dvh">
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#FF8C00;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:6px;padding:10px 12px;background:#FF8C00;flex-shrink:0">
       <button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0">← Back</button>
       <img src="${user.avatar||'https://via.placeholder.com/80'}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0">
       <div style="flex:1;min-width:0;line-height:1.2">
         <b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;font-size:15px">${typeof shortName!=='undefined'?shortName(user.name):user.name}</b>
-        <div style="font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">● Online • FREE • You earn</div>
+        <div style="font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">● Online • FREE • Reply to earn</div>
         <div id="chatHeaderCoins" style="font-size:12px;color:#FFD700;font-weight:800;white-space:nowrap">🪙 ${myProfile?myProfile.coins||0:0}</div>
       </div>
-      <button id="chatFollowBtn" onclick="toggleFollowInChat()" style="background:#2196F3;color:#fff;border:2px solid #fff;padding:9px 12px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Follow</button>
+      <button id="chatFollowBtn" onclick="toggleFollowInChat()" style="background:#2196F3;color:#fff;border:2px solid #fff;padding:9px 10px;border-radius:20px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Follow</button>
+      <button id="chatBlockBtn" onclick="toggleBlockUser()" style="background:${blocked?'#D32F2F':'#333'};color:#fff;border:2px solid #fff;padding:9px 10px;border-radius:20px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0">${blocked?'🚫 Unblock':'🚫 Block'}</button>
     </div>
+    ${blocked||blockedBy?`<div style="background:#D32F2F;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:700">${blocked?'🚫 You blocked this user. Unblock to chat again.':'🚫 This user blocked you.'}</div>`:''}
+    <div id="pendingBanner" style="display:none;background:#FF9800;color:#fff;text-align:center;padding:8px 10px;font-size:13px;font-weight:700"></div>
     <div id="chatMessages" style="flex:1;min-height:0;overflow-y:auto;padding:15px 15px 10px;background:#0D1117"></div>
     <div style="background:#161B22;border-top:1px solid #30363D;padding:8px 10px calc(8px + env(safe-area-inset-bottom));flex-shrink:0">
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
         <button onclick="ChatManager.startVoiceMessage(ChatManager.currentChatUser.name)" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#21262D;font-size:20px;cursor:pointer;line-height:1" title="Voice message">🎤</button>
-        <input id="chatInput" placeholder="Type message... FREE" style="flex:1;min-width:0;padding:13px 16px;border-radius:25px;border:none;background:#21262D;color:#fff;font-size:15px;outline:none">
+        <input id="chatInput" placeholder="${blocked||blockedBy?'Blocked':'Type message... FREE • Reply to earn'}" ${blocked||blockedBy?'disabled':''} style="flex:1;min-width:0;padding:13px 16px;border-radius:25px;border:none;background:#21262D;color:#fff;font-size:15px;outline:none">
         <button onclick="ChatManager.toggleEmojiPanel()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:none;font-size:26px;cursor:pointer;line-height:1" title="Emoji">😊</button>
         <button onclick="ChatManager.sendChatMessage()" style="width:42px;height:42px;flex-shrink:0;border:none;border-radius:50%;background:#FF8C00;color:#fff;font-size:18px;cursor:pointer;line-height:1" title="Send">✈️</button>
       </div>
@@ -574,6 +661,8 @@ const ChatManager = {
     this.enableChatProtection();
     this.startListening();
     updateChatFollowUI();
+    updateBlockUI();
+    showPendingBanner(user);
     let inp=document.getElementById('chatInput'); if(inp) inp.addEventListener('keydown',e=>{if(e.key==='Enter') ChatManager.sendChatMessage();});
   },
   _chatProtected:false,
@@ -613,18 +702,19 @@ const ChatManager = {
         let msgs=[]; snap.forEach(c=>{ let v=c.val(); if(v) msgs.push(v); });
         msgs.sort((a,b)=>(a.ts||0)-(b.ts||0));
         this._msgs=msgs; saveCachedMsgs(this.currentChatId, msgs); this.renderMessages(msgs);
+        if(this.currentChatUser) showPendingBanner(this.currentChatUser);
       }, (err)=>{ console.log('chat load err',err); });
       setTimeout(()=>{ if(_got) return; ref.once('value').then(s=>{ let m=[]; s.forEach(c=>m.push(c.val())); m.sort((a,b)=>(a.ts||0)-(b.ts||0)); if(m.length){ this._msgs=m; saveCachedMsgs(this.currentChatId,m); this.renderMessages(m); } }).catch(()=>{}); }, 2000);
     }catch(e){ console.log(e); }
   },
   renderMessages(msgs){
     let box=document.getElementById('chatMessages'); if(!box) return;
-    if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#8B949E;padding:30px">Say Hi to '+(typeof shortName!=='undefined'?shortName(this.currentChatUser?this.currentChatUser.name:'him'):this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">All FREE for ladies • You earn</span></div>'; return; }
+    if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#8B949E;padding:30px">Say Hi to '+(typeof shortName!=='undefined'?shortName(this.currentChatUser?this.currentChatUser.name:'him'):this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">All FREE for ladies • Reply to earn</span></div>'; return; }
     box.innerHTML=msgs.map(m=>{
       if(m.type==='missed' || m.type==='call-event'){
         var st=m.callStatus||m.status||'missed';
-        var bg=st==='rejected'?'#D32F2F':st==='insufficient'?'#FF8C00':st==='ended'?'#25D366':'#333';
-        var icon=st==='rejected'?'📵':st==='insufficient'?'⚠️':st==='ended'?'✅':'📞';
+        var bg=st==='rejected'?'#D32F2F':st==='insufficient'?'#FF8C00':st==='ended'?'#25D366':st==='held'?'#FF9800':'#333';
+        var icon=st==='rejected'?'📵':st==='insufficient'?'↩️':st==='ended'?'✅':st==='held'?'⏳':'📞';
         return `<div style="text-align:center;margin:10px 0"><span style="display:inline-block;background:${bg};color:#fff;padding:8px 14px;border-radius:20px;font-size:13px">${icon} ${String(m.text||'Call event').replace(/</g,'&lt;')}<div style="font-size:10px;color:#eee;margin-top:2px">${m.time||''}</div></span></div>`;
       }
       let mine=(m.fromId===myProfile.id);
@@ -635,15 +725,17 @@ const ChatManager = {
   },
   renderChat(userName){ if(this._msgs) this.renderMessages(this._msgs); },
   closeChat(){ if(this._listener && this.currentChatId){ try{ getDB().ref('chats/'+this.currentChatId+'/messages').off('value', this._listener); }catch(e){} } this._listener=null; let el=document.getElementById('chatPopup'); if(el) el.remove(); if(window.ChatManager) window.ChatManager.openInbox(); },
-  sendChatMessage(){
+  async sendChatMessage(){
     let ep=document.getElementById('emojiPanel'); if(ep) ep.style.display='none';
     let inp=document.getElementById('chatInput'); if(!inp||!this.currentChatUser) return;
     let msg=inp.value; if(!msg.trim()) return;
-    let ok=this.sendMessage(this.currentChatUser,msg); if(ok) inp.value='';
+    let ok=await this.sendMessage(this.currentChatUser,msg); if(ok) inp.value='';
   },
-  sendMessage(toUser, message){
+  async sendMessage(toUser, message){
     if(!message.trim()) return false;
     let to=(typeof toUser==='string')?{name:toUser,id:toUser}:toUser;
+    if(await isBlocked(to.id)){ showToast('You blocked '+to.name); return false; }
+    if(await isBlockedByOther(to.id)){ showToast('You are blocked by '+to.name); return false; }
     saveTalkedTo(to);
     let db=getDB(); if(!db){ showToast('Firebase not loaded - reload page'); return false; }
     let chatId=getChatId(myProfile.id, to.id);
@@ -651,6 +743,9 @@ const ChatManager = {
     this._msgs = [...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId, this._msgs); this.renderMessages(this._msgs);
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:to.id,aName:myProfile.name,bName:to.name,lastMsg:message,lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
+    // ESCROW: Her reply releases her held coins - even if boy offline
+    const released = await releaseMyPending(to);
+    if(released>0) showPendingBanner(to);
     return true;
   },
   loadChat(to){ return {messages:this._msgs||[],msgCount:(this._msgs||[]).length}; },
@@ -790,14 +885,17 @@ const ChatManager = {
     document.body.insertAdjacentHTML('beforeend', html);
   },
   selectGift(index,giftPanelId){ let g=this.giftList[index]; if(!g) return; this.sendGift(g,this.currentChatUser,giftPanelId); },
-  sendGift(gift,toUser,giftPanelId){
+  async sendGift(gift,toUser,giftPanelId){
     if(typeof myProfile==='undefined'||!myProfile) return false;
+    if(await isBlocked(toUser.id)){ showToast('You blocked '+toUser.name); return false; }
     saveTalkedTo(toUser);
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,text:gift.icon+' Sent '+gift.name+' gift',type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:gift.icon+' Gift',lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
+    // Her gift message also counts as a reply - release pending from this boy
+    await releaseMyPending(toUser);
     if(document.getElementById(giftPanelId)) document.getElementById(giftPanelId).remove();
     showToast('🎁 Gift sent!');
   }
