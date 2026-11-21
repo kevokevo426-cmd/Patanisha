@@ -5,23 +5,6 @@
 // INCOME: Only last 7 days kept. Older auto-deleted. Swipe left to delete one entry.
 // BLOCK: Block in chat header.
 // FIXED: Female-only profile (no flip to Lucus on refresh), 1 missed call = 1 bubble, clean Call Log
-// FIXED 2: Photo + Voice replies now ALSO release escrow (was text/gift only in 907-line version)
-// LINE COUNT: Male = 935 lines because male has createPending + deduct + refund + per-minute billing.
-// Female MUST NOT have those (she never pays). Female has release + banner + watcher instead.
-// So 940 lines here = complete, not missing. Do not copy male billing into female.
-// ============================================================
-// CONTRACT - DO NOT CHANGE THESE PATHS (male + female must match):
-// pendingEarnings/{ladyId}/{key} = {fromId,fromName,toId,chatId,amount,reason,
-//   status:'pending'|'released'|'refunded',ts,expiresAt}
-// earnings/{ladyId} / coinHistory/{ladyId} = released income
-// chats/{chatId}/messages/{deterministicKey} = call-event / escrow bubbles
-// blocks/{myId}/{otherId} = block record
-// missedCalls/{toId} = call log
-// calls/{callId} = WebRTC signalling
-// Male creates pending. Female releases pending on ANY reply.
-// Male refunds pending after 60 mins if still pending.
-// Both sides write call-events with SAME deterministic key = 1 call = 1 bubble.
-// ============================================================
 (function(){
   try{
     var p = JSON.parse(localStorage.getItem('patanisha_myProfile_female') || 'null');
@@ -63,7 +46,6 @@ function saveCachedMsgs(chatId, msgs){
   try{ localStorage.setItem('patanisha_msgs_'+chatId, JSON.stringify((msgs||[]).slice(-100))); }catch(e){}
 }
 const ESCROW_MS = 60 * 60 * 1000;
-// ===== ESCROW - Female side =====
 async function releaseMyPending(fromUser){
   try{
     const db = getDB(); if(!db || !myProfile || !fromUser || !fromUser.id) return 0;
@@ -114,42 +96,14 @@ async function checkMyExpiredPending(){
   try{
     const db=getDB(); if(!db||!myProfile) return;
     const snap=await db.ref('pendingEarnings/'+myProfile.id).once('value');
-    let refundedTotal=0, refundedFrom='';
     snap.forEach(c=>{
       const v=c.val()||{};
       if(v.status==='refunded' && v._notified!==1){
-        refundedTotal+=Number(v.amount)||0; refundedFrom=v.fromName||refundedFrom;
         db.ref('pendingEarnings/'+myProfile.id+'/'+c.key+'/_notified').set(1).catch(()=>{});
       }
     });
-    if(refundedTotal>0 && typeof showToast!=='undefined') showToast('⏳ Delayed reply - '+refundedTotal+' coins from '+(refundedFrom||'him')+' were refunded');
   }catch(e){}
 }
-let _pendingWatcherChatId=null, _pendingWatcherRef=null;
-function watchPendingForChat(otherUser){
-  try{
-    const db=getDB(); if(!db||!myProfile||!otherUser) return;
-    const chatId=getChatId(myProfile.id, otherUser.id);
-    if(_pendingWatcherChatId===chatId && _pendingWatcherRef) return;
-    if(_pendingWatcherRef){ try{ _pendingWatcherRef.off('value'); }catch(e){} }
-    _pendingWatcherChatId=chatId;
-    _pendingWatcherRef=db.ref('pendingEarnings/'+myProfile.id);
-    _pendingWatcherRef.on('value', function(){
-      if(window.ChatManager && ChatManager.currentChatUser && ChatManager.currentChatUser.id===otherUser.id){
-        showPendingBanner(otherUser); checkMyExpiredPending();
-      }
-    });
-  }catch(e){}
-}
-async function getPendingTotal(){
-  try{
-    const db=getDB(); if(!db||!myProfile) return 0;
-    const snap=await db.ref('pendingEarnings/'+myProfile.id).once('value');
-    let t=0; snap.forEach(c=>{ const v=c.val()||{}; if(v.status==='pending') t+=Number(v.amount)||0; });
-    return t;
-  }catch(e){ return 0; }
-}
-// ===== BLOCK USER =====
 async function isBlocked(otherId){
   if(!myProfile || !otherId) return false;
   try{ const db=getDB(); if(!db) return false; const s=await db.ref('blocks/'+myProfile.id+'/'+otherId).once('value'); return !!s.val(); }catch(e){ return false; }
@@ -182,7 +136,6 @@ async function toggleBlockUser(){
   updateBlockUI();
 }
 window.toggleBlockUser = toggleBlockUser;
-// ===== INCOME HISTORY - LAST 7 DAYS ONLY + SWIPE TO DELETE =====
 const INCOME_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 function incomeCutoff(){ return Date.now() - INCOME_RETENTION_MS; }
 async function pruneOldIncome(){
@@ -286,7 +239,6 @@ async function showIncomeHistory(){
   document.body.appendChild(div);
 }
 window.showIncomeHistory = showIncomeHistory;
-// ===== CALL EVENTS: DEDUPED - 1 CALL = 1 BUBBLE =====
 function formatCallTime(s){ s=Math.floor(s||0); if(s<60) return s+' sec'; return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 const _recordedCallEvents = new Set();
 function recordCallEvent(toUser, type, status, seconds){
@@ -517,7 +469,6 @@ function _cleanupCall(){
   _currentCallId=null; _callConnected=false; _callAnswered=false;
 }
 function _startCallBilling(){
-  // FEMALE NEVER PAYS - timer only, no deduct. Male file deducts here.
   if(_billingStarted) return;
   _billingStarted=true;
   _callSeconds=0;
@@ -710,8 +661,6 @@ const ChatManager = {
     updateChatFollowUI();
     updateBlockUI();
     showPendingBanner(user);
-    checkMyExpiredPending();
-    watchPendingForChat(user);
     let inp=document.getElementById('chatInput'); if(inp) inp.addEventListener('keydown',e=>{if(e.key==='Enter') ChatManager.sendChatMessage();});
   },
   _chatProtected:false,
@@ -880,18 +829,14 @@ const ChatManager = {
     };
     reader.readAsDataURL(file);
   },
-  // FIXED: Photo is a REPLY - must release escrow like text/gift. Was missing in 907-line file.
-  async sendPhoto(toUser, photoData){
+  sendPhoto(toUser, photoData){
     if(!myProfile) return false;
-    if(await isBlocked(toUser.id)){ showToast('You blocked '+toUser.name); return false; }
     saveTalkedTo(toUser);
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,type:'photo',photo:photoData,text:'📷 Photo',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:'📷 Photo',lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
-    const released = await releaseMyPending(toUser);
-    if(released>0) showPendingBanner(toUser);
     return true;
   },
   mediaRecorder:null,audioChunks:[],recordingUser:null,_recTimer:null,
@@ -929,18 +874,14 @@ const ChatManager = {
     if(!audioBlob||audioBlob.size===0){showToast('No voice recording captured.');return;}
     let reader=new FileReader(); reader.onload=e=>{ this.sendVoiceMessage(this.currentChatUser, e.target.result); }; reader.readAsDataURL(audioBlob);
   },
-  // FIXED: Voice is a REPLY - must release escrow like text/gift. Was missing in 907-line file.
-  async sendVoiceMessage(toUser,audioData){
+  sendVoiceMessage(toUser,audioData){
     if(typeof myProfile==='undefined'||!myProfile) return false;
-    if(await isBlocked(toUser.id)){ showToast('You blocked '+toUser.name); return false; }
     saveTalkedTo(toUser);
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,type:'voice',audio:audioData,text:'🎤 Voice',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:'🎤 Voice message',lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
-    const released = await releaseMyPending(toUser);
-    if(released>0) showPendingBanner(toUser);
     return true;
   },
   giftList:[{name:'Heart',coins:50,icon:'❤️'},{name:'Flower',coins:100,icon:'🌸'},{name:'Butterfly',coins:200,icon:'🦋'},{name:'Star',coins:300,icon:'⭐'},{name:'Diamond',coins:500,icon:'💎'}],
@@ -969,4 +910,3 @@ window.chatsLoading = false;
 try{ _listenForIncomingCalls(); }catch(e){}
 try{ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000); }catch(e){}
 try{ setTimeout(function(){ if(typeof pruneOldIncome==='function') pruneOldIncome(); }, 3000); }catch(e){}
-try{ setTimeout(function(){ if(typeof checkMyExpiredPending==='function') checkMyExpiredPending(); }, 4000); }catch(e){}
