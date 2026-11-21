@@ -62,6 +62,7 @@ function deductCoins(amount, reason, toUser){
   saveMyProfileMale();
   let el=document.getElementById('meCoins'); if(el) el.innerText=myProfile.coins;
   let hc=document.getElementById('chatHeaderCoins'); if(hc) hc.textContent='🪙 '+(myProfile.coins||0);
+  if(typeof syncTopCoins === 'function') syncTopCoins();
   return true;
 }
 function refundCoins(amount, reason){
@@ -72,6 +73,7 @@ function refundCoins(amount, reason){
   saveMyProfileMale();
   let el=document.getElementById('meCoins'); if(el) el.innerText=myProfile.coins;
   let hc=document.getElementById('chatHeaderCoins'); if(hc) hc.textContent='🪙 '+(myProfile.coins||0);
+  if(typeof syncTopCoins === 'function') syncTopCoins();
 }
 // ===== ESCROW - Male side: create HELD, refund after 60 min if lady never replies =====
 async function createPendingEarning(toUser, amount, reason){
@@ -180,7 +182,7 @@ function callEventTitle(e){ if(e.status==='rejected'||e.callStatus==='rejected')
 function showMissedCallsPopup(list){
   if(!list||!list.length) return; if(document.getElementById('missedPopup')) return;
   const seen=new Set(); const cleaned=[];
-  list.forEach(m=>{ if(!m) return; if(m.callId && seen.has(m.callId)) return; if(m.callId) seen.add(m.callId); cleaned.push(m); });
+  list.forEach(m=>{ if(!m) return; const dk=(m.callId||'')+'_'+(m.status||m.callStatus||''); if(m.callId && seen.has(dk)) return; if(m.callId) seen.add(dk); cleaned.push(m); });
   cleaned.sort((a,b)=>(b.ts||0)-(a.ts||0));
   const show=cleaned.slice(0,5);
   if(!show.length) return;
@@ -631,11 +633,11 @@ const ChatManager = {
   },
   renderChat(userName){ if(this._msgs) this.renderMessages(this._msgs); },
   closeChat(){ if(this._listener && this.currentChatId){ try{ getDB().ref('chats/'+this.currentChatId+'/messages').off('value', this._listener); }catch(e){} } this._listener=null; let el=document.getElementById('chatPopup'); if(el) el.remove(); if(window.ChatManager) window.ChatManager.openInbox(); },
-  sendChatMessage(){
+  async sendChatMessage(){
     let ep=document.getElementById('emojiPanel'); if(ep) ep.style.display='none';
     let inp=document.getElementById('chatInput'); if(!inp||!this.currentChatUser) return;
     let msg=inp.value; if(!msg.trim()) return;
-    let ok=this.sendMessage(this.currentChatUser,msg); if(ok) inp.value='';
+    let ok=await this.sendMessage(this.currentChatUser,msg); if(ok) inp.value='';
   },
   async sendMessage(toUser, message){
     if(!message.trim()) return false;
@@ -648,7 +650,6 @@ const ChatManager = {
     if(!isFirst){
       let ok = deductCoins(CHAT_COST, 'Chat message', to);
       if(!ok){ showToast('Not enough coins! Recharge: KES 100 = 1000 Coins'); if(typeof openRecharge==='function') openRecharge(); return false; }
-      // ESCROW: HELD, not direct earnings. Lady earns only if she replies in 60 min.
       await createPendingEarning(to, CHAT_COST, 'Chat from '+myProfile.name);
     }
     markSent(to.id);
@@ -821,7 +822,6 @@ const ChatManager = {
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,text:gift.icon+' Sent '+gift.name+' gift',type:'text',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
-    // ESCROW: Gift HELD 60 min, not direct earnings. Lady earns only if she replies.
     await createPendingEarning(toUser, gift.coins, 'Gift '+gift.name+' from '+myProfile.name);
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:gift.icon+' Gift',lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
