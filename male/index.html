@@ -116,7 +116,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   <div style="min-width:0;flex:1"><div class="t-name" id="topName">Hi 👋</div><div class="t-id" id="topID">ID: -</div></div>
   <div class="t-coins" onclick="openCoinsPage()">🪙 <span id="topCoins">0</span></div>
 </div>
-<div class="how-box">💡 <b>How it works:</b> 1st message to each lady is FREE. Then 10 coins / msg. Voice 50/min • Video 100/min. <b>Coins are HELD 60 mins</b> - lady gets them only if she replies. No reply = auto refund to you. Recharge: KES 100 = 1000 Coins.</div>
+<div class="how-box">💡 <b>How it works:</b> 1st message to each lady is FREE. Then 10 coins / msg. Voice 50/min • Video 100/min. <b>Chat + Gifts are HELD 60 mins</b> - lady gets them only if she replies. No reply = auto refund to you. Calls are deducted live per minute. Recharge: KES 100 = 1000 Coins.</div>
 <div class="tabs-wrapper">
   <div class="tabs" id="tabs">
     <button class="tab active" onclick="switchTab('recommend', this)">Recommend</button>
@@ -165,7 +165,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   <div style="display:flex;gap:10px;margin-top:14px"><button onclick="copyReferralLink()" style="flex:1;background:#25D366;color:#fff;border:none;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">📋 Copy</button><button onclick="shareReferralLink()" style="flex:1;background:#F59E0B;color:#000;border:none;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">🔗 Share</button></div>
 </div>
 <div style="padding:0 0 20px"><div class="menu-item" onclick="openFollowRequests()">👥 Follow Requests</div><div class="menu-item" onclick="openSocialList('requests')">🤝 Friend Requests</div><div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div><div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div><div class="menu-item" onclick="window.location='../about.html#terms'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='../about.html#privacy'">🔒 Privacy Policy</div><button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button><button onclick="askLogout()" style="width:calc(100% - 30px);margin:0 15px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
-<div class="popup" id="infoPopup"><span class="close-btn" onclick="closePopup('infoPopup')">×</span><div class="popup-content" style="text-align:left;padding:25px"><h3 style="text-align:center;margin-bottom:20px;color:#2196F3">Coin Rates</h3><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Chat</b><p style="color:#8B949E;font-size:13px">1st message FREE, then 10 Coins per message • HELD 60 mins until she replies</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📞 Voice Call</b><p style="color:#8B949E;font-size:13px">50 Coins per minute • HELD 60 mins until she replies</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📹 Video Call</b><p style="color:#8B949E;font-size:13px">100 Coins per minute • HELD 60 mins until she replies</p></div><div style="background:#21262D;padding:15px;border-radius:12px"><b>🔄 Recharge Rate</b><p style="color:#8B949E;font-size:13px">KES 100 = 1000 Coins</p></div></div></div>
+<div class="popup" id="infoPopup"><span class="close-btn" onclick="closePopup('infoPopup')">×</span><div class="popup-content" style="text-align:left;padding:25px"><h3 style="text-align:center;margin-bottom:20px;color:#2196F3">Coin Rates</h3><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Chat</b><p style="color:#8B949E;font-size:13px">1st message FREE, then 10 Coins per message • HELD 60 mins until she replies • No reply = refund</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>🎁 Gifts</b><p style="color:#8B949E;font-size:13px">HELD 60 mins until she replies • No reply = refund</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📞 Voice Call</b><p style="color:#8B949E;font-size:13px">50 Coins per minute • Deducted live during call • NOT held / NOT refunded</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📹 Video Call</b><p style="color:#8B949E;font-size:13px">100 Coins per minute • Deducted live during call • NOT held / NOT refunded</p></div><div style="background:#21262D;padding:15px;border-radius:12px"><b>🔄 Recharge Rate</b><p style="color:#8B949E;font-size:13px">KES 100 = 1000 Coins</p></div></div></div>
 <div class="popup" id="rechargePopup"><span class="close-btn" onclick="closePopup('rechargePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Recharge Coins</h3><p style="font-size:12px;color:#8B949E;margin-bottom:10px">Rate: KES 100 = 1000 Coins</p><div class="form-group"><label>Send M-Pesa to:</label><input type="text" id="adminMpesa" value="0718422377" readonly style="font-weight:bold;color:#4CAF50"></div><div class="form-group"><label>Enter Amount KES</label><input type="number" id="rechargeAmount" placeholder="100" onkeyup="calcCoins()"></div><div class="form-group"><label>You will get</label><input type="text" id="rechargeCoins" readonly style="background:#21262D"></div><div class="form-group"><label>Your M-Pesa Name</label><input type="text" id="rechargeMpesa" placeholder="e.g. JOHN KAMAU"></div><div class="form-group"><label>M-Pesa Code (from SMS)</label><input type="text" id="rechargeCode" placeholder="e.g. QK7X..." style="text-transform:uppercase"></div><p style="font-size:12px;color:#8B949E;padding:0 20px">After Admin approves, coins appear automatically. Check Recharge History for status.</p><button class="btn" onclick="submitRecharge()">I Have Sent</button></div></div>
 <div class="popup" id="usagePopup"><span class="close-btn" onclick="closePopup('usagePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Coin Usage</h3><div id="usageList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="rechargeHistoryPopup"><span class="close-btn" onclick="closePopup('rechargeHistoryPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Recharge History</h3><div id="rechargeList" style="margin-top:15px"></div></div></div>
@@ -179,7 +179,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   <div style="background:#F59E0B;border-radius:14px;padding:16px;color:#000;text-align:center"><div style="font-size:13px">My Coins Balance</div><b id="coinsBalance" style="font-size:32px">0</b></div>
   <div style="display:flex;gap:10px;margin-top:10px;text-align:center"><div style="flex:1;background:#21262D;border-radius:12px;padding:12px"><div style="font-size:12px;color:#8B949E">🎁 Bonus Income</div><b id="coinsBonusIncome" style="font-size:18px;color:#F59E0B">0</b><div style="font-size:11px;color:#888">Invite & Earn +100 / friend</div></div></div>
   <button class="btn" onclick="closePopup('coinsPopup');openRecharge()">💳 Recharge Now</button>
-  <p style="font-size:12px;color:#8B949E;text-align:center;margin-top:8px">Rate: KES 100 = 1000 Coins • 1st msg FREE, then 10/msg • Voice 50/min • Video 100/min • HELD 60 mins until she replies</p>
+  <p style="font-size:12px;color:#8B949E;text-align:center;margin-top:8px">Rate: KES 100 = 1000 Coins • 1st msg FREE, then 10/msg • Voice 50/min • Video 100/min • Chat + Gifts HELD 60 mins until she replies • Calls deducted live</p>
   <h3 style="margin:18px 0 10px">📜 Recharge History</h3><div id="coinsRechargeList"></div>
   <h3 style="margin:18px 0 10px">📊 Usage History</h3><div id="coinsUsageList"></div>
 </div></div></div>
@@ -343,11 +343,18 @@ function declineFollowRequest(fromId){
   showToast('Declined');
   openFollowRequests();
 }
+// PATCH 1 - OLD creditLadyEarnings() was a dead stub. Male now uses escrow via chat-manager.js.
+// Do NOT push directly to earnings/{ladyId}. Use createPendingEarning() -> pendingEarnings/{ladyId}.
+// Lady earns ONLY on reply. No reply in 60 min -> refunded by chat-manager.js.
 function creditLadyEarnings(ladyId, amount, reason){
-  if(window.ChatManager && typeof window.creditLadyEarnings === 'function' && window.creditLadyEarnings !== creditLadyEarnings){
-    return window.creditLadyEarnings(ladyId, amount, reason);
-  }
-  console.log('Escrow pending - chat-manager not loaded yet', ladyId, amount);
+  console.warn('DEPRECATED: creditLadyEarnings called, forwarding to createPendingEarning', ladyId, amount, reason);
+  try{
+    if(typeof createPendingEarning === 'function'){
+      var toUser = {id: ladyId, name: ''};
+      return createPendingEarning(toUser, amount, reason);
+    }
+  }catch(e){ console.log('creditLadyEarnings forward failed', e); }
+  return null;
 }
 window.creditLadyEarnings = creditLadyEarnings;
 function copyMyId(){
@@ -357,6 +364,17 @@ function copyMyId(){
   showToast('✅ ID copied: '+id);
 }
 function refreshTopHeader(){ if(!myProfile) return; var av=document.getElementById('topAvatar'); if(av) av.src=myProfile.avatar||'https://via.placeholder.com/80'; var nm=document.getElementById('topName'); if(nm) nm.textContent='Hi, '+shortName(myProfile.name)+' 👋'; var id=document.getElementById('topID'); if(id) id.textContent='ID: '+(myProfile.displayId||myProfile.id||'-'); var cn=document.getElementById('topCoins'); if(cn) cn.textContent=myProfile.coins||0; }
+// PATCH 3 - Top coins go stale after chat deducts. chat-manager.js updates #meCoins / #chatHeaderCoins only.
+// This syncs #topCoins / #coinsBalance / #meCoins from the same myProfile object.
+function syncTopCoins(){
+  if(!myProfile) return;
+  var v = myProfile.coins||0;
+  var tc=document.getElementById('topCoins'); if(tc) tc.textContent=v;
+  var cb=document.getElementById('coinsBalance'); if(cb) cb.textContent=v;
+  var mc=document.getElementById('meCoins'); if(mc) mc.textContent=v;
+}
+window.syncTopCoins = syncTopCoins;
+setInterval(function(){ try{ syncTopCoins(); }catch(e){} }, 2000);
 function getFilteredUsers(){
   let base = users.filter(u => {
     if(!u) return false;
