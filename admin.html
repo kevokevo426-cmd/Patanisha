@@ -24,13 +24,16 @@ textarea:disabled{background:#f5f5f5;color:#666}
 .anchor-tabs{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
 .anchor-tab{flex:1;min-width:120px;padding:10px;background:#eee;border:none;border-radius:10px;font-weight:600;cursor:pointer}
 .anchor-tab.active{background:#FFD700}
-.anchor-card{background:#f8f8f8;padding:15px;border-radius:12px;margin:12px 0;display:flex;gap:15px;align-items:flex-start;cursor:pointer}
+.anchor-card{background:#f8f8f8;padding:15px;border-radius:12px;margin:12px 0;display:flex;gap:12px;align-items:flex-start;cursor:pointer}
 .anchor-card.banned{opacity:0.5;background:#FFEBEE;border:2px solid #FF5252}
 .anchor-avatar{width:70px;height:70px;border-radius:50%;position:relative;flex-shrink:0}
 .anchor-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .banned-badge{position:absolute;top:0;left:0;background:#FF5252;color:white;font-size:9px;padding:2px 6px;border-radius:0 0 8px 0;font-weight:700}
-.anchor-info{flex:1}
-.anchor-info-row{display:flex;justify-content:space-between;margin:4px 0;font-size:14px}
+.anchor-info{flex:1;min-width:0}
+.anchor-info-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin:4px 0;font-size:14px}
+.anchor-meta{flex:1;min-width:0;color:#333;word-break:break-word}
+.anchor-coins{flex-shrink:0;text-align:right;font-weight:800;white-space:nowrap;font-size:14px}
+.anchor-coins small{display:block;font-size:11px;color:#888;font-weight:600}
 .anchor-id{background:white;padding:5px 12px;border-radius:20px;font-size:12px;display:inline-block;margin:5px 5px 5px 0}
 .status-badge{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700}
 .status-pending{background:#FFF3CD;color:#856404}
@@ -170,7 +173,7 @@ textarea:disabled{background:#f5f5f5;color:#666}
   <div class="detail-section"><h4>🔐 Admin Actions</h4>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-success" id="detailApproveBtn" onclick="approveLadyAdmin(_detailId)">✅ Approve Lady</button>
-      <button class="btn btn-danger" id="detailBanBtn" onclick="toggleBan(_detailId); openUserDetail(_detailId)">Ban / Unban</button>
+      <button class="btn btn-danger" id="detailBanBtn" onclick="toggleBan(_DetailId); openUserDetail(_detailId)">Ban / Unban</button>
     </div>
     <label>Adjust Coins (+ / -)</label><div style="display:flex;gap:8px"><input id="detailCoinsAdjust" type="number" placeholder="e.g. 500 or -200"><button class="btn btn-purple" onclick="adjustCoinsDetail()">Apply Coins</button></div>
     <label>Reset Login Password (user will login with this)</label><div style="display:flex;gap:8px"><input id="detailNewPassword" placeholder="New password, min 6 chars"><button class="btn btn-warning" onclick="resetLoginPassword()">🔑 Reset Login Password</button></div>
@@ -263,18 +266,26 @@ async function openUserDetail(userId){
   let online=isOnlineNow(u);
   document.getElementById('detailOnline').innerHTML = online ? '<span style="color:#00C853">● ONLINE NOW</span>' : '<span style="color:#888">○ OFFLINE</span>';
   document.getElementById('detailLastSeen').textContent='Last seen: '+fmtTime(u.lastSeen||u.onlineAt);
-  let rows=[
-    ['Name', u.name||'-'], ['ID', u.id||'-'], ['Email', u.email||'-'], ['Gender', u.gender||'-'],
-    ['City', u.city||'-'], ['Age', u.age||'-'], ['DOB', u.dob||'-'],
-    ['🪙 Coins Balance', (u.coins||0)+' coins'],
-    ['💰 Earnings (Female)', (u.earnings||0)+' coins'],
-    ['Referral Code', u.referralCode||u.displayId||u.id||'-'],
-    ['M-Pesa', u.mpesa||u.phone||'Not set'],
-    ['Verification', (u.verificationStatus||'approved').toUpperCase()],
-    ['Created', u.createdAt?new Date(u.createdAt).toLocaleString():'-'],
-    ['Banned?', banned.includes(userId)?'YES - BANNED':'No'],
-  ];
-  document.getElementById('detailRows').innerHTML=rows.map(r=>`<div class="detail-row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
+  let g=(u.gender||'').toString();
+  let isMale=g.toLowerCase().startsWith('male');
+  let localG=(_allUsersCache.find(x=>x.id===userId)||{}).gender||'';
+  let mismatch = localG && localG.toLowerCase()!==g.toLowerCase();
+  function row(k,v){ return `<div class="detail-row"><span>${k}</span><b>${v}</b></div>`; }
+  function sec(t){ return `<h4 style="margin:16px 0 4px;border-bottom:2px solid #FFD700;padding-bottom:6px">${t}</h4>`; }
+  let html='';
+  if(mismatch) html+=`<div style="background:#FFF3CD;border:1px solid #FFC107;padding:10px;border-radius:10px;font-size:13px;margin-bottom:8px">⚠️ <b>Gender mismatch:</b> Firebase says <b>${g}</b> but local record says <b>${localG}</b>. That is why Kelvin logs in as Male but Admin shows Female. Fix it below — it writes to Firebase.</div>`;
+  html+=sec('👤 Identity');
+  html+=row('Name',u.name||'-')+row('ID',u.id||'-')+row('Email',u.email||'-');
+  html+=`<div class="detail-row"><span>Gender</span><b style="color:${isMale?'#1E90FF':'#E91E63'}">${g||'-'}</b></div>`;
+  html+=`<div style="display:flex;gap:8px;margin:6px 0 10px"><button class="btn btn-info" onclick="fixGender('${userId}','Male')">♂️ Set Male</button><button class="btn btn-purple" onclick="fixGender('${userId}','Female')">♀️ Set Female</button></div>`;
+  html+=row('City',u.city||'-')+row('Age',u.age||'-')+row('DOB',u.dob||'-')+row('Bio',u.bio||'No bio');
+  html+=sec('💰 Wallet');
+  if(isMale){ html+=row('🪙 Coins Balance',(u.coins||0)+' coins'); }
+  else{ html+=row('💰 Earnings',(u.earnings||0)+' coins')+row('🪙 Coins Balance',(u.coins||0)+' coins'); }
+  html+=row('Referral Code',u.referralCode||u.displayId||u.id||'-')+row('M-Pesa',u.mpesa||u.phone||'Not set');
+  html+=sec('🔐 Account');
+  html+=row('Verification',(u.verificationStatus||'approved').toUpperCase())+row('Created',u.createdAt?new Date(u.createdAt).toLocaleString():'-')+row('Banned?',banned.includes(userId)?'YES - BANNED':'No');
+  document.getElementById('detailRows').innerHTML=html;
   let _rawPhotos = u.photos || [];
   let photos = Array.isArray(_rawPhotos) ? _rawPhotos.filter(Boolean) : Object.keys(_rawPhotos).sort().map(k=>_rawPhotos[k]).filter(Boolean);
   if(!photos.length && u.avatar) photos=[u.avatar];
@@ -325,9 +336,9 @@ async function adjustCoinsDetail(){
 async function resetLoginPassword(){
   let np=document.getElementById('detailNewPassword').value.trim();
   if(!np || np.length<6) return showAlert('Password min 6 chars','error');
-  if(!confirm('Reset login password for '+_detailId+' to: '+np+' ? Old password will stop working.')) return;
+  if(!confirm('Reset login password for '+_DetailId+' to: '+np+' ? Old password will stop working.')) return;
   let db=getDB();
-  if(db){ try{ await db.ref('users/'+_detailId+'/password').set(np); await db.ref('users/'+_detailId+'/passwordResetAt').set(Date.now()); }catch(e){} }
+  if(db){ try{ await db.ref('users/'+_DetailId+'/password').set(np); await db.ref('users/'+_DetailId+'/passwordResetAt').set(Date.now()); }catch(e){} }
   try{
     let all=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); let u=all.find(x=>x.id===_DetailId); if(u) u.password=np; localStorage.setItem('patanisha_allAccounts', JSON.stringify(all));
     ['patanishaUsers','patanishaUsers_male'].forEach(k=>{ let arr=JSON.parse(localStorage.getItem(k)||'[]'); let x=arr.find(y=>y.id===_detailId); if(x) x.password=np; localStorage.setItem(k, JSON.stringify(arr)); });
@@ -338,14 +349,25 @@ async function resetLoginPassword(){
 async function resetWithdrawalPin(){
   let pin=document.getElementById('detailNewPin').value.trim();
   if(!/^\d{4,6}$/.test(pin)) return showAlert('PIN must be 4-6 digits','error');
-  if(!confirm('Reset Withdrawal PIN for '+_detailId+' to: '+pin+' ?')) return;
+  if(!confirm('Reset Withdrawal PIN for '+_DetailId+' to: '+pin+' ?')) return;
   let db=getDB();
-  if(db){ try{ await db.ref('users/'+_detailId+'/withdrawalPin').set(pin); await db.ref('users/'+_detailId+'/pin').set(pin); await db.ref('users/'+_DetailId+'/pinResetAt').set(Date.now()); }catch(e){} }
+  if(db){ try{ await db.ref('users/'+_DetailId+'/withdrawalPin').set(pin); await db.ref('users/'+_DetailId+'/pin').set(pin); await db.ref('users/'+_DetailId+'/pinResetAt').set(Date.now()); }catch(e){} }
   try{ localStorage.setItem('patanisha_pin_'+_DetailId, pin); }catch(e){}
   document.getElementById('detailResetMsg').textContent='✅ Withdrawal PIN reset to: '+pin+' — tell lady on WhatsApp';
   showAlert('Withdrawal PIN reset','success');
 }
-// ===== DEPOSITS =====
+async function fixGender(userId, gender){
+  if(!confirm('Set '+userId+' gender to '+gender+'? This updates Firebase + local records.')) return;
+  let db=getDB();
+  if(db){ try{ await db.ref('users/'+userId+'/gender').set(gender); }catch(e){ showAlert(e.message,'error'); return; } }
+  try{
+    ['patanisha_allAccounts','patanishaUsers','patanishaUsers_male'].forEach(k=>{
+      let arr=JSON.parse(localStorage.getItem(k)||'[]'); let x=arr.find(y=>y.id===userId); if(x) x.gender=gender; localStorage.setItem(k, JSON.stringify(arr));
+    });
+  }catch(e){}
+  showAlert('✅ Gender set to '+gender,'success');
+  loadAnchors(); openUserDetail(userId);
+}
 async function loadDeposits(){
   let box=document.getElementById('depositList'); box.innerHTML='Loading deposits...'; _deposits=[];
   let db=getDB(); if(!db){ box.innerHTML='<p style="color:#999">Firebase not loaded</p>'; return; }
@@ -364,10 +386,8 @@ function renderDeposits(){
   if(!list.length){ box.innerHTML='<p style="color:#999;text-align:center">No deposits in this tab</p>'; return; }
   box.innerHTML=list.map(d=>`<div class="deposit-card" onclick="openUserDetail('${d.userId}')"><div class="withdraw-info"><span>Male:</span><b>${d.name||'Unknown'} (tap for record)</b></div><div class="withdraw-info"><span>ID:</span><b>${d.userId||''}</b></div><div class="withdraw-info"><span>Amount:</span><b>KES ${d.amountKES||d.amount||0}</b></div><div class="withdraw-info"><span>Coins:</span><b>${d.coins||0}</b></div><div class="withdraw-info"><span>M-Pesa Code:</span><b>${d.mpesaCode||d.code||'-'} <button class="btn btn-info" onclick="event.stopPropagation();copyText('${(d.mpesaCode||d.code||'').replace(/'/g,'')}','Code copied')">📋 Copy</button></b></div>${d.mpesaMessage?`<div style="background:#fff;padding:10px;border-radius:10px;font-size:12px;color:#333;margin:8px 0;white-space:pre-wrap;word-break:break-word">📩 Full SMS: ${String(d.mpesaMessage).replace(/</g,'&lt;')}<br><button class="btn btn-info" onclick="event.stopPropagation();copyText(${JSON.stringify(d.mpesaMessage)},'Message copied')">📋 Copy Message</button></div>`:''}<div class="withdraw-info"><span>Status:</span><b>${(d.status||'pending').toUpperCase()}</b></div>${(!d.status||d.status==='pending')?`<div onclick="event.stopPropagation()"><button class="btn btn-success" onclick="approveDeposit('${d.key}', '${d.userId||''}', ${d.coins||0})">✅ Approve - Credit ${d.coins||0}</button><button class="btn btn-danger" onclick="rejectDeposit('${d.key}')">❌ Reject</button></div>`:''}</div>`).join('');
 }
-// FIX: Male has Coins, NOT Earnings. Only credit users/{id}/coins. Do NOT push to earnings/{id}.
 async function approveDeposit(key,userId,coins){ let db=getDB(); if(!db) return; if(!confirm(`Approve +${coins} coins to ${userId}?`)) return; try{ await db.ref('deposits/'+key+'/status').set('approved'); let snap=await db.ref('users/'+userId+'/coins').once('value'); let cur=Number(snap.val()||0); await db.ref('users/'+userId+'/coins').set(cur+Number(coins||0)); showAlert('✅ Deposit approved','success'); loadDeposits(); }catch(e){ showAlert(e.message,'error'); } }
 async function rejectDeposit(key){ let db=getDB(); if(!db) return; if(!confirm('Reject deposit?')) return; await db.ref('deposits/'+key+'/status').set('rejected'); showAlert('Rejected','success'); loadDeposits(); }
-// ===== PENDING ESCROW =====
 async function loadPendingEscrow(){
   let box=document.getElementById('escrowList'); box.innerHTML='Loading escrow...'; _escrow=[];
   let db=getDB(); if(!db){ box.innerHTML='<p style="color:#999">Firebase not loaded</p>'; return; }
@@ -404,7 +424,6 @@ async function refundEscrow(ladyId,key,amount,fromId){
     showAlert('↩ Refunded to male','success'); loadPendingEscrow();
   }catch(e){ showAlert(e.message,'error'); }
 }
-// ===== FEMALE VERIFICATION =====
 async function loadVerifications(){
   let box=document.getElementById('verifyList'); box.innerHTML='Loading verifications...'; _verifications=[];
   try{ let local=JSON.parse(localStorage.getItem('patanisha_verificationRequests')||'[]'); local.forEach(v=>{ _verifications.push({userId:v.userId, name:v.name, email:v.email, avatar:v.avatar, selfie:v.selfie||v.avatar, status:v.status||'pending', createdAt:v.createdAt||0, source:'local'}); }); }catch(e){}
@@ -428,7 +447,6 @@ async function setLadyStatus(userId,status){
   let db=getDB(); if(db){ try{ await db.ref('verifications/'+userId+'/status').set(status); await db.ref('users/'+userId+'/verificationStatus').set(status); }catch(e){} }
   try{ let reqs=JSON.parse(localStorage.getItem('patanisha_verificationRequests')||'[]'); let r=reqs.find(x=>x.userId===userId); if(r) r.status=status; localStorage.setItem('patanisha_verificationRequests', JSON.stringify(reqs)); let all=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); let u=all.find(x=>x.id===userId); if(u) u.verificationStatus=status; localStorage.setItem('patanisha_allAccounts', JSON.stringify(all)); }catch(e){}
 }
-// ===== REFERRALS AUTO =====
 async function loadReferralStats(){
   let db=getDB(); document.getElementById('referralList').innerHTML='Loading referrals...';
   if(!db){ document.getElementById('referralList').innerHTML='<p style="color:#999">Firebase not loaded</p>'; return; }
@@ -451,7 +469,6 @@ function renderReferralList(){
   if(!list.length){ box.innerHTML='<p style="color:#999;text-align:center">No referrals</p>'; return; }
   box.innerHTML=list.map(r=>`<div class="ref-card" onclick="openUserDetail('${r.referredId}')"><div style="flex:1"><b>👤 ${r.referredName}</b> <span style="font-size:12px;color:#888">ID: ${r.referredId}</span><div style="font-size:12px;color:#666">Referred by: <b>${r.referrerName||'User'}</b> (ID: ${r.referrerId})</div></div><span style="padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${r.rewardPaid?'#D4EDDA;color:#155724':'#FFF3CD;color:#856404'}">${r.rewardPaid?'✅ +100 AUTO-PAID':'⏳ NOT YET PAID'}</span></div>`).join('');
 }
-// ===== WITHDRAWALS =====
 async function loadWithdrawalsFirebase(){
   let list=document.getElementById('withdrawList'); list.innerHTML='Loading...'; _firebaseWithdrawals=[];
   let db=getDB(); if(!db){ renderWithdrawals('⚠️ Firebase not loaded'); return; }
@@ -470,7 +487,6 @@ async function approveWithdrawalFirebase(key){ let db=getDB(); if(!db) return; a
 async function rejectWithdrawalFirebase(key,coins,userId){ let db=getDB(); if(!db) return; await db.ref('withdrawals/'+key+'/status').set('rejected'); if(userId&&coins) await db.ref('earnings/'+userId).push({amount:coins, reason:'Withdrawal rejected - refund', ts:Date.now()}); showAlert('Rejected + refunded','success'); loadWithdrawalsFirebase(); }
 function approveWithdrawal(i){ withdrawals[i].status='approved'; localStorage.setItem('patanishaWithdrawals', JSON.stringify(withdrawals)); showAlert('Approved','success'); renderWithdrawals(''); }
 function rejectWithdrawal(i){ withdrawals[i].status='rejected'; localStorage.setItem('patanishaWithdrawals', JSON.stringify(withdrawals)); showAlert('Rejected','success'); renderWithdrawals(''); }
-// ===== ANCHORS =====
 function switchAnchorTab(tab,btn){ currentAnchorTab=tab; document.querySelectorAll('.anchor-tab').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); loadAnchors(); }
 async function loadAnchors(){
   users=JSON.parse(localStorage.getItem('patanishaUsers'))||[]; maleUsers=JSON.parse(localStorage.getItem('patanishaUsers_male'))||[]; banned=JSON.parse(localStorage.getItem('patanishaBanned'))||[];
@@ -497,11 +513,14 @@ async function loadAnchors(){
   if(!list.length){ box.innerHTML='<p style="color:#999;text-align:center">No anchors — tap Refresh</p>'; return; }
   box.innerHTML=list.map(u=>{
     let isBanned=banned.includes(u.id); let online=isOnlineNow(u);
+    let g=(u.gender||'').toString().toLowerCase().startsWith('male')?'Male':'Female';
+    let wallet = g==='Male' ? (u.coins||0)+' coins' : (u.earnings||0)+' earnings';
+    let walletLabel = g==='Male' ? '🪙 Coins' : '💰 Earnings';
     return `<div class="anchor-card ${isBanned?'banned':''}" onclick="openUserDetail('${u.id}')">
       <div class="anchor-avatar"><img src="${u.avatar||''}" onerror="this.src='https://via.placeholder.com/70/FFD600/000?text=Tap'">${isBanned?'<span class="banned-badge">BANNED</span>':''}</div>
       <div class="anchor-info">
-        <div class="anchor-info-row"><b>${u.name||'User'} ${online?'●':''}</b><span class="status-badge ${u.verificationStatus==='pending'?'status-pending':'status-approved'}">${(u.verificationStatus||'approved').toUpperCase()}</span></div>
-        <div class="anchor-info-row"><span>${u.gender} • ${u.city||''} • ${u.age||''}y • ${online?'● Online':'○ Offline • '+fmtTime(u.lastSeen)}</span><span>💰 ${u.coins||0} coins</span></div>
+        <div class="anchor-info-row"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.name||'User'} ${online?'●':''}</b><span class="status-badge ${u.verificationStatus==='pending'?'status-pending':'status-approved'}">${(u.verificationStatus||'approved').toUpperCase()}</span></div>
+        <div class="anchor-info-row"><span class="anchor-meta">${g} • ${u.city||''} • ${u.age||''}y • ${online?'● Online':'○ Offline • '+fmtTime(u.lastSeen)}</span><span class="anchor-coins">${wallet}<small>${walletLabel}</small></span></div>
         <span class="anchor-id">ID: ${u.id||''}</span><span class="anchor-id">${u.email||''}</span><br>
         <span style="font-size:12px;color:#888">👆 Tap card for full record, photos, reset passwords</span><br>
         <div onclick="event.stopPropagation()"><button class="btn btn-success" onclick="approveLadyAdmin('${u.id}')">✅ Approve Lady</button><button class="btn ${isBanned?'btn-gray':'btn-danger'}" onclick="toggleBan('${u.id}')">${isBanned?'Unban':'Ban'}</button></div>
