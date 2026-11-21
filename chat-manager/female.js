@@ -4,10 +4,31 @@
 // Female: Chat / Photo / Voice / Gifts = FREE to send, but she EARNS only on reply.
 // INCOME: Only last 7 days kept. Older auto-deleted. Swipe left to delete one entry.
 // BLOCK: Block in chat header.
+// FIXED: Female-only profile (no flip to Lucus on refresh), 1 missed call = 1 bubble, clean Call Log
+// FIXED 2: Photo + Voice replies now ALSO release escrow (was text/gift only in 907-line version)
+// LINE COUNT: Male = 935 lines because male has createPending + deduct + refund + per-minute billing.
+// Female MUST NOT have those (she never pays). Female has release + banner + watcher instead.
+// So 940 lines here = complete, not missing. Do not copy male billing into female.
+// ============================================================
+// CONTRACT - DO NOT CHANGE THESE PATHS (male + female must match):
+// pendingEarnings/{ladyId}/{key} = {fromId,fromName,toId,chatId,amount,reason,
+//   status:'pending'|'released'|'refunded',ts,expiresAt}
+// earnings/{ladyId} / coinHistory/{ladyId} = released income
+// chats/{chatId}/messages/{deterministicKey} = call-event / escrow bubbles
+// blocks/{myId}/{otherId} = block record
+// missedCalls/{toId} = call log
+// calls/{callId} = WebRTC signalling
+// Male creates pending. Female releases pending on ANY reply.
+// Male refunds pending after 60 mins if still pending.
+// Both sides write call-events with SAME deterministic key = 1 call = 1 bubble.
+// ============================================================
 (function(){
   try{
-    var p = JSON.parse(localStorage.getItem('patanisha_myProfile') || 'null')
-      || JSON.parse(localStorage.getItem('patanisha_myProfile_male') || 'null');
+    var p = JSON.parse(localStorage.getItem('patanisha_myProfile_female') || 'null');
+    if(!p){
+      var g = JSON.parse(localStorage.getItem('patanisha_myProfile') || 'null');
+      if(g && String(g.gender||'').toLowerCase().startsWith('female')) p = g;
+    }
     if(p && String(p.gender||'').toLowerCase().startsWith('male')){
       window.location.replace('../male/index.html');
     }
@@ -42,10 +63,7 @@ function saveCachedMsgs(chatId, msgs){
   try{ localStorage.setItem('patanisha_msgs_'+chatId, JSON.stringify((msgs||[]).slice(-100))); }catch(e){}
 }
 const ESCROW_MS = 60 * 60 * 1000;
-
 // ===== ESCROW - Female side =====
-// When SHE replies, release ALL pending from that boy to herself, even if boy is offline.
-// This is the backup to male's release. Both sides check status=='pending' so no double-pay.
 async function releaseMyPending(fromUser){
   try{
     const db = getDB(); if(!db || !myProfile || !fromUser || !fromUser.id) return 0;
@@ -60,22 +78,20 @@ async function releaseMyPending(fromUser){
     if(!toRelease.length) return 0;
     for(const item of toRelease){
       await db.ref('pendingEarnings/'+myProfile.id+'/'+item.key+'/status').set('released');
-      // Credit herself - transaction so no double
       await db.ref('users/'+myProfile.id+'/coins').transaction(function(c){ return (Number(c)||0)+Number(item.val.amount); });
       await db.ref('earnings/'+myProfile.id).push({amount:Number(item.val.amount), reason:item.val.reason+' - released on reply', fromId:item.val.fromId, fromName:item.val.fromName, ts:Date.now()});
       await db.ref('coinHistory/'+myProfile.id).push({amount:Number(item.val.amount), reason:item.val.reason+' - released on reply', fromId:item.val.fromId, fromName:item.val.fromName, ts:Date.now()});
     }
-    // Update local coins
     myProfile.coins = (myProfile.coins||0) + total;
     saveMyProfileFemale();
     const hc = document.getElementById('chatHeaderCoins'); if(hc) hc.textContent = '🪙 '+(myProfile.coins||0);
     const chatId = getChatId(myProfile.id, fromUser.id);
-    db.ref('chats/'+chatId+'/messages').push({fromId:'system',from:'System',toId:fromUser.id,text:'✅ '+total+' coins released to you - you replied 💬',type:'call-event',callType:'escrow',callStatus:'ended',seconds:0,ts:Date.now(),time:new Date().toLocaleTimeString()}).catch(()=>{});
+    var rKey = ('escrow_release_'+myProfile.id+'_'+fromUser.id+'_'+total).replace(/[.$#\[\]\/]/g,'_');
+    db.ref('chats/'+chatId+'/messages/'+rKey).set({fromId:'system',from:'System',toId:fromUser.id,text:'✅ '+total+' coins released to you - you replied 💬',type:'call-event',callType:'escrow',callStatus:'ended',seconds:0,ts:Date.now(),time:new Date().toLocaleTimeString(),callId:rKey}).catch(()=>{});
     if(typeof showToast!=='undefined') showToast('✅ +'+total+' coins - you replied to '+fromUser.name);
     return total;
   }catch(e){ console.log('releaseMyPending',e); return 0; }
 }
-// Show how much is HELD for her in this chat - "Reply in X mins to earn"
 async function showPendingBanner(otherUser){
   try{
     const db = getDB(); if(!db || !myProfile || !otherUser) return;
@@ -94,21 +110,45 @@ async function showPendingBanner(otherUser){
     } else { el.style.display='none'; }
   }catch(e){}
 }
-// Check if any of HER pending expired (male refunded) - show delayed notice
 async function checkMyExpiredPending(){
   try{
     const db=getDB(); if(!db||!myProfile) return;
     const snap=await db.ref('pendingEarnings/'+myProfile.id).once('value');
+    let refundedTotal=0, refundedFrom='';
     snap.forEach(c=>{
       const v=c.val()||{};
       if(v.status==='refunded' && v._notified!==1){
-        // Mark notified so we don't spam
+        refundedTotal+=Number(v.amount)||0; refundedFrom=v.fromName||refundedFrom;
         db.ref('pendingEarnings/'+myProfile.id+'/'+c.key+'/_notified').set(1).catch(()=>{});
+      }
+    });
+    if(refundedTotal>0 && typeof showToast!=='undefined') showToast('⏳ Delayed reply - '+refundedTotal+' coins from '+(refundedFrom||'him')+' were refunded');
+  }catch(e){}
+}
+let _pendingWatcherChatId=null, _pendingWatcherRef=null;
+function watchPendingForChat(otherUser){
+  try{
+    const db=getDB(); if(!db||!myProfile||!otherUser) return;
+    const chatId=getChatId(myProfile.id, otherUser.id);
+    if(_pendingWatcherChatId===chatId && _pendingWatcherRef) return;
+    if(_pendingWatcherRef){ try{ _pendingWatcherRef.off('value'); }catch(e){} }
+    _pendingWatcherChatId=chatId;
+    _pendingWatcherRef=db.ref('pendingEarnings/'+myProfile.id);
+    _pendingWatcherRef.on('value', function(){
+      if(window.ChatManager && ChatManager.currentChatUser && ChatManager.currentChatUser.id===otherUser.id){
+        showPendingBanner(otherUser); checkMyExpiredPending();
       }
     });
   }catch(e){}
 }
-
+async function getPendingTotal(){
+  try{
+    const db=getDB(); if(!db||!myProfile) return 0;
+    const snap=await db.ref('pendingEarnings/'+myProfile.id).once('value');
+    let t=0; snap.forEach(c=>{ const v=c.val()||{}; if(v.status==='pending') t+=Number(v.amount)||0; });
+    return t;
+  }catch(e){ return 0; }
+}
 // ===== BLOCK USER =====
 async function isBlocked(otherId){
   if(!myProfile || !otherId) return false;
@@ -142,7 +182,6 @@ async function toggleBlockUser(){
   updateBlockUI();
 }
 window.toggleBlockUser = toggleBlockUser;
-
 // ===== INCOME HISTORY - LAST 7 DAYS ONLY + SWIPE TO DELETE =====
 const INCOME_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 function incomeCutoff(){ return Date.now() - INCOME_RETENTION_MS; }
@@ -164,7 +203,6 @@ async function pruneOldIncome(){
         if(hasOld) await db.ref(node+'/'+uid).update(updates);
       }catch(e){ console.log('prune income', e); }
     }
-    // Also prune old pending that is already released/refunded older than 7 days
     try{
       const psnap = await db.ref('pendingEarnings/'+uid).once('value');
       const pu={}; let hasP=false;
@@ -248,24 +286,24 @@ async function showIncomeHistory(){
   document.body.appendChild(div);
 }
 window.showIncomeHistory = showIncomeHistory;
-
-// ===== CALL EVENTS: DEDUPED =====
+// ===== CALL EVENTS: DEDUPED - 1 CALL = 1 BUBBLE =====
 function formatCallTime(s){ s=Math.floor(s||0); if(s<60) return s+' sec'; return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 const _recordedCallEvents = new Set();
 function recordCallEvent(toUser, type, status, seconds){
   if(!myProfile || !toUser || !toUser.id) return;
   const callId = window._activeCallIdForEvent || _currentCallId || 'unknown';
-  const bucket = Math.floor(Date.now()/60000);
-  const key = callId+'_'+status+'_'+toUser.id+'_'+bucket;
+  const key = callId+'_'+status+'_'+toUser.id;
   if(_recordedCallEvents.has(key)) return;
   _recordedCallEvents.add(key);
   if(_recordedCallEvents.size>50){ const first=_recordedCallEvents.values().next().value; _recordedCallEvents.delete(first); }
+  var isVideo = (type==='video');
+  var typeLabel = isVideo ? 'Video' : 'Voice';
   var labels={
-    missed:'📞 Missed '+(type==='video'?'Video':'Voice')+' call from '+(myProfile.name||''),
-    rejected:'📵 '+(type==='video'?'Video':'Voice')+' call rejected / declined by '+(toUser.name||''),
-    insufficient:'⚠️ Call ended - Insufficient coins (<50) - '+(type==='video'?'Video':'Voice')+' call with '+(toUser.name||''),
-    ended:'✅ Call ended • '+(type==='video'?'Video':'Voice')+' • '+formatCallTime(seconds||0),
-    cancelled:'📞 Missed '+(type==='video'?'Video':'Voice')+' call from '+(myProfile.name||'')
+    missed:'Missed '+typeLabel+' call from '+(myProfile.name||''),
+    rejected: typeLabel+' call declined by '+(toUser.name||''),
+    insufficient:'Call ended - No coins (<50)',
+    ended: typeLabel+' Call Ended • '+formatCallTime(seconds||0),
+    cancelled:'Missed '+typeLabel+' call from '+(myProfile.name||'')
   };
   var text=labels[status]||labels.missed;
   var entry={fromId:myProfile.id,fromName:myProfile.name,fromAvatar:myProfile.avatar||'',toId:toUser.id,toName:toUser.name||'',type:type||'voice',status:status||'missed',seconds:seconds||0,text:text,ts:Date.now(),callId:callId};
@@ -273,21 +311,15 @@ function recordCallEvent(toUser, type, status, seconds){
     if(window.PatanishaDB){
       window.PatanishaDB.ref('missedCalls/'+toUser.id).push(entry);
       var chatId=[String(myProfile.id),String(toUser.id)].sort().join('_');
-      window.PatanishaDB.ref('chats/'+chatId+'/messages').push({fromId:'system',from:'System',toId:toUser.id,text:text,type:'call-event',callType:type,callStatus:status,seconds:seconds||0,ts:Date.now(),time:new Date().toLocaleTimeString()});
+      var msgKey = (callId+'_'+status).replace(/[.$#\[\]\/]/g,'_');
+      window.PatanishaDB.ref('chats/'+chatId+'/messages/'+msgKey).set({fromId:'system',from:'System',toId:toUser.id,text:text,type:'call-event',callType:type,callStatus:status,seconds:seconds||0,ts:Date.now(),time:new Date().toLocaleTimeString(),callId:callId});
       window.PatanishaDB.ref('chats/'+chatId+'/meta').update({lastMsg:text,lastTs:Date.now()}).catch(()=>{});
     }
   }catch(e){}
   try{
-    var k='patanisha_missed_'+toUser.id; var arr=JSON.parse(localStorage.getItem(k)||'[]'); arr.unshift(entry); localStorage.setItem(k, JSON.stringify(arr.slice(0,30)));
-    var k2='patanisha_missed_'+myProfile.id; var arr2=JSON.parse(localStorage.getItem(k2)||'[]'); arr2.unshift(entry); localStorage.setItem(k2, JSON.stringify(arr2.slice(0,30)));
-  }catch(e){}
-  try{
-    if(window.ChatManager && ChatManager.currentChatUser && (ChatManager.currentChatUser.id===toUser.id || ChatManager.currentChatUser.id===myProfile.id)){
-      var sysMsg={fromId:'system',from:'System',toId:toUser.id,text:text,type:'call-event',callType:type,callStatus:status,seconds:seconds||0,ts:Date.now(),time:new Date().toLocaleTimeString()};
-      ChatManager._msgs=[...(ChatManager._msgs||[]), sysMsg];
-      if(ChatManager.currentChatId) saveCachedMsgs(ChatManager.currentChatId, ChatManager._msgs);
-      ChatManager.renderMessages(ChatManager._msgs);
-    }
+    var k='patanisha_missed_'+toUser.id;
+    var arr=JSON.parse(localStorage.getItem(k)||'[]');
+    if(!arr.find(x=>x.callId===callId && x.status===status)){ arr.unshift(entry); localStorage.setItem(k, JSON.stringify(arr.slice(0,30))); }
   }catch(e){}
 }
 function recordMissedCall(toUser, type){ return recordCallEvent(toUser, type, 'missed', 0); }
@@ -297,28 +329,40 @@ function callEventIcon(e){ if(e.status==='rejected'||e.callStatus==='rejected') 
 function callEventTitle(e){ if(e.status==='rejected'||e.callStatus==='rejected') return 'Rejected'; if(e.status==='insufficient'||e.callStatus==='insufficient') return 'Refund'; if(e.status==='ended'||e.callStatus==='ended') return 'Call Ended'; return 'Missed '+(e.type==='video'||e.callType==='video'?'Video':'Voice')+' Call'; }
 function showMissedCallsPopup(list){
   if(!list||!list.length) return; if(document.getElementById('missedPopup')) return;
-  const seen=new Set();
-  list=list.filter(m=>{
-    const k=(m.callId||'')+'_'+(m.status||m.callStatus||'')+'_'+(m.fromId||'')+'_'+(m.toId||'');
-    if(seen.has(k)) return false; seen.add(k); return true;
-  });
-  if(!list.length) return;
-  var html=list.map(function(m,i){
-    var when=new Date(m.ts||Date.now()).toLocaleString();
-    return `<div style="display:flex;gap:10px;align-items:center;background:#fff;padding:12px;border-radius:12px;margin-bottom:8px">
-      <div style="font-size:28px">${callEventIcon(m)}</div>
-      <div style="flex:1;min-width:0"><b style="display:block">${callEventIcon(m)} ${callEventTitle(m)} - ${m.type==='video'?'Video':'Voice'}</b><span style="font-size:13px;color:#333">${String(m.text||'').replace(/</g,'&lt;')}</span><br><span style="font-size:12px;color:#888">${when}</span></div>
-      <button onclick="callBackMissed(${i})" style="background:#25D366;color:#fff;border:none;padding:10px 14px;border-radius:20px;font-weight:800;cursor:pointer;white-space:nowrap">Call Back</button>
+  const seenCallIds = new Set(); const cleaned=[];
+  list.forEach(m=>{ if(!m) return; if(m.callId && seenCallIds.has(m.callId)) return; if(m.callId) seenCallIds.add(m.callId); cleaned.push(m); });
+  cleaned.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const show = cleaned.slice(0,5);
+  if(!show.length) return;
+  var html=show.map(function(m,i){
+    var when = new Date(m.ts||Date.now()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' • ' + new Date(m.ts||Date.now()).toLocaleDateString([], {day:'numeric', month:'short'});
+    var isVideo = (m.type==='video' || m.callType==='video');
+    var icon = m.status==='rejected' ? '📵' : m.status==='insufficient' ? '⚠️' : m.status==='ended' ? '✅' : isVideo ? '📹' : '📞';
+    var title = m.status==='rejected' ? 'Call Declined' : m.status==='insufficient' ? 'No Coins' : m.status==='ended' ? 'Call Ended' : 'Missed '+(isVideo?'Video':'Voice')+' Call';
+    var otherName = (m.fromId===myProfile.id) ? (m.toName||'User') : (m.fromName||'User');
+    var otherAvatar = (m.fromId===myProfile.id) ? '' : (m.fromAvatar||'');
+    var sub = (m.fromId===myProfile.id) ? 'You called '+otherName+' • No answer' : otherName+' called you • No answer';
+    if(m.status==='ended') sub = (m.fromId===myProfile.id ? 'You called ' : '') + otherName + ' • ' + formatCallTime(m.seconds||0);
+    if(m.status==='rejected') sub = otherName+' declined your call';
+    if(m.status==='insufficient') sub = 'Call ended - not enough coins';
+    return `<div style="display:flex;gap:12px;align-items:center;background:#fff;padding:12px;border-radius:14px;margin-bottom:10px">
+      <div style="width:48px;height:48px;border-radius:50%;background:#F1F1F1;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden">${otherAvatar ? `<img src="${otherAvatar}" style="width:100%;height:100%;object-fit:cover">` : icon}</div>
+      <div style="flex:1;min-width:0">
+        <b style="display:block;font-size:15px;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon} ${title}</b>
+        <span style="font-size:13px;color:#555;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</span>
+        <span style="font-size:12px;color:#999">${when}</span>
+      </div>
+      <button onclick="callBackMissed(${i})" style="background:#25D366;color:#fff;border:none;padding:10px 14px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">Call Back</button>
     </div>`;
   }).join('');
   var div=document.createElement('div'); div.id='missedPopup';
   div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999999;display:flex;align-items:flex-end;justify-content:center';
   div.innerHTML=`<div style="width:100%;max-width:650px;background:#f5f5f5;border-radius:25px 25px 0 0;padding:16px;max-height:85vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:19px">📞 Call Log (${list.length})</b><button onclick="closeMissedPopup()" style="border:none;background:none;font-size:28px;cursor:pointer">×</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:19px;color:#111">📞 Call Log (${show.length})</b><button onclick="closeMissedPopup()" style="border:none;background:none;font-size:28px;cursor:pointer;color:#111">×</button></div>
     ${html}
-    <button onclick="closeMissedPopup()" style="width:100%;padding:14px;border:none;border-radius:14px;background:#eee;font-weight:800;cursor:pointer;margin-top:4px">Dismiss</button>
+    <button onclick="closeMissedPopup()" style="width:100%;padding:14px;border:none;border-radius:14px;background:#eee;font-weight:800;cursor:pointer;margin-top:4px;color:#111">Dismiss</button>
   </div>`;
-  document.body.appendChild(div); window._missedList=list;
+  document.body.appendChild(div); window._missedList=show;
 }
 function closeMissedPopup(){ var el=document.getElementById('missedPopup'); if(el) el.remove(); clearMissedCalls(); }
 function callBackMissed(i){
@@ -327,7 +371,8 @@ function callBackMissed(i){
     var all=ChatManager.getChatUsers?ChatManager.getChatUsers():[];
     var otherId=(m.fromId===myProfile.id)?m.toId:m.fromId;
     var otherName=(m.fromId===myProfile.id)?m.toName:m.fromName;
-    var u=all.find(x=>x.id===otherId)||{id:otherId,name:otherName,avatar:m.fromAvatar||''};
+    var otherAvatar=(m.fromId===myProfile.id)?'':(m.fromAvatar||'');
+    var u=all.find(x=>x.id===otherId)||{id:otherId,name:otherName,avatar:otherAvatar};
     ChatManager.openChat(u);
     setTimeout(function(){ if(m.type==='video') ChatManager.startVideoCall(u); else ChatManager.startVoiceCall(u); },600);
   }
@@ -472,6 +517,7 @@ function _cleanupCall(){
   _currentCallId=null; _callConnected=false; _callAnswered=false;
 }
 function _startCallBilling(){
+  // FEMALE NEVER PAYS - timer only, no deduct. Male file deducts here.
   if(_billingStarted) return;
   _billingStarted=true;
   _callSeconds=0;
@@ -506,7 +552,8 @@ async function _startRealCall(user, type){
     if(_thisCallId!==window._activeCallIdForEvent) return;
     try{
       var s=await db.ref('calls/'+_thisCallId+'/status').once('value');
-      if(s.val()==='ringing' && !_callAnswered){
+      if(s.val()==='ringing' && !_callAnswered && !_callEventRecorded){
+        _callEventRecorded=true;
         await db.ref('calls/'+_thisCallId+'/status').set('missed');
         window._activeCallIdForEvent=_thisCallId;
         if(typeof recordCallEvent==='function') recordCallEvent(user, type, 'missed', 0);
@@ -532,7 +579,7 @@ async function _startRealCall(user, type){
       }).catch(()=>{});
       _cleanupCall();
     }
-    if(snap.val()==='missed' && !_callAnswered){ _cleanupCall(); }
+    if(snap.val()==='missed' && !_callAnswered && !_callEventRecorded){ _callEventRecorded=true; _cleanupCall(); }
   });
   return true;
 }
@@ -663,6 +710,8 @@ const ChatManager = {
     updateChatFollowUI();
     updateBlockUI();
     showPendingBanner(user);
+    checkMyExpiredPending();
+    watchPendingForChat(user);
     let inp=document.getElementById('chatInput'); if(inp) inp.addEventListener('keydown',e=>{if(e.key==='Enter') ChatManager.sendChatMessage();});
   },
   _chatProtected:false,
@@ -710,6 +759,15 @@ const ChatManager = {
   renderMessages(msgs){
     let box=document.getElementById('chatMessages'); if(!box) return;
     if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#8B949E;padding:30px">Say Hi to '+(typeof shortName!=='undefined'?shortName(this.currentChatUser?this.currentChatUser.name:'him'):this.currentChatUser?this.currentChatUser.name:'him')+' 👋<br><span style="font-size:12px">All FREE for ladies • Reply to earn</span></div>'; return; }
+    var seenCallMsg = new Set();
+    msgs = (msgs||[]).filter(function(m){
+      if(m && m.type==='call-event' && m.callId){
+        var ck = m.callId+'_'+(m.callStatus||m.status||'');
+        if(seenCallMsg.has(ck)) return false;
+        seenCallMsg.add(ck);
+      }
+      return true;
+    });
     box.innerHTML=msgs.map(m=>{
       if(m.type==='missed' || m.type==='call-event'){
         var st=m.callStatus||m.status||'missed';
@@ -743,7 +801,6 @@ const ChatManager = {
     this._msgs = [...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId, this._msgs); this.renderMessages(this._msgs);
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:to.id,aName:myProfile.name,bName:to.name,lastMsg:message,lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
-    // ESCROW: Her reply releases her held coins - even if boy offline
     const released = await releaseMyPending(to);
     if(released>0) showPendingBanner(to);
     return true;
@@ -823,14 +880,18 @@ const ChatManager = {
     };
     reader.readAsDataURL(file);
   },
-  sendPhoto(toUser, photoData){
+  // FIXED: Photo is a REPLY - must release escrow like text/gift. Was missing in 907-line file.
+  async sendPhoto(toUser, photoData){
     if(!myProfile) return false;
+    if(await isBlocked(toUser.id)){ showToast('You blocked '+toUser.name); return false; }
     saveTalkedTo(toUser);
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,type:'photo',photo:photoData,text:'📷 Photo',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:'📷 Photo',lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
+    const released = await releaseMyPending(toUser);
+    if(released>0) showPendingBanner(toUser);
     return true;
   },
   mediaRecorder:null,audioChunks:[],recordingUser:null,_recTimer:null,
@@ -868,14 +929,18 @@ const ChatManager = {
     if(!audioBlob||audioBlob.size===0){showToast('No voice recording captured.');return;}
     let reader=new FileReader(); reader.onload=e=>{ this.sendVoiceMessage(this.currentChatUser, e.target.result); }; reader.readAsDataURL(audioBlob);
   },
-  sendVoiceMessage(toUser,audioData){
+  // FIXED: Voice is a REPLY - must release escrow like text/gift. Was missing in 907-line file.
+  async sendVoiceMessage(toUser,audioData){
     if(typeof myProfile==='undefined'||!myProfile) return false;
+    if(await isBlocked(toUser.id)){ showToast('You blocked '+toUser.name); return false; }
     saveTalkedTo(toUser);
     let db=getDB(); let chatId=getChatId(myProfile.id, toUser.id);
     let newMsg={fromId:myProfile.id,from:myProfile.name,toId:toUser.id,to:toUser.name,type:'voice',audio:audioData,text:'🎤 Voice',time:new Date().toLocaleTimeString(),ts:Date.now()};
     this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:'🎤 Voice message',lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
+    const released = await releaseMyPending(toUser);
+    if(released>0) showPendingBanner(toUser);
     return true;
   },
   giftList:[{name:'Heart',coins:50,icon:'❤️'},{name:'Flower',coins:100,icon:'🌸'},{name:'Butterfly',coins:200,icon:'🦋'},{name:'Star',coins:300,icon:'⭐'},{name:'Diamond',coins:500,icon:'💎'}],
@@ -894,7 +959,6 @@ const ChatManager = {
     this._msgs=[...(this._msgs||[]), newMsg]; saveCachedMsgs(chatId,this._msgs); this.renderMessages(this._msgs);
     db.ref('chats/'+chatId+'/meta').set({aId:myProfile.id,bId:toUser.id,aName:myProfile.name,bName:toUser.name,lastMsg:gift.icon+' Gift',lastTs:Date.now()}).catch(()=>{});
     db.ref('chats/'+chatId+'/messages').push(newMsg).catch(()=>{});
-    // Her gift message also counts as a reply - release pending from this boy
     await releaseMyPending(toUser);
     if(document.getElementById(giftPanelId)) document.getElementById(giftPanelId).remove();
     showToast('🎁 Gift sent!');
@@ -905,3 +969,4 @@ window.chatsLoading = false;
 try{ _listenForIncomingCalls(); }catch(e){}
 try{ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000); }catch(e){}
 try{ setTimeout(function(){ if(typeof pruneOldIncome==='function') pruneOldIncome(); }, 3000); }catch(e){}
+try{ setTimeout(function(){ if(typeof checkMyExpiredPending==='function') checkMyExpiredPending(); }, 4000); }catch(e){}
