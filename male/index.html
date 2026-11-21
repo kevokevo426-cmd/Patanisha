@@ -116,7 +116,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   <div style="min-width:0;flex:1"><div class="t-name" id="topName">Hi 👋</div><div class="t-id" id="topID">ID: -</div></div>
   <div class="t-coins" onclick="openCoinsPage()">🪙 <span id="topCoins">0</span></div>
 </div>
-<div class="how-box">💡 <b>How it works:</b> 1st message to each lady is FREE. Then 10 coins / msg. Voice 50/min • Video 100/min. Recharge: KES 100 = 1000 Coins.</div>
+<div class="how-box">💡 <b>How it works:</b> 1st message to each lady is FREE. Then 10 coins / msg. Voice 50/min • Video 100/min. <b>Coins are HELD 60 mins</b> - lady gets them only if she replies. No reply = auto refund to you. Recharge: KES 100 = 1000 Coins.</div>
 <div class="tabs-wrapper">
   <div class="tabs" id="tabs">
     <button class="tab active" onclick="switchTab('recommend', this)">Recommend</button>
@@ -165,7 +165,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   <div style="display:flex;gap:10px;margin-top:14px"><button onclick="copyReferralLink()" style="flex:1;background:#25D366;color:#fff;border:none;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">📋 Copy</button><button onclick="shareReferralLink()" style="flex:1;background:#F59E0B;color:#000;border:none;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">🔗 Share</button></div>
 </div>
 <div style="padding:0 0 20px"><div class="menu-item" onclick="openFollowRequests()">👥 Follow Requests</div><div class="menu-item" onclick="openSocialList('requests')">🤝 Friend Requests</div><div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div><div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div><div class="menu-item" onclick="window.location='../about.html#terms'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='../about.html#privacy'">🔒 Privacy Policy</div><button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button><button onclick="askLogout()" style="width:calc(100% - 30px);margin:0 15px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
-<div class="popup" id="infoPopup"><span class="close-btn" onclick="closePopup('infoPopup')">×</span><div class="popup-content" style="text-align:left;padding:25px"><h3 style="text-align:center;margin-bottom:20px;color:#2196F3">Coin Rates</h3><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Chat</b><p style="color:#8B949E;font-size:13px">1st message FREE, then 10 Coins per message</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📞 Voice Call</b><p style="color:#8B949E;font-size:13px">50 Coins per minute</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📹 Video Call</b><p style="color:#8B949E;font-size:13px">100 Coins per minute</p></div><div style="background:#21262D;padding:15px;border-radius:12px"><b>🔄 Recharge Rate</b><p style="color:#8B949E;font-size:13px">KES 100 = 1000 Coins</p></div></div></div>
+<div class="popup" id="infoPopup"><span class="close-btn" onclick="closePopup('infoPopup')">×</span><div class="popup-content" style="text-align:left;padding:25px"><h3 style="text-align:center;margin-bottom:20px;color:#2196F3">Coin Rates</h3><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Chat</b><p style="color:#8B949E;font-size:13px">1st message FREE, then 10 Coins per message • HELD 60 mins until she replies</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📞 Voice Call</b><p style="color:#8B949E;font-size:13px">50 Coins per minute • HELD 60 mins until she replies</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📹 Video Call</b><p style="color:#8B949E;font-size:13px">100 Coins per minute • HELD 60 mins until she replies</p></div><div style="background:#21262D;padding:15px;border-radius:12px"><b>🔄 Recharge Rate</b><p style="color:#8B949E;font-size:13px">KES 100 = 1000 Coins</p></div></div></div>
 <div class="popup" id="rechargePopup"><span class="close-btn" onclick="closePopup('rechargePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Recharge Coins</h3><p style="font-size:12px;color:#8B949E;margin-bottom:10px">Rate: KES 100 = 1000 Coins</p><div class="form-group"><label>Send M-Pesa to:</label><input type="text" id="adminMpesa" value="0718422377" readonly style="font-weight:bold;color:#4CAF50"></div><div class="form-group"><label>Enter Amount KES</label><input type="number" id="rechargeAmount" placeholder="100" onkeyup="calcCoins()"></div><div class="form-group"><label>You will get</label><input type="text" id="rechargeCoins" readonly style="background:#21262D"></div><div class="form-group"><label>Your M-Pesa Name</label><input type="text" id="rechargeMpesa" placeholder="e.g. JOHN KAMAU"></div><div class="form-group"><label>M-Pesa Code (from SMS)</label><input type="text" id="rechargeCode" placeholder="e.g. QK7X..." style="text-transform:uppercase"></div><p style="font-size:12px;color:#8B949E;padding:0 20px">After Admin approves, coins appear automatically. Check Recharge History for status.</p><button class="btn" onclick="submitRecharge()">I Have Sent</button></div></div>
 <div class="popup" id="usagePopup"><span class="close-btn" onclick="closePopup('usagePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Coin Usage</h3><div id="usageList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="rechargeHistoryPopup"><span class="close-btn" onclick="closePopup('rechargeHistoryPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Recharge History</h3><div id="rechargeList" style="margin-top:15px"></div></div></div>
@@ -179,7 +179,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   <div style="background:#F59E0B;border-radius:14px;padding:16px;color:#000;text-align:center"><div style="font-size:13px">My Coins Balance</div><b id="coinsBalance" style="font-size:32px">0</b></div>
   <div style="display:flex;gap:10px;margin-top:10px;text-align:center"><div style="flex:1;background:#21262D;border-radius:12px;padding:12px"><div style="font-size:12px;color:#8B949E">🎁 Bonus Income</div><b id="coinsBonusIncome" style="font-size:18px;color:#F59E0B">0</b><div style="font-size:11px;color:#888">Invite & Earn +100 / friend</div></div></div>
   <button class="btn" onclick="closePopup('coinsPopup');openRecharge()">💳 Recharge Now</button>
-  <p style="font-size:12px;color:#8B949E;text-align:center;margin-top:8px">Rate: KES 100 = 1000 Coins • 1st msg FREE, then 10/msg • Voice 50/min • Video 100/min</p>
+  <p style="font-size:12px;color:#8B949E;text-align:center;margin-top:8px">Rate: KES 100 = 1000 Coins • 1st msg FREE, then 10/msg • Voice 50/min • Video 100/min • HELD 60 mins until she replies</p>
   <h3 style="margin:18px 0 10px">📜 Recharge History</h3><div id="coinsRechargeList"></div>
   <h3 style="margin:18px 0 10px">📊 Usage History</h3><div id="coinsUsageList"></div>
 </div></div></div>
@@ -189,6 +189,8 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 let myProfile = null;
 try{ myProfile = JSON.parse(localStorage.getItem('patanisha_myProfile')) || JSON.parse(localStorage.getItem('patanisha_myProfile_male')); }catch(e){ myProfile=null; }
 if(!myProfile){ window.location.href = '../register/index.html'; }
+if(myProfile && myProfile.displayId && !myProfile.id) myProfile.id = myProfile.displayId;
+if(myProfile && myProfile.id && !myProfile.displayId) myProfile.displayId = myProfile.id;
 if(!myProfile.friends) myProfile.friends=[]; if(!myProfile.following) myProfile.following=[]; if(!myProfile.followers) myProfile.followers=[]; if(!myProfile.visitors) myProfile.visitors=[]; if(!myProfile.recharges) myProfile.recharges=[]; if(!myProfile.usage) myProfile.usage=[]; if(myProfile.coins==null) myProfile.coins=0;
 if(!myProfile.referralCode){ myProfile.referralCode = myProfile.displayId||myProfile.id; try{ localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile)); }catch(e){} }
 let users = [];
@@ -329,13 +331,10 @@ function declineFollowRequest(fromId){
   openFollowRequests();
 }
 function creditLadyEarnings(ladyId, amount, reason){
-  try{
-    if(!ladyId || !amount || !window.PatanishaDB) return;
-    var db=window.PatanishaDB;
-    db.ref('earnings/'+ladyId).push({amount:Number(amount), reason:reason||'Chat', fromId:myProfile.id, fromName:myProfile.name||'', ts:Date.now()});
-    db.ref('users/'+ladyId+'/coins').transaction(function(c){ return (Number(c)||0)+Number(amount); });
-    db.ref('coinHistory/'+ladyId).push({amount:Number(amount), reason:reason||'Chat', ts:Date.now()});
-  }catch(e){}
+  if(window.ChatManager && typeof window.creditLadyEarnings === 'function' && window.creditLadyEarnings !== creditLadyEarnings){
+    return window.creditLadyEarnings(ladyId, amount, reason);
+  }
+  console.log('Escrow pending - chat-manager not loaded yet', ladyId, amount);
 }
 window.creditLadyEarnings = creditLadyEarnings;
 function copyMyId(){
@@ -564,7 +563,6 @@ function logoutUser(){
   localStorage.removeItem('patanisha_myProfile_male');
   window.location.replace('../register/index.html');
 }
-// FIXED: Real data is in Firestore, NOT Realtime Database. Firestore fields: username/photo/userId/gender
 function loadUsersFromFirebase(){
   try{
     let fs=getFS(); if(!fs){ showToast('Firestore SDK not loaded'); return; }
@@ -578,7 +576,7 @@ function loadUsersFromFirebase(){
         if(realId===myProfile.id || realId===(myProfile.displayId||myProfile.id)) return;
         if(!v.username && !v.name && !v.photo && !v.avatar) return;
         let ex=users.find(x=>(x.displayId||x.id)===realId);
-        let obj={name:v.username||v.name||'Lady',gender:v.gender||'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.photo||v.avatar||'https://via.placeholder.com/80',photos:v.photos||[v.photo||v.avatar].filter(Boolean),friends:[],id:doc.id,displayId:realId,activityScore:0,online:v.online,lastSeen:v.lastSeen||0};
+        let obj={name:v.username||v.name||'Lady',gender:v.gender||'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.photo||v.avatar||'https://via.placeholder.com/80',photos:v.photos||[v.photo||v.avatar].filter(Boolean),friends:[],id:realId,displayId:realId,activityScore:0,online:v.online,lastSeen:v.lastSeen||0};
         if(ex){ Object.assign(ex, obj); }
         else users.push(obj);
       });
@@ -590,31 +588,12 @@ function loadUsersFromFirebase(){
 renderUsers();
 refreshTopHeader();
 </script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAXwKw7n28LiJx2W4PBkQG7_glL0sVog8M",
-    authDomain: "patanisha-49561.firebaseapp.com",
-    databaseURL: "https://patanisha-49561-default-rtdb.firebaseio.com",
-    projectId: "patanisha-49561",
-    storageBucket: "patanisha-49561.firebasestorage.app",
-    messagingSenderId: "363879415134",
-    appId: "1:363879415134:web:81b99ab93290a3e45723cf",
-    measurementId: "G-GLXLGVWLHF"
-  };
-  if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-  window.PatanishaDB = firebase.database();
-  window.PatanishaDBType = 'rtdb';
-  try{ window.PatanishaFS = firebase.firestore(); }catch(e){}
-  loadUsersFromFirebase();
-  if(typeof startPresence==='function') startPresence();
-</script>
 <script src="../referral.js"></script>
 <script src="../social.js"></script>
-<script src="chat-manager.js?v=1007"></script>
+<script src="chat-manager.js?v=1008"></script>
 <script>
+loadUsersFromFirebase();
+if(typeof startPresence==='function') startPresence();
 setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000);
 </script>
 </body>
