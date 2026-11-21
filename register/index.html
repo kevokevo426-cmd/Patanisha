@@ -126,6 +126,8 @@ function shuffleAvatars(){let shuffled=[...avatarPool].sort(()=>0.5-Math.random(
 window.addEventListener('load',shuffleAvatars);
 window.addEventListener('load',function(){
   try{ if(typeof captureReferralFromURL==='function') captureReferralFromURL(); }catch(e){}
+  var rc=document.getElementById('referralCodeInput');
+  if(rc){ rc.addEventListener('input',function(){ var v=rc.value.trim().toUpperCase(); document.getElementById('referralHint').textContent = v ? '✅ Referral code entered: '+v+' — referrer earns +100 on your 1st purchase' : ''; }); }
 });
 let userData={},selectedGender='',tempGender='',selectedHobbies=[],uploadedPhotos=[];
 const MAX_HOBBIES=5,MAX_PHOTOS=3;
@@ -227,7 +229,6 @@ async function isPhotoSafe(dataUrl){
     return true;
   } finally { setChecking(false); }
 }
-// ===== FIX: correct age with month/day, auto-edits on every login =====
 function calcAge(dobStr){
   if(!dobStr) return 20;
   const b = new Date(dobStr), now = new Date();
@@ -235,7 +236,6 @@ function calcAge(dobStr){
   if(now.getMonth() < b.getMonth() || (now.getMonth() === b.getMonth() && now.getDate() < b.getDate())) age--;
   return age;
 }
-// ===== FIX: FAST LOGIN - 1 query, 4s max, NO free coins, age auto-edit =====
 async function doSignIn(){
   const email=document.getElementById('loginEmail').value.trim().toLowerCase();
   const pass=document.getElementById('loginPassword').value;
@@ -264,7 +264,6 @@ async function doSignIn(){
     showToast(savedProfile.verificationStatus==='rejected' ? '❌ Your selfie was rejected by Admin. Contact Admin.' : '⏳ Your selfie is waiting for Admin approval. Try again after approval.');
     return;
   }
-  // FIX: Age auto-edit on every login
   if(savedProfile.dob){
     const newAge = calcAge(savedProfile.dob);
     if(newAge !== savedProfile.age){
@@ -272,13 +271,31 @@ async function doSignIn(){
       if(db && savedProfile.id) db.ref('users/'+savedProfile.id+'/age').set(newAge).catch(()=>{});
     }
   }
-  // FIX: NEVER give coins on login. Bonus was given once at signup only.
   savedProfile.welcomeBonusGiven = true;
   if(savedProfile.withdrawalPin){ try{ localStorage.setItem('patanisha_pin_'+savedProfile.id, String(savedProfile.withdrawalPin)); }catch(e){} }
   if(savedProfile.pin && !savedProfile.withdrawalPin){ try{ localStorage.setItem('patanisha_pin_'+savedProfile.id, String(savedProfile.pin)); }catch(e){} }
   showToast('Welcome back ' + (savedProfile.name||'').split(' ')[0] + '!');
+  // FIX: GENDER LOCK - Firebase gender wins. Delete the opposite-gender local key so old
+  // Kelvin-type accounts (saved as Male locally, Female in Firebase) cannot flip back.
+  try{
+    if(savedProfile.gender==='Male'){
+      localStorage.removeItem('patanisha_myProfile_female');
+      localStorage.setItem('patanisha_myProfile_male', JSON.stringify(savedProfile));
+    } else {
+      localStorage.removeItem('patanisha_myProfile_male');
+      localStorage.setItem('patanisha_myProfile_female', JSON.stringify(savedProfile));
+    }
+    // Also fix the two list buckets - remove this email from the WRONG bucket
+    ['patanishaUsers','patanishaUsers_male'].forEach(k=>{
+      try{
+        let arr=JSON.parse(localStorage.getItem(k)||'[]');
+        let wrong = (k==='patanishaUsers' && savedProfile.gender==='Male') || (k==='patanishaUsers_male' && savedProfile.gender==='Female');
+        if(wrong){ arr=arr.filter(a=>!(a.email && a.email.toLowerCase()===email)); localStorage.setItem(k, JSON.stringify(arr)); }
+        else { let ex=arr.find(a=>a.email && a.email.toLowerCase()===email); if(ex) ex.gender=savedProfile.gender; localStorage.setItem(k, JSON.stringify(arr)); }
+      }catch(e){}
+    });
+  }catch(e){}
   localStorage.setItem('patanisha_myProfile', JSON.stringify(savedProfile));
-  localStorage.setItem(savedProfile.gender==='Male' ? 'patanisha_myProfile_male' : 'patanisha_myProfile_female', JSON.stringify(savedProfile));
   try{ let all2=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); let idx=all2.findIndex(a=>a.email===email); if(idx>=0) all2[idx]=Object.assign({}, all2[idx], savedProfile, {photos:[], verificationSelfie:''}); else all2.push(Object.assign({}, savedProfile, {photos:[], verificationSelfie:''})); localStorage.setItem('patanisha_allAccounts', JSON.stringify(all2)); }catch(e){}
   setTimeout(()=>{
     if(savedProfile.gender==='Male') window.location.replace('../male/index.html');
@@ -288,7 +305,6 @@ async function doSignIn(){
 function askGenderConfirm(gender){tempGender=gender;document.getElementById('confirmText').innerText=`Are you sure you want to select ${gender}?`;document.getElementById('genderConfirm').style.display='flex';}
 function closeConfirm(){document.getElementById('genderConfirm').style.display='none';}
 function confirmGender(){selectedGender=tempGender;document.querySelectorAll('.gender-card').forEach(b=>b.classList.remove('selected'));if(tempGender==='Male')document.querySelectorAll('.gender-card')[0].classList.add('selected');if(tempGender==='Female')document.querySelectorAll('.gender-card')[1].classList.add('selected');closeConfirm();}
-// ===== FIX: Email duplicate checked in Firebase, not just this phone =====
 async function goToStep2(){
   if(!document.getElementById('email').value.includes('@')||document.getElementById('password').value.length<6||!selectedGender){showToast('Fill all fields and select gender');return;}
   if(document.getElementById('password').value !== document.getElementById('confirmPassword').value){showToast('Passwords do not match');return;}
@@ -371,7 +387,6 @@ async function saveProfile(){
     var _all0=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]');
     var _dup=_all0.find(a=>a.email && a.email.toLowerCase()===(userData.email||'').toLowerCase());
     if(_dup){ showToast('⚠️ This email already has an account. Please Sign In.'); switchAuth('signin'); document.getElementById('loginEmail').value=userData.email||''; return; }
-    // FIX: Final Firebase duplicate check - stops boy+girl same email race
     try{
       let db2=getDB();
       if(db2){
@@ -386,7 +401,6 @@ async function saveProfile(){
     userData.displayId = userData.id;
     userData.referralCode = userData.id;
     userData.level = 1;
-    // Welcome coins given ONCE here at signup only, never on login
     userData.coins = userData.gender === 'Male' ? 100 : 20;
     userData.welcomeBonusGiven = true;
     if(userData.gender==='Female'){
@@ -403,7 +417,6 @@ async function saveProfile(){
     userData.createdAt = Date.now();
     userData.distance = "2.5km";
     userData.email = (userData.email||'').trim().toLowerCase();
-    // FIX: Correct age with month/day
     userData.age = calcAge(userData.dob);
     if(!userData.city) userData.city = "Ruiru";
     if(!userData.avatar) userData.avatar = document.getElementById('avatarPrev').src;
@@ -420,11 +433,17 @@ async function saveProfile(){
       localStorage.setItem('patanisha_allAccounts', JSON.stringify(all));
     }catch(e){ console.log('allAccounts quota', e); }
     try{
-      let listKey = userData.gender === 'Male' ? 'patanishaUsers' : 'patanishaUsers_male';
+      // FIX: lists were SWAPPED - Male went into patanishaUsers (Female list).
+      // Correct: Male -> patanishaUsers_male, Female -> patanishaUsers
+      let listKey = userData.gender === 'Male' ? 'patanishaUsers_male' : 'patanishaUsers';
       let list = JSON.parse(localStorage.getItem(listKey) || '[]');
       list = list.filter(u => u.email !== userData.email && u.id !== userData.id);
       list.unshift(Object.assign({}, userData, {photos:[]}));
       localStorage.setItem(listKey, JSON.stringify(list));
+      // Remove from the WRONG bucket too, in case this email was there before
+      let otherKey = userData.gender === 'Male' ? 'patanishaUsers' : 'patanishaUsers_male';
+      let other = JSON.parse(localStorage.getItem(otherKey) || '[]').filter(u => u.email !== userData.email);
+      localStorage.setItem(otherKey, JSON.stringify(other));
     }catch(e){ console.log('list quota', e); }
     try{
       let db=getDB();
