@@ -166,7 +166,7 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
 </div>
 <div style="padding:0 0 20px"><div class="menu-item" onclick="openFollowRequests()">👥 Follow Requests</div><div class="menu-item" onclick="openSocialList('requests')">🤝 Friend Requests</div><div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div><div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div><div class="menu-item" onclick="window.location='../about.html#terms'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='../about.html#privacy'">🔒 Privacy Policy</div><button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button><button onclick="askLogout()" style="width:calc(100% - 30px);margin:0 15px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
 <div class="popup" id="infoPopup"><span class="close-btn" onclick="closePopup('infoPopup')">×</span><div class="popup-content" style="text-align:left;padding:25px"><h3 style="text-align:center;margin-bottom:20px;color:#2196F3">Coin Rates</h3><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Chat</b><p style="color:#8B949E;font-size:13px">1st message FREE, then 10 Coins per message • HELD 60 mins until she replies • No reply = refund</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>🎁 Gifts</b><p style="color:#8B949E;font-size:13px">HELD 60 mins until she replies • No reply = refund</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📞 Voice Call</b><p style="color:#8B949E;font-size:13px">50 Coins per minute • Deducted live during call • NOT held / NOT refunded</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📹 Video Call</b><p style="color:#8B949E;font-size:13px">100 Coins per minute • Deducted live during call • NOT held / NOT refunded</p></div><div style="background:#21262D;padding:15px;border-radius:12px"><b>🔄 Recharge Rate</b><p style="color:#8B949E;font-size:13px">KES 100 = 1000 Coins</p></div></div></div>
-<div class="popup" id="rechargePopup"><span class="close-btn" onclick="closePopup('rechargePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Recharge Coins</h3><p style="font-size:12px;color:#8B949E;margin-bottom:10px">Rate: KES 100 = 1000 Coins</p><div class="form-group"><label>Send M-Pesa to:</label><input type="text" id="adminMpesa" value="0718422377" readonly style="font-weight:bold;color:#4CAF50"></div><div class="form-group"><label>Enter Amount KES</label><input type="number" id="rechargeAmount" placeholder="100" onkeyup="calcCoins()"></div><div class="form-group"><label>You will get</label><input type="text" id="rechargeCoins" readonly style="background:#21262D"></div><div class="form-group"><label>Your M-Pesa Name</label><input type="text" id="rechargeMpesa" placeholder="e.g. JOHN KAMAU"></div><div class="form-group"><label>M-Pesa Code (from SMS)</label><input type="text" id="rechargeCode" placeholder="e.g. QK7X..." style="text-transform:uppercase"></div><p style="font-size:12px;color:#8B949E;padding:0 20px">After Admin approves, coins appear automatically. Check Recharge History for status.</p><button class="btn" onclick="submitRecharge()">I Have Sent</button></div></div>
+<div class="popup" id="rechargePopup"><span class="close-btn" onclick="closePopup('rechargePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px"><h3>Recharge Coins</h3><p style="font-size:12px;color:#8B949E;margin-bottom:10px">Rate: KES 100 = 1000 Coins • Minimum KES 100</p><div class="form-group"><label>Send M-Pesa to:</label><div style="display:flex;gap:8px"><input type="text" id="adminMpesa" value="0718422377" readonly onclick="copyAdminMpesa()" style="font-weight:bold;color:#4CAF50;cursor:pointer;flex:1"><button onclick="copyAdminMpesa()" style="background:#25D366;color:#fff;border:none;padding:14px 16px;border-radius:12px;font-weight:800;cursor:pointer;flex-shrink:0;white-space:nowrap">📋 Copy</button></div><div id="copyMpesaHint" style="font-size:12px;color:#4CAF50;margin-top:6px;display:none">✅ Number copied - paste in M-Pesa</div></div><div class="form-group"><label>Enter Amount KES <span style="color:#FF5252;font-size:12px">(Min 100)</span></label><input type="number" id="rechargeAmount" placeholder="100" min="100" step="10" value="100" onkeyup="calcCoins()" onchange="calcCoins()" oninput="calcCoins()"><div id="amountHint" style="font-size:12px;color:#FF5252;margin-top:6px;display:none">⚠️ Minimum amount is KES 100</div></div><div class="form-group"><label>You will get</label><input type="text" id="rechargeCoins" readonly style="background:#21262D" value="1000 Coins"></div><div class="form-group"><label>M-Pesa Code / Message (from SMS)</label><textarea id="rechargeCode" placeholder="Paste code e.g. QK7XABC123 OR paste full M-Pesa message, we extract the code" style="width:100%;height:90px;background:#21262D;border:1px solid #30363D;color:#C9D1D9;border-radius:12px;padding:12px;font-size:14px;text-transform:uppercase;resize:vertical" oninput="parseMpesaMessage()" onpaste="setTimeout(parseMpesaMessage,50)"></textarea><div id="codeExtracted" style="font-size:12px;color:#4CAF50;margin-top:6px;display:none"></div><div style="display:flex;gap:8px;margin-top:8px"><button onclick="pasteMpesaMessage()" style="flex:1;background:#333;color:#fff;border:none;padding:12px;border-radius:12px;font-weight:700;cursor:pointer">📋 Paste from Clipboard</button><button onclick="clearMpesaMessage()" style="background:#333;color:#fff;border:none;padding:12px 16px;border-radius:12px;cursor:pointer">✕ Clear</button></div></div><p style="font-size:12px;color:#8B949E;padding:0 20px">1. Copy number above → send in M-Pesa • 2. Paste the SMS here • 3. Tap I Have Sent. After Admin approves, coins appear automatically.</p><button class="btn" onclick="submitRecharge()">I Have Sent</button></div></div>
 <div class="popup" id="usagePopup"><span class="close-btn" onclick="closePopup('usagePopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Coin Usage</h3><div id="usageList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="rechargeHistoryPopup"><span class="close-btn" onclick="closePopup('rechargeHistoryPopup')">×</span><div class="popup-content" style="text-align:left;padding:20px;background:#121212;color:white"><h3>Recharge History</h3><div id="rechargeList" style="margin-top:15px"></div></div></div>
 <div class="popup" id="coinsPopup"><div class="popup-content" style="text-align:left;padding:0">
@@ -343,9 +343,6 @@ function declineFollowRequest(fromId){
   showToast('Declined');
   openFollowRequests();
 }
-// PATCH 1 - OLD creditLadyEarnings() was a dead stub. Male now uses escrow via chat-manager.js.
-// Do NOT push directly to earnings/{ladyId}. Use createPendingEarning() -> pendingEarnings/{ladyId}.
-// Lady earns ONLY on reply. No reply in 60 min -> refunded by chat-manager.js.
 function creditLadyEarnings(ladyId, amount, reason){
   console.warn('DEPRECATED: creditLadyEarnings called, forwarding to createPendingEarning', ladyId, amount, reason);
   try{
@@ -364,8 +361,6 @@ function copyMyId(){
   showToast('✅ ID copied: '+id);
 }
 function refreshTopHeader(){ if(!myProfile) return; var av=document.getElementById('topAvatar'); if(av) av.src=myProfile.avatar||'https://via.placeholder.com/80'; var nm=document.getElementById('topName'); if(nm) nm.textContent='Hi, '+shortName(myProfile.name)+' 👋'; var id=document.getElementById('topID'); if(id) id.textContent='ID: '+(myProfile.displayId||myProfile.id||'-'); var cn=document.getElementById('topCoins'); if(cn) cn.textContent=myProfile.coins||0; }
-// PATCH 3 - Top coins go stale after chat deducts. chat-manager.js updates #meCoins / #chatHeaderCoins only.
-// This syncs #topCoins / #coinsBalance / #meCoins from the same myProfile object.
 function syncTopCoins(){
   if(!myProfile) return;
   var v = myProfile.coins||0;
@@ -532,24 +527,91 @@ function openMe(){
 }
 function closePopup(id){ document.getElementById(id).style.display = 'none'; }
 function openInfoRates(){ document.getElementById('infoPopup').style.display = 'block'; }
-function openRecharge(){ document.getElementById('rechargePopup').style.display = 'block'; }
-function calcCoins(){ let amt = parseInt(document.getElementById('rechargeAmount').value||'0'); document.getElementById('rechargeCoins').value = amt ? (amt*10) + ' Coins' : ''; }
+function openRecharge(){ document.getElementById('rechargePopup').style.display = 'block'; calcCoins(); }
+function copyAdminMpesa(){
+  var num = document.getElementById('adminMpesa').value || '0718422377';
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(num).then(function(){
+        var h=document.getElementById('copyMpesaHint'); if(h) h.style.display='block';
+        showToast('✅ Number copied: '+num);
+        setTimeout(function(){ if(h) h.style.display='none'; }, 2500);
+      });
+    } else { throw new Error('no clipboard'); }
+  }catch(e){
+    var inp=document.getElementById('adminMpesa'); inp.select(); document.execCommand('copy');
+    showToast('✅ Number copied: '+num);
+  }
+}
+function parseMpesaMessage(){
+  var el=document.getElementById('rechargeCode'); if(!el) return null;
+  var raw=(el.value||'').trim();
+  var out=document.getElementById('codeExtracted');
+  if(!raw){ if(out) out.style.display='none'; el.dataset.parsedCode=''; return null; }
+  var m = raw.toUpperCase().match(/\b([A-Z]{2,4}[0-9A-Z]{6,8})\b/);
+  if(!m) m = raw.toUpperCase().match(/\b([A-Z0-9]{10})\b/);
+  var code = m ? m[1] : '';
+  var am = raw.match(/(?:Ksh|KES|KSH)\s*([\d,]+\.?\d*)/i);
+  if(am){
+    var amtVal = parseFloat(am[1].replace(/,/g,''));
+    if(amtVal >= 100){
+      var amtEl=document.getElementById('rechargeAmount');
+      if(amtEl) amtEl.value = Math.round(amtVal);
+      calcCoins();
+    }
+  }
+  if(code && out){
+    out.style.display='block'; out.style.color='#4CAF50';
+    out.textContent='✅ Code found: '+code;
+    el.dataset.parsedCode = code;
+  } else if(out){
+    out.style.display='block'; out.style.color='#FF5252';
+    out.textContent='⚠️ No code found - paste the full M-Pesa SMS or just the code';
+    el.dataset.parsedCode='';
+  }
+  return code;
+}
+async function pasteMpesaMessage(){
+  try{
+    var txt = await navigator.clipboard.readText();
+    if(!txt){ showToast('Clipboard empty - long-press to paste'); return; }
+    document.getElementById('rechargeCode').value = txt;
+    parseMpesaMessage();
+  }catch(e){
+    showToast('Long-press the box → Paste');
+    document.getElementById('rechargeCode').focus();
+  }
+}
+function clearMpesaMessage(){
+  var el=document.getElementById('rechargeCode'); if(el){ el.value=''; el.dataset.parsedCode=''; }
+  var out=document.getElementById('codeExtracted'); if(out) out.style.display='none';
+}
+function calcCoins(){
+  let amt = parseInt(document.getElementById('rechargeAmount').value||'0');
+  var hint=document.getElementById('amountHint');
+  if(amt && amt < 100){ if(hint) hint.style.display='block'; }
+  else { if(hint) hint.style.display='none'; }
+  document.getElementById('rechargeCoins').value = amt ? (amt*10) + ' Coins' : '';
+}
 function submitRecharge(){
   let amt = parseInt(document.getElementById('rechargeAmount').value||'0');
-  let mpesaName = document.getElementById('rechargeMpesa').value.trim();
-  let mpesaCode = (document.getElementById('rechargeCode') ? document.getElementById('rechargeCode').value.trim().toUpperCase() : '');
-  if(!amt || amt < 100){ showToast('Minimum KES 100'); return; }
-  if(!mpesaName || mpesaName.length < 3){ showToast('Enter your M-Pesa Name as shown on M-Pesa'); return; }
-  if(!mpesaCode){ showToast('Enter M-Pesa Code from SMS (e.g. QK7X...)'); return; }
+  if(!amt || amt < 100){ showToast('⚠️ Minimum amount is KES 100'); var h=document.getElementById('amountHint'); if(h) h.style.display='block'; return; }
+  let mpesaName = (myProfile && myProfile.name) ? myProfile.name : 'User';
+  let rawCode = (document.getElementById('rechargeCode') ? document.getElementById('rechargeCode').value.trim().toUpperCase() : '');
+  let mpesaCode = document.getElementById('rechargeCode').dataset.parsedCode || parseMpesaMessage() || '';
+  if(!mpesaCode){
+    if(/^[A-Z0-9]{10}$/.test(rawCode.replace(/\s/g,''))) mpesaCode = rawCode.replace(/\s/g,'');
+  }
+  if(!mpesaCode){ showToast('Paste M-Pesa Code or full M-Pesa SMS'); return; }
   let coins = amt*10;
   if(!myProfile.recharges) myProfile.recharges=[];
-  myProfile.recharges.unshift({amount:amt, amountKES:amt, coins:coins, mpesa:mpesaName, mpesaName:mpesaName, mpesaCode:mpesaCode, code:mpesaCode, date:new Date().toLocaleString(), status:'pending', createdAt:Date.now()});
+  myProfile.recharges.unshift({amount:amt, amountKES:amt, coins:coins, mpesa:mpesaName, mpesaName:mpesaName, mpesaCode:mpesaCode, code:mpesaCode, mpesaMessage:rawCode, date:new Date().toLocaleString(), status:'pending', createdAt:Date.now()});
   localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile));
   localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile));
   let payments = JSON.parse(localStorage.getItem('payments')||'[]');
-  payments.unshift({userId:myProfile.id, email:myProfile.email||'', txCode:mpesaCode, mpesaName:mpesaName, amount:amt, coins:coins, status:'pending', createdAt:new Date().toLocaleString()});
+  payments.unshift({userId:myProfile.id, email:myProfile.email||'', txCode:mpesaCode, mpesaName:mpesaName, mpesaMessage:rawCode, amount:amt, coins:coins, status:'pending', createdAt:new Date().toLocaleString()});
   localStorage.setItem('payments', JSON.stringify(payments));
-  try{ let db=getDB(); if(db){ db.ref('deposits').push({userId:myProfile.id, name:myProfile.name, email:myProfile.email||'', phone:mpesaName, amount:amt, amountKES:amt, coins:coins, mpesaCode:mpesaCode, code:mpesaCode, status:'pending', createdAt:Date.now()}); db.ref('users/'+myProfile.id).update({name:myProfile.name, email:myProfile.email||'', coins:Number(myProfile.coins||0), gender:'Male'}); } }catch(e){ console.log('deposit push',e); }
+  try{ let db=getDB(); if(db){ db.ref('deposits').push({userId:myProfile.id, name:myProfile.name, email:myProfile.email||'', phone:mpesaName, amount:amt, amountKES:amt, coins:coins, mpesaCode:mpesaCode, code:mpesaCode, mpesaMessage:rawCode, status:'pending', createdAt:Date.now()}); db.ref('users/'+myProfile.id).update({name:myProfile.name, email:myProfile.email||'', coins:Number(myProfile.coins||0), gender:'Male'}); } }catch(e){ console.log('deposit push',e); }
   try{ if(typeof payReferralOnFirstPurchase==='function') payReferralOnFirstPurchase(myProfile); }catch(e){}
   closePopup('rechargePopup'); showToast('✅ Recharge submitted - wait for approval');
   renderRecharges();
