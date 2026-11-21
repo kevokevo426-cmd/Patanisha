@@ -37,6 +37,7 @@ textarea:disabled{background:#f5f5f5;color:#666}
 .status-approved{background:#D4EDDA;color:#155724}
 .withdraw-card{background:#FFF3E0;border:1px solid #FFB74D;padding:15px;border-radius:12px;margin:10px 0}
 .deposit-card{background:#E8F5E9;border:1px solid #81C784;padding:15px;border-radius:12px;margin:10px 0}
+.escrow-card{background:#FFF8E1;border:1px solid #FFC107;padding:15px;border-radius:12px;margin:10px 0}
 .withdraw-info{display:flex;justify-content:space-between;margin:5px 0}
 .verify-card{background:#FFF8E1;border:2px solid #FFC107;padding:15px;border-radius:12px;margin:10px 0;display:flex;gap:15px}
 .verify-card img{width:110px;height:110px;object-fit:cover;border-radius:12px;border:2px solid #FFC107;flex-shrink:0}
@@ -73,7 +74,8 @@ textarea:disabled{background:#f5f5f5;color:#666}
     <div class="stat-card" style="background:#FFEBEE"><b id="pendingWithdrawalsCount">0</b><span>Pending Withdrawals</span></div>
     <div class="stat-card" style="background:#FFE0E0"><b id="pendingVerifyCount">0</b><span>Pending Lady Verify</span></div>
     <div class="stat-card" style="background:#E8F5E9"><b id="pendingDepositsCount">0</b><span>Pending Deposits</span></div>
-    <div class="stat-card"><b id="totalIncome">0</b><span>Total Income</span></div>
+    <div class="stat-card" style="background:#FFF8E1"><b id="pendingEscrowCount">0</b><span>⏳ Held Escrow (60 min)</span></div>
+    <div class="stat-card"><b id="totalIncome">KES 0</b><span>Total Income (Approved Deposits)</span></div>
   </div>
   <button class="btn btn-info" onclick="refreshAll()">↻ Refresh All</button>
 </div>
@@ -90,6 +92,7 @@ textarea:disabled{background:#f5f5f5;color:#666}
 </div>
 <div class="box" style="border:3px solid #00C853">
   <h3>💳 Male Deposits — Approve to Credit Coins</h3>
+  <input id="depositSearch" placeholder="🔍 Search by Name, ID, M-Pesa Code or Message" onkeyup="renderDeposits()">
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
     <button class="btn" onclick="switchDepositTab('pending',this)" id="depositTabPending">⏳ Pending</button>
     <button class="btn btn-gray" onclick="switchDepositTab('approved',this)" id="depositTabApproved">✅ Approved</button>
@@ -97,6 +100,12 @@ textarea:disabled{background:#f5f5f5;color:#666}
     <button class="btn btn-gray" onclick="switchDepositTab('all',this)" id="depositTabAll">All</button>
   </div>
   <div id="depositList">Loading deposits...</div>
+</div>
+<div class="box" style="border:3px solid #FFC107">
+  <h3>⏳ Pending Escrow — HELD Coins (Chat / Gifts)</h3>
+  <p style="font-size:12px;color:#666;margin-bottom:10px">Male pays → HELD here 60 min. Lady earns ONLY if she replies. No reply = auto-refund. Use Release / Refund only if auto system fails.</p>
+  <button class="btn btn-info" onclick="loadPendingEscrow()">↻ Reload Escrow</button>
+  <div id="escrowList">Loading escrow...</div>
 </div>
 <div class="box">
   <h3>🎁 Referral & Bonus — Auto-Credit (No Admin Approval Needed)</h3>
@@ -148,8 +157,6 @@ textarea:disabled{background:#f5f5f5;color:#666}
   <p id="termsSaveStatus" style="font-size:12px;color:#888;margin-top:8px"></p>
 </div>
 </div>
-
-<!-- USER DETAIL POPUP -->
 <div class="detail-overlay" id="userDetailOverlay" onclick="if(event.target===this) closeUserDetail()">
 <div class="detail-box">
   <div style="display:flex;justify-content:space-between;align-items:center"><h2 id="detailTitle">User Record</h2><button onclick="closeUserDetail()" style="border:none;background:#eee;width:38px;height:38px;border-radius:50%;font-size:22px;cursor:pointer">✕</button></div>
@@ -158,6 +165,7 @@ textarea:disabled{background:#f5f5f5;color:#666}
   <div class="detail-section"><h4>📸 Profile + Photos</h4><div id="detailPhotos" class="detail-photos"></div><p id="detailBio" style="background:#f8f8f8;padding:12px;border-radius:12px;color:#333;line-height:1.5"></p></div>
   <div class="detail-section"><h4>📊 Activity</h4><div id="detailActivity"></div></div>
   <div class="detail-section"><h4>💳 Deposits (Male)</h4><div id="detailDeposits"></div></div>
+  <div class="detail-section"><h4>⏳ Escrow (Held / Released / Refunded)</h4><div id="detailEscrow"></div></div>
   <div class="detail-section"><h4>💰 Withdrawals (Female)</h4><div id="detailWithdrawals"></div></div>
   <div class="detail-section"><h4>🔐 Admin Actions</h4>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -168,11 +176,10 @@ textarea:disabled{background:#f5f5f5;color:#666}
     <label>Reset Login Password (user will login with this)</label><div style="display:flex;gap:8px"><input id="detailNewPassword" placeholder="New password, min 6 chars"><button class="btn btn-warning" onclick="resetLoginPassword()">🔑 Reset Login Password</button></div>
     <label>Reset Withdrawal PIN (Female, 4-6 digits)</label><div style="display:flex;gap:8px"><input id="detailNewPin" placeholder="e.g. 1234" inputmode="numeric"><button class="btn btn-warning" onclick="resetWithdrawalPin()">🔐 Reset Withdrawal PIN</button></div>
     <p id="detailResetMsg" style="font-size:13px;color:#0a7;margin-top:8px"></p>
-    <p style="font-size:12px;color:#888;margin-top:8px">⚠️ Tell the user the new password / PIN on WhatsApp. Old one stops working. PIN reset also writes to <b>users/&lt;id&gt;/withdrawalPin</b> in Firebase — Female app must read it (see note below).</p>
+    <p style="font-size:12px;color:#888;margin-top:8px">⚠️ Tell the user the new password / PIN on WhatsApp. Old one stops working. PIN reset also writes to <b>users/&lt;id&gt;/withdrawalPin</b> in Firebase — Female app must read it.</p>
   </div>
 </div>
 </div>
-
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script>
@@ -196,10 +203,11 @@ let maleUsers = JSON.parse(localStorage.getItem('patanishaUsers_male')) || [];
 let withdrawals = JSON.parse(localStorage.getItem('patanishaWithdrawals')) || [];
 let banned = JSON.parse(localStorage.getItem('patanishaBanned')) || [];
 let currentAnchorTab='all', currentRefTab='all', currentVerifyTab='pending', currentDepositTab='pending';
-let _allReferrals=[], _bonusByUser={}, _firebaseWithdrawals=[], _verifications=[], _deposits=[], _detailId=null, _detailUser=null, _allUsersCache=[];
+let _allReferrals=[], _bonusByUser={}, _firebaseWithdrawals=[], _verifications=[], _deposits=[], _escrow=[], _detailId=null, _detailUser=null, _allUsersCache=[];
 function getDB(){ if(window.PatanishaDB) return window.PatanishaDB; try{ if(typeof firebase!=='undefined' && firebase.database){ window.PatanishaDB=firebase.database(); return window.PatanishaDB; } }catch(e){} return null; }
 function showAlert(msg,type){ let a=document.getElementById('alert'); a.className='alert '+(type==='error'?'error':'success'); a.innerText=msg; a.style.display='block'; setTimeout(()=>{a.style.display='none'},3000); }
-function refreshAll(){ loadReferralStats(); loadWithdrawalsFirebase(); loadVerifications(); loadDeposits(); loadAnchors(); loadTermsFromFirebase(); showAlert('Refreshed','success'); }
+function copyText(t,msg){ try{ navigator.clipboard.writeText(t).then(()=>showAlert(msg||'Copied','success')); }catch(e){ let i=document.createElement('input'); i.value=t; document.body.appendChild(i); i.select(); document.execCommand('copy'); i.remove(); showAlert(msg||'Copied','success'); } }
+function refreshAll(){ loadReferralStats(); loadWithdrawalsFirebase(); loadVerifications(); loadDeposits(); loadPendingEscrow(); loadAnchors(); loadTermsFromFirebase(); showAlert('Refreshed','success'); }
 window.addEventListener('load', function(){
   document.getElementById('termsEditor').value = localStorage.getItem('patanisha_terms') || DEFAULT_TERMS;
   document.getElementById('privacyEditor').value = localStorage.getItem('patanisha_privacy') || DEFAULT_PRIVACY;
@@ -237,23 +245,16 @@ async function sendCoinsToMale(){
 }
 function isOnlineNow(u){ if(!u) return false; if(u.online===true && u.lastSeen && (Date.now()-u.lastSeen<120000)) return true; if(u.online===true && !u.lastSeen) return true; let ls=u.lastSeen||u.onlineAt||0; return ls && (Date.now()-ls<120000); }
 function fmtTime(ts){ if(!ts) return 'Never'; let d=Date.now()-ts; if(d<60000) return 'Just now'; if(d<3600000) return Math.floor(d/60000)+' min ago'; if(d<86400000) return Math.floor(d/3600000)+' hours ago'; return new Date(ts).toLocaleString(); }
-// ===== USER DETAIL - TAP USER =====
 async function openUserDetail(userId){
   _detailId=userId; document.getElementById('detailResetMsg').textContent='';
   document.getElementById('userDetailOverlay').style.display='block';
   document.getElementById('detailTitle').textContent='Loading...';
   document.getElementById('detailRows').innerHTML='<p style="color:#888">Loading record...</p>';
   document.getElementById('detailPhotos').innerHTML=''; document.getElementById('detailBio').textContent='';
-  // 1. Local first
   let u = _allUsersCache.find(x=>x.id===userId) || users.find(x=>x.id===userId) || maleUsers.find(x=>x.id===userId) || null;
-  // 2. Firebase - freshest: coins, online, photos, password hint, pin
   let db=getDB();
   if(db){
-    try{
-      let snap=await db.ref('users/'+userId).once('value');
-      let fb=snap.val()||{};
-      if(fb && Object.keys(fb).length){ u = Object.assign({}, u||{}, fb, {id:userId}); }
-    }catch(e){}
+    try{ let snap=await db.ref('users/'+userId).once('value'); let fb=snap.val()||{}; if(fb && Object.keys(fb).length){ u = Object.assign({}, u||{}, fb, {id:userId}); } }catch(e){}
   }
   if(!u){ document.getElementById('detailTitle').textContent='User not found'; return; }
   _detailUser=u;
@@ -265,7 +266,8 @@ async function openUserDetail(userId){
   let rows=[
     ['Name', u.name||'-'], ['ID', u.id||'-'], ['Email', u.email||'-'], ['Gender', u.gender||'-'],
     ['City', u.city||'-'], ['Age', u.age||'-'], ['DOB', u.dob||'-'],
-    ['🪙 Coins Balance', (u.coins||0)+' coins = KES '+((u.coins||0)*30/1000).toFixed(2)],
+    ['🪙 Coins Balance', (u.coins||0)+' coins'],
+    ['💰 Earnings (Female)', (u.earnings||0)+' coins'],
     ['Referral Code', u.referralCode||u.displayId||u.id||'-'],
     ['M-Pesa', u.mpesa||u.phone||'Not set'],
     ['Verification', (u.verificationStatus||'approved').toUpperCase()],
@@ -273,7 +275,6 @@ async function openUserDetail(userId){
     ['Banned?', banned.includes(userId)?'YES - BANNED':'No'],
   ];
   document.getElementById('detailRows').innerHTML=rows.map(r=>`<div class="detail-row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
-  // FIX PHOTOS: Firebase may store photos as object {0:...,1:...}, not array - convert it. And open in-page, not window.open(data:) which goes blank.
   let _rawPhotos = u.photos || [];
   let photos = Array.isArray(_rawPhotos) ? _rawPhotos.filter(Boolean) : Object.keys(_rawPhotos).sort().map(k=>_rawPhotos[k]).filter(Boolean);
   if(!photos.length && u.avatar) photos=[u.avatar];
@@ -283,12 +284,14 @@ async function openUserDetail(userId){
   document.getElementById('detailActivity').innerHTML=`<div class="detail-row"><span>Friends</span><b>${(u.friends||[]).length}</b></div><div class="detail-row"><span>Following</span><b>${(u.following||[]).length}</b></div><div class="detail-row"><span>Followers</span><b>${(u.followers||[]).length}</b></div><div class="detail-row"><span>Visitors</span><b>${(u.visitors||[]).length}</b></div><div class="detail-row"><span>Referral Earned</span><b>${u.referralEarned||u.referralEarnedCoins||0} coins</b></div>`;
   document.getElementById('detailApproveBtn').style.display = (u.gender==='Female')?'inline-block':'none';
   document.getElementById('detailBanBtn').textContent = banned.includes(userId)?'Unban':'Ban';
-  // Deposits / Withdrawals for THIS user
   if(db){
     try{
       let ds=await db.ref('deposits').orderByChild('userId').equalTo(userId).once('value');
       let dArr=[]; ds.forEach(c=>dArr.push(c.val())); dArr.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-      document.getElementById('detailDeposits').innerHTML = dArr.length ? dArr.map(d=>`<div class="detail-row"><span>KES ${d.amountKES||d.amount} = ${d.coins} coins • ${d.mpesaCode||''}</span><b>${(d.status||'pending').toUpperCase()}</b></div>`).join('') : '<p style="color:#888">No deposits</p>';
+      document.getElementById('detailDeposits').innerHTML = dArr.length ? dArr.map(d=>`<div class="detail-row"><span>KES ${d.amountKES||d.amount} = ${d.coins} coins • ${(d.mpesaCode||'').toUpperCase()}<br><span style="font-size:11px;color:#888">${String(d.mpesaMessage||'').substring(0,120)}</span></span><b>${(d.status||'pending').toUpperCase()}</b></div>`).join('') : '<p style="color:#888">No deposits</p>';
+      let es=await db.ref('pendingEarnings/'+userId).once('value');
+      let eArr=[]; es.forEach(c=>eArr.push({key:c.key,...c.val()})); eArr.sort((a,b)=>(b.ts||0)-(a.ts||0));
+      document.getElementById('detailEscrow').innerHTML = eArr.length ? eArr.slice(0,10).map(e=>`<div class="detail-row"><span>${e.amount} coins • ${e.reason||''} • from ${e.fromName||e.fromId||''}</span><b>${(e.status||'pending').toUpperCase()}</b></div>`).join('') : '<p style="color:#888">No escrow</p>';
       let ws=await db.ref('withdrawals').orderByChild('userId').equalTo(userId).once('value');
       let wArr=[]; ws.forEach(c=>wArr.push(c.val())); wArr.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
       document.getElementById('detailWithdrawals').innerHTML = wArr.length ? wArr.map(w=>`<div class="detail-row"><span>${w.coins} coins = KES ${(w.netKES||0).toFixed(2)} • ${w.phone||''}</span><b>${(w.status||'pending').toUpperCase()}</b></div>`).join('') : '<p style="color:#888">No withdrawals</p>';
@@ -315,7 +318,7 @@ async function adjustCoinsDetail(){
   let db=getDB(); if(!db) return showAlert('Firebase not loaded','error');
   let snap=await db.ref('users/'+_detailId+'/coins').once('value');
   let cur=Number(snap.val()||(_detailUser&&_detailUser.coins)||0);
-  await db.ref('users/'+_DetailId+'/coins').set(cur+amt);
+  await db.ref('users/'+_detailId+'/coins').set(cur+amt);
   document.getElementById('detailResetMsg').textContent=`✅ Coins: ${cur} → ${cur+amt}`;
   loadAnchors(); openUserDetail(_detailId);
 }
@@ -324,9 +327,7 @@ async function resetLoginPassword(){
   if(!np || np.length<6) return showAlert('Password min 6 chars','error');
   if(!confirm('Reset login password for '+_detailId+' to: '+np+' ? Old password will stop working.')) return;
   let db=getDB();
-  // 1. Firebase - this is what matters for other phones
   if(db){ try{ await db.ref('users/'+_detailId+'/password').set(np); await db.ref('users/'+_detailId+'/passwordResetAt').set(Date.now()); }catch(e){} }
-  // 2. Local - for same-phone testing
   try{
     let all=JSON.parse(localStorage.getItem('patanisha_allAccounts')||'[]'); let u=all.find(x=>x.id===_DetailId); if(u) u.password=np; localStorage.setItem('patanisha_allAccounts', JSON.stringify(all));
     ['patanishaUsers','patanishaUsers_male'].forEach(k=>{ let arr=JSON.parse(localStorage.getItem(k)||'[]'); let x=arr.find(y=>y.id===_detailId); if(x) x.password=np; localStorage.setItem(k, JSON.stringify(arr)); });
@@ -339,9 +340,8 @@ async function resetWithdrawalPin(){
   if(!/^\d{4,6}$/.test(pin)) return showAlert('PIN must be 4-6 digits','error');
   if(!confirm('Reset Withdrawal PIN for '+_detailId+' to: '+pin+' ?')) return;
   let db=getDB();
-  if(db){ try{ await db.ref('users/'+_DetailId+'/withdrawalPin').set(pin); await db.ref('users/'+_DetailId+'/pin').set(pin); await db.ref('users/'+_detailId+'/pinResetAt').set(Date.now()); }catch(e){} }
-  // Local fallback - Female app on same phone reads patanisha_pin_<id>
-  try{ localStorage.setItem('patanisha_pin_'+_detailId, pin); }catch(e){}
+  if(db){ try{ await db.ref('users/'+_detailId+'/withdrawalPin').set(pin); await db.ref('users/'+_detailId+'/pin').set(pin); await db.ref('users/'+_DetailId+'/pinResetAt').set(Date.now()); }catch(e){} }
+  try{ localStorage.setItem('patanisha_pin_'+_DetailId, pin); }catch(e){}
   document.getElementById('detailResetMsg').textContent='✅ Withdrawal PIN reset to: '+pin+' — tell lady on WhatsApp';
   showAlert('Withdrawal PIN reset','success');
 }
@@ -351,17 +351,59 @@ async function loadDeposits(){
   let db=getDB(); if(!db){ box.innerHTML='<p style="color:#999">Firebase not loaded</p>'; return; }
   try{ let timeout=new Promise(res=>setTimeout(()=>res(null),8000)); let snap=await Promise.race([db.ref('deposits').once('value'), timeout]); if(!snap){ box.innerHTML='<p style="color:#999">Timeout - check Rules</p>'; return; } snap.forEach(c=>{ _deposits.push({key:c.key, ...c.val()}); }); _deposits.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)); }catch(e){ box.innerHTML='<p style="color:#999">'+e.message+'</p>'; return; }
   document.getElementById('pendingDepositsCount').innerText=_deposits.filter(d=>!d.status||d.status==='pending').length;
+  let income=_deposits.filter(d=>d.status==='approved').reduce((s,d)=>s+Number(d.amountKES||d.amount||0),0);
+  document.getElementById('totalIncome').innerText='KES '+income.toLocaleString();
   renderDeposits();
 }
 function switchDepositTab(tab,btn){ currentDepositTab=tab; ['Pending','Approved','Rejected','All'].forEach(t=>{ let el=document.getElementById('depositTab'+t); if(el) el.className='btn btn-gray'; }); if(btn) btn.className='btn'; renderDeposits(); }
 function renderDeposits(){
   let box=document.getElementById('depositList'); let list=_deposits.slice();
   if(currentDepositTab!=='all') list=list.filter(d=>(d.status||'pending')===currentDepositTab);
+  let q=(document.getElementById('depositSearch')?.value||'').toLowerCase().trim();
+  if(q) list=list.filter(d=>((d.name||'')+' '+(d.userId||'')+' '+(d.mpesaCode||d.code||'')+' '+(d.mpesaMessage||'')).toLowerCase().includes(q));
   if(!list.length){ box.innerHTML='<p style="color:#999;text-align:center">No deposits in this tab</p>'; return; }
-  box.innerHTML=list.map(d=>`<div class="deposit-card" onclick="openUserDetail('${d.userId}')"><div class="withdraw-info"><span>Male:</span><b>${d.name||'Unknown'} (tap for record)</b></div><div class="withdraw-info"><span>ID:</span><b>${d.userId||''}</b></div><div class="withdraw-info"><span>Amount:</span><b>KES ${d.amountKES||d.amount||0}</b></div><div class="withdraw-info"><span>Coins:</span><b>${d.coins||0}</b></div><div class="withdraw-info"><span>M-Pesa Code:</span><b>${d.mpesaCode||d.code||'-'}</b></div><div class="withdraw-info"><span>Status:</span><b>${(d.status||'pending').toUpperCase()}</b></div>${(!d.status||d.status==='pending')?`<div onclick="event.stopPropagation()"><button class="btn btn-success" onclick="approveDeposit('${d.key}', '${d.userId||''}', ${d.coins||0})">✅ Approve - Credit ${d.coins||0}</button><button class="btn btn-danger" onclick="rejectDeposit('${d.key}')">❌ Reject</button></div>`:''}</div>`).join('');
+  box.innerHTML=list.map(d=>`<div class="deposit-card" onclick="openUserDetail('${d.userId}')"><div class="withdraw-info"><span>Male:</span><b>${d.name||'Unknown'} (tap for record)</b></div><div class="withdraw-info"><span>ID:</span><b>${d.userId||''}</b></div><div class="withdraw-info"><span>Amount:</span><b>KES ${d.amountKES||d.amount||0}</b></div><div class="withdraw-info"><span>Coins:</span><b>${d.coins||0}</b></div><div class="withdraw-info"><span>M-Pesa Code:</span><b>${d.mpesaCode||d.code||'-'} <button class="btn btn-info" onclick="event.stopPropagation();copyText('${(d.mpesaCode||d.code||'').replace(/'/g,'')}','Code copied')">📋 Copy</button></b></div>${d.mpesaMessage?`<div style="background:#fff;padding:10px;border-radius:10px;font-size:12px;color:#333;margin:8px 0;white-space:pre-wrap;word-break:break-word">📩 Full SMS: ${String(d.mpesaMessage).replace(/</g,'&lt;')}<br><button class="btn btn-info" onclick="event.stopPropagation();copyText(${JSON.stringify(d.mpesaMessage)},'Message copied')">📋 Copy Message</button></div>`:''}<div class="withdraw-info"><span>Status:</span><b>${(d.status||'pending').toUpperCase()}</b></div>${(!d.status||d.status==='pending')?`<div onclick="event.stopPropagation()"><button class="btn btn-success" onclick="approveDeposit('${d.key}', '${d.userId||''}', ${d.coins||0})">✅ Approve - Credit ${d.coins||0}</button><button class="btn btn-danger" onclick="rejectDeposit('${d.key}')">❌ Reject</button></div>`:''}</div>`).join('');
 }
-async function approveDeposit(key,userId,coins){ let db=getDB(); if(!db) return; if(!confirm(`Approve +${coins} coins to ${userId}?`)) return; try{ await db.ref('deposits/'+key+'/status').set('approved'); let snap=await db.ref('users/'+userId+'/coins').once('value'); let cur=Number(snap.val()||0); await db.ref('users/'+userId+'/coins').set(cur+Number(coins||0)); await db.ref('earnings/'+userId).push({amount:Number(coins||0), reason:'Deposit approved', ts:Date.now()}); showAlert('✅ Deposit approved','success'); loadDeposits(); }catch(e){ showAlert(e.message,'error'); } }
+// FIX: Male has Coins, NOT Earnings. Only credit users/{id}/coins. Do NOT push to earnings/{id}.
+async function approveDeposit(key,userId,coins){ let db=getDB(); if(!db) return; if(!confirm(`Approve +${coins} coins to ${userId}?`)) return; try{ await db.ref('deposits/'+key+'/status').set('approved'); let snap=await db.ref('users/'+userId+'/coins').once('value'); let cur=Number(snap.val()||0); await db.ref('users/'+userId+'/coins').set(cur+Number(coins||0)); showAlert('✅ Deposit approved','success'); loadDeposits(); }catch(e){ showAlert(e.message,'error'); } }
 async function rejectDeposit(key){ let db=getDB(); if(!db) return; if(!confirm('Reject deposit?')) return; await db.ref('deposits/'+key+'/status').set('rejected'); showAlert('Rejected','success'); loadDeposits(); }
+// ===== PENDING ESCROW =====
+async function loadPendingEscrow(){
+  let box=document.getElementById('escrowList'); box.innerHTML='Loading escrow...'; _escrow=[];
+  let db=getDB(); if(!db){ box.innerHTML='<p style="color:#999">Firebase not loaded</p>'; return; }
+  try{
+    let snap=await db.ref('pendingEarnings').once('value');
+    snap.forEach(ladySnap=>{ ladySnap.forEach(c=>{ _escrow.push({ladyId:ladySnap.key, key:c.key, ...c.val()}); }); });
+    _escrow.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  }catch(e){ box.innerHTML='<p style="color:#999">'+e.message+'</p>'; return; }
+  document.getElementById('pendingEscrowCount').innerText=_escrow.filter(e=>!e.status||e.status==='pending').length;
+  renderEscrow();
+}
+function renderEscrow(){
+  let box=document.getElementById('escrowList'); let list=_escrow.filter(e=>!e.status||e.status==='pending');
+  if(!list.length){ box.innerHTML='<p style="color:#999;text-align:center">No held coins right now — all released or refunded</p>'; return; }
+  box.innerHTML=list.map(e=>{
+    let left=Math.max(0, (e.expiresAt||0)-Date.now()); let mins=Math.floor(left/60000);
+    return `<div class="escrow-card"><div class="withdraw-info"><span>From Male:</span><b>${e.fromName||e.fromId||''} (${e.fromId||''})</b></div><div class="withdraw-info"><span>To Lady:</span><b>${e.toId||''} <button class="btn btn-info" onclick="openUserDetail('${e.toId||''}')">View Lady</button></b></div><div class="withdraw-info"><span>Amount:</span><b>${e.amount||0} coins</b></div><div class="withdraw-info"><span>Reason:</span><b>${e.reason||''}</b></div><div class="withdraw-info"><span>Expires in:</span><b>${mins} min</b></div><div style="margin-top:8px"><button class="btn btn-success" onclick="releaseEscrow('${e.ladyId}','${e.key}',${e.amount||0})">✅ Release to Lady</button><button class="btn btn-danger" onclick="refundEscrow('${e.ladyId}','${e.key}',${e.amount||0},'${e.fromId||''}')">↩ Refund to Male</button></div></div>`;
+  }).join('');
+}
+async function releaseEscrow(ladyId,key,amount){
+  let db=getDB(); if(!db) return; if(!confirm(`Release ${amount} coins to lady ${ladyId}? This credits her Earnings.`)) return;
+  try{
+    await db.ref('pendingEarnings/'+ladyId+'/'+key+'/status').set('released');
+    let s=await db.ref('users/'+ladyId+'/earnings').once('value'); await db.ref('users/'+ladyId+'/earnings').set(Number(s.val()||0)+Number(amount||0));
+    await db.ref('earnings/'+ladyId).push({amount:Number(amount||0), reason:'Escrow released by Admin', ts:Date.now()});
+    showAlert('✅ Released to lady','success'); loadPendingEscrow();
+  }catch(e){ showAlert(e.message,'error'); }
+}
+async function refundEscrow(ladyId,key,amount,fromId){
+  let db=getDB(); if(!db) return; if(!confirm(`Refund ${amount} coins to male ${fromId}?`)) return;
+  try{
+    await db.ref('pendingEarnings/'+ladyId+'/'+key+'/status').set('refunded');
+    let s=await db.ref('users/'+fromId+'/coins').once('value'); await db.ref('users/'+fromId+'/coins').set(Number(s.val()||0)+Number(amount||0));
+    showAlert('↩ Refunded to male','success'); loadPendingEscrow();
+  }catch(e){ showAlert(e.message,'error'); }
+}
 // ===== FEMALE VERIFICATION =====
 async function loadVerifications(){
   let box=document.getElementById('verifyList'); box.innerHTML='Loading verifications...'; _verifications=[];
@@ -428,12 +470,11 @@ async function approveWithdrawalFirebase(key){ let db=getDB(); if(!db) return; a
 async function rejectWithdrawalFirebase(key,coins,userId){ let db=getDB(); if(!db) return; await db.ref('withdrawals/'+key+'/status').set('rejected'); if(userId&&coins) await db.ref('earnings/'+userId).push({amount:coins, reason:'Withdrawal rejected - refund', ts:Date.now()}); showAlert('Rejected + refunded','success'); loadWithdrawalsFirebase(); }
 function approveWithdrawal(i){ withdrawals[i].status='approved'; localStorage.setItem('patanishaWithdrawals', JSON.stringify(withdrawals)); showAlert('Approved','success'); renderWithdrawals(''); }
 function rejectWithdrawal(i){ withdrawals[i].status='rejected'; localStorage.setItem('patanishaWithdrawals', JSON.stringify(withdrawals)); showAlert('Rejected','success'); renderWithdrawals(''); }
-// ===== ANCHORS - NOW FROM FIREBASE TOO =====
+// ===== ANCHORS =====
 function switchAnchorTab(tab,btn){ currentAnchorTab=tab; document.querySelectorAll('.anchor-tab').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); loadAnchors(); }
 async function loadAnchors(){
   users=JSON.parse(localStorage.getItem('patanishaUsers'))||[]; maleUsers=JSON.parse(localStorage.getItem('patanishaUsers_male'))||[]; banned=JSON.parse(localStorage.getItem('patanishaBanned'))||[];
   let all=[...users.map(u=>({...u,gender:u.gender||'Female'})), ...maleUsers.map(u=>({...u,gender:u.gender||'Male'}))];
-  // Merge Firebase users/ - this gives real online + coins + photos
   let db=getDB();
   if(db){
     try{
