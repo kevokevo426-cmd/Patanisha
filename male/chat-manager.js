@@ -5,6 +5,7 @@
 // FIX: Inbox ALSO discovers chats from Firebase - even if never talked on THIS phone
 // FIX: End call removes ALL #callScreen elements, stops tracks + ringtone
 // FIX: Chat header CLEAN - only Back, Photo, Name, Coins, Follow, Block on top. All other buttons at bottom.
+// FIX: Header - Name/Online/Avatar NEVER squeezed. No shortName() truncation. Follow/Block fixed small.
 // NEW: ESCROW - Male pays -> HELD in pendingEarnings/{ladyId} 60 min. Lady earns ONLY on reply.
 //      No reply in 60 min -> REFUNDED to male. Female release is backup, male refund is backup.
 //      NEVER push directly to earnings/{ladyId} anymore (old file did - that was the leak).
@@ -13,6 +14,8 @@
 //       Female has Earnings. Male has Coins. Do not copy female nav here.
 function getDB(){ return window.PatanishaDB || null; }
 function getChatId(aId,bId){ return [String(aId),String(bId)].sort().join('_'); }
+function getDisplayName(u){ return (u && (u.name || u.displayName)) || 'User'; }
+function getAvatarUrl(u){ return (u && (u.avatar || u.photoURL || u.photo)) || 'https://via.placeholder.com/80'; }
 function saveMyProfileMale(){
   if(typeof myProfile==='undefined'||!myProfile) return;
   localStorage.setItem('patanisha_myProfile_male', JSON.stringify(myProfile));
@@ -113,7 +116,7 @@ async function updateBlockUI(){
   const btn=document.getElementById('chatBlockBtn'); const u=(window.ChatManager && ChatManager.currentChatUser);
   if(!btn||!u) return;
   const blocked=await isBlocked(u.id);
-  btn.textContent = blocked ? '🚫 Unblock' : '🚫 Block';
+  btn.textContent = blocked ? 'Unblock' : 'Block';
   btn.style.background = blocked ? '#D32F2F' : '#333';
   const inp=document.getElementById('chatInput');
   if(inp){ inp.disabled=blocked; inp.placeholder = blocked ? 'You blocked this user - Unblock to chat' : inp.placeholder; }
@@ -329,8 +332,8 @@ function _showCallUI(user, status, isIncoming){
   cs.innerHTML=`
   <video id="remoteVideo" autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;display:none;filter:brightness(1.1) contrast(1.05)"></video>
   <div id="callTopInfo" style="position:absolute;top:0;left:0;right:0;padding:18px;text-align:center;z-index:3;background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)">
-    <img src="${user.avatar||''}" style="width:80px;height:80px;border-radius:50%;border:3px solid #25D366;object-fit:cover;margin:0 auto">
-    <div style="font-size:22px;font-weight:700;margin-top:8px">${typeof shortName!=='undefined'?shortName(user.name):user.name}</div>
+    <img src="${getAvatarUrl(user)}" onerror="this.onerror=null;this.src='https://via.placeholder.com/80'" style="width:80px;height:80px;border-radius:50%;border:3px solid #25D366;object-fit:cover;margin:0 auto">
+    <div style="font-size:22px;font-weight:700;margin-top:8px">${getDisplayName(user)}</div>
     <div id="callStatusText" style="color:#fff;font-size:15px;margin-top:4px">${status}</div>
     <div id="callCoinText" style="color:#F59E0B;font-size:14px;font-weight:700;margin-top:4px">Coins: ${myProfile?myProfile.coins||0:0}</div>
   </div>
@@ -461,7 +464,7 @@ const ChatManager = {
       content.innerHTML=`<div style="text-align:center;padding:40px;color:#888">No chats yet<br><span style="font-size:12px">Tap a lady on Home → Chat to start<br>1st message FREE</span><br><br><button onclick="ChatManager.openInbox()" style="background:#2196F3;color:#fff;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer">↻ Retry</button></div>`;
       return;
     }
-    content.innerHTML=list.map((u,i)=>`<div onclick="ChatManager.openInboxChat(${i})" style="display:flex;align-items:center;gap:12px;background:#161B22;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer"><img src="${u.avatar||'https://via.placeholder.com/80'}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #2196F3"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;color:#fff">${typeof shortName!=='undefined'?shortName(u.name):u.name} ♀</b><div style="font-size:12px;color:#8B949E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.lastMsg ? String(u.lastMsg).replace(/</g,'&lt;') : '📍 '+(u.city||'Ruiru')}</div></div><span style="font-size:22px">💬</span></div>`).join('');
+    content.innerHTML=list.map((u,i)=>`<div onclick="ChatManager.openInboxChat(${i})" style="display:flex;align-items:center;gap:12px;background:#161B22;padding:12px;border-radius:12px;margin-bottom:10px;cursor:pointer"><img src="${getAvatarUrl(u)}" onerror="this.onerror=null;this.src='https://via.placeholder.com/80'" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #2196F3"><div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;color:#fff">${getDisplayName(u)} ♀</b><div style="font-size:12px;color:#8B949E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.lastMsg ? String(u.lastMsg).replace(/</g,'&lt;') : '📍 '+(u.city||'Ruiru')}</div></div><span style="font-size:22px">💬</span></div>`).join('');
   },
   openInbox(){
     let old=document.getElementById('chatInboxPopup'); if(old) old.remove();
@@ -528,16 +531,16 @@ const ChatManager = {
     const blocked = await isBlocked(user.id);
     const blockedBy = await isBlockedByOther(user.id);
     let html=`<div id="chatPopup" style="position:fixed;inset:0;background:#0D1117;z-index:99999;display:flex;flex-direction:column;color:#fff;height:100dvh">
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#2196F3;flex-shrink:0">
-      <button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:10px 14px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;flex-shrink:0">← Back</button>
-      <img src="${user.avatar||'https://via.placeholder.com/80'}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex-shrink:0">
-      <div style="flex:1;min-width:0;line-height:1.2">
-        <b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;font-size:15px">${typeof shortName!=='undefined'?shortName(user.name):user.name}</b>
+    <div style="display:flex;align-items:center;gap:6px;padding:8px;background:#2196F3;flex-shrink:0;width:100%;box-sizing:border-box;overflow:hidden">
+      <button onclick="ChatManager.closeChat()" style="background:#fff;color:#000;border:none;padding:8px 10px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex:0 0 auto">← Back</button>
+      <img src="${getAvatarUrl(user)}" onerror="this.onerror=null;this.src='https://via.placeholder.com/80'" style="width:42px;height:42px;min-width:42px;border-radius:50%;object-fit:cover;border:2px solid #fff;flex:0 0 42px;background:#fff">
+      <div style="flex:1 1 auto;min-width:0;line-height:1.25">
+        <b title="${getDisplayName(user).replace(/"/g,'&quot;')}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;font-size:15px;max-width:100%">${getDisplayName(user).replace(/</g,'&lt;')}</b>
         <div style="font-size:11px;color:#BBDEFB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">● Online • ${isFirst?'1st message FREE':'10 coins / msg'}</div>
         <div id="chatHeaderCoins" style="font-size:12px;color:#FFD700;font-weight:800;white-space:nowrap">🪙 ${myProfile?myProfile.coins||0:0}</div>
       </div>
-      <button id="chatFollowBtn" onclick="toggleFollowInChat()" style="background:#2196F3;color:#fff;border:2px solid #fff;padding:9px 12px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Follow</button>
-      <button id="chatBlockBtn" onclick="toggleBlockUser()" style="background:${blocked?'#D32F2F':'#333'};color:#fff;border:2px solid #fff;padding:9px 10px;border-radius:20px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0">${blocked?'🚫 Unblock':'🚫 Block'}</button>
+      <button id="chatFollowBtn" onclick="toggleFollowInChat()" style="background:#2196F3;color:#fff;border:1px solid #fff;padding:7px 8px;border-radius:18px;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap;flex:0 0 auto">+ Follow</button>
+      <button id="chatBlockBtn" onclick="toggleBlockUser()" style="background:${blocked?'#D32F2F':'#333'};color:#fff;border:1px solid #fff;padding:7px 8px;border-radius:18px;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap;flex:0 0 auto">${blocked?'Unblock':'Block'}</button>
     </div>
     ${blocked||blockedBy?`<div style="background:#D32F2F;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:700">${blocked?'🚫 You blocked this user. Unblock to chat again.':'🚫 This user blocked you.'}</div>`:''}
     <div id="chatMessages" style="flex:1;min-height:0;overflow-y:auto;padding:15px 15px 10px;background:#0D1117"></div>
@@ -608,7 +611,7 @@ const ChatManager = {
   },
   renderMessages(msgs){
     let box=document.getElementById('chatMessages'); if(!box) return;
-    if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#8B949E;padding:30px">Say Hi to '+(typeof shortName!=='undefined'?shortName(this.currentChatUser?this.currentChatUser.name:'her'):this.currentChatUser?this.currentChatUser.name:'her')+' 👋<br><span style="font-size:12px">1st message FREE, then 10 coins</span></div>'; return; }
+    if(!msgs || msgs.length===0){ box.innerHTML='<div style="text-align:center;color:#8B949E;padding:30px">Say Hi to '+getDisplayName(this.currentChatUser)+' 👋<br><span style="font-size:12px">1st message FREE, then 10 coins</span></div>'; return; }
     var seenCallMsg = new Set();
     msgs = (msgs||[]).filter(function(m){
       if(m && m.type==='call-event' && m.callId){
@@ -810,7 +813,7 @@ const ChatManager = {
   giftList:[{name:'Heart',coins:50,icon:'❤️'},{name:'Flower',coins:100,icon:'🌸'},{name:'Butterfly',coins:200,icon:'🦋'},{name:'Star',coins:300,icon:'⭐'},{name:'Diamond',coins:500,icon:'💎'}],
   openGiftPanel(user){
     let giftId='giftPanelPopup'; if(document.getElementById(giftId)) document.getElementById(giftId).remove();
-    let html=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#161B22;color:#fff;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Send Gift 🎁</div><button onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#21262D;color:#fff;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((g,i)=>`<button onclick="ChatManager.selectGift(${i},'${giftId}')" style="background:#21262D;color:#fff;border:1px solid #30363D;border-radius:18px;min-height:140px;cursor:pointer;padding:8px 5px"><div style="font-size:50px">${g.icon}</div><div style="font-size:14px;font-weight:600;color:#F59E0B">${g.coins} coins</div><div style="margin-top:5px;font-size:14px">${g.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #30363D;color:#8B949E;font-size:13px;text-align:center">Sending gift to <strong style="color:#fff">${typeof shortName!=='undefined'?shortName(user.name):user.name}</strong> • Balance: ${myProfile?myProfile.coins||0:0} coins</div></div></div>`;
+    let html=`<div id="${giftId}" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:650px;max-height:90vh;background:#161B22;color:#fff;border-radius:25px 25px 0 0;overflow:hidden;display:flex;flex-direction:column"><div style="padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:22px;font-weight:800">Send Gift 🎁</div><button onclick="document.getElementById('${giftId}').remove()" style="width:40px;height:40px;border:none;border-radius:50%;background:#21262D;color:#fff;font-size:25px;cursor:pointer">×</button></div><div style="flex:1;overflow-y:auto;padding:0 12px 20px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${this.giftList.map((g,i)=>`<button onclick="ChatManager.selectGift(${i},'${giftId}')" style="background:#21262D;color:#fff;border:1px solid #30363D;border-radius:18px;min-height:140px;cursor:pointer;padding:8px 5px"><div style="font-size:50px">${g.icon}</div><div style="font-size:14px;font-weight:600;color:#F59E0B">${g.coins} coins</div><div style="margin-top:5px;font-size:14px">${g.name}</div></button>`).join('')}</div></div><div style="padding:12px 20px;border-top:1px solid #30363D;color:#8B949E;font-size:13px;text-align:center">Sending gift to <strong style="color:#fff">${getDisplayName(user)}</strong> • Balance: ${myProfile?myProfile.coins||0:0} coins</div></div></div>`;
     document.body.insertAdjacentHTML('beforeend', html);
   },
   selectGift(index,giftPanelId){ let g=this.giftList[index]; if(!g) return; this.sendGift(g,this.currentChatUser,giftPanelId); },
