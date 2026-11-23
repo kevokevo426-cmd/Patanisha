@@ -7,7 +7,7 @@
 <link rel="icon" href="logo-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="logo-180.png">
 <meta name="theme-color" content="#FFA4C7">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="/manifest.json">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#f5f5f5;padding-bottom:88px;overflow-x:hidden}
@@ -171,7 +171,6 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
       </div>
       <button id="profileDownloadBtn" onclick="openInstallFromProfile()" style="background:#fff;color:#000;border:none;padding:11px 14px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">⬇️ Download</button>
     </div>
-    <p id="profileDownloadManual" style="display:none;font-size:13px;color:#333;background:#f5f5f5;padding:12px;border-radius:12px;margin-top:8px;line-height:1.6">📱 <b>Android Chrome:</b> Tap <b>⋮ Menu</b> → <b>Add to Home screen</b> → <b>Install</b><br>🍎 <b>iPhone Safari:</b> Tap <b>Share ⬆️</b> → <b>Add to Home Screen</b></p>
     <!-- ===== END DOWNLOAD APP ===== -->
     <button class="btn" style="width:100%;margin-top:12px;background:#D32F2F;color:#fff" onclick="logout()">🚪 Log Out</button>
   </div>
@@ -613,7 +612,7 @@ loadBoys();
 loadFemaleEarnings();
 setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000);
 </script>
-<!-- ===== INSTALL POPUP - TRIGGERED FROM PROFILE ===== -->
+<!-- ===== INSTALL POPUP - DIRECT ONLY, NO MANUAL STEPS ===== -->
 <div id="installPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999999;align-items:flex-end;justify-content:center">
   <div style="width:100%;max-width:650px;background:#fff;border-radius:25px 25px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));text-align:center">
     <div style="width:60px;height:5px;background:#ddd;border-radius:10px;margin:0 auto 14px"></div>
@@ -621,7 +620,7 @@ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls
     <h2 style="font-size:22px;margin:12px 0 4px;color:#111">Download Patanisha App 📲</h2>
     <p style="font-size:14px;color:#666;line-height:1.5">Faster • Full screen • No browser bar<br>Chat, Voice & Video calls work better in the App.</p>
     <button id="installAppBtn" style="width:100%;padding:16px;border:none;border-radius:16px;background:linear-gradient(135deg,#FF8C00,#FF5252);color:#fff;font-size:17px;font-weight:800;cursor:pointer;margin-top:12px">⬇️ Download App - FREE</button>
-    <p id="installManual" style="display:none;font-size:13px;color:#333;background:#f5f5f5;padding:12px;border-radius:12px;margin-top:12px;line-height:1.6;text-align:left">📱 <b>Android Chrome:</b> Tap <b>⋮ Menu</b> → <b>Add to Home screen</b> → <b>Install</b><br>🍎 <b>iPhone Safari:</b> Tap <b>Share ⬆️</b> → <b>Add to Home Screen</b></p>
+    <p id="installStatus" style="display:none;font-size:13px;color:#E65100;margin-top:10px">⏳ Preparing install... please wait 2 seconds and tap again</p>
     <button onclick="closeInstallPopup()" style="width:100%;padding:14px;border:none;background:none;color:#888;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px">Maybe Later</button>
   </div>
 </div>
@@ -629,7 +628,8 @@ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls
 (function(){
   var deferredPrompt = null;
   var popup = document.getElementById('installPopup');
-  var isInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || localStorage.getItem('patanisha_installed')==='1';
+  // REAL check only - never trust localStorage
+  var isInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   function updateProfileDownloadBtn(){
     var btn = document.getElementById('profileDownloadBtn');
     var title = document.getElementById('profileDownloadTitle');
@@ -644,19 +644,23 @@ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls
       if(box) box.style.background = 'linear-gradient(135deg,#25D366,#128C7E)';
     } else {
       btn.textContent = '⬇️ Download';
+      if(title) title.textContent = 'Download Patanisha App 📲';
+      if(sub) sub.textContent = 'Faster • Full screen • No browser bar';
+      if(box) box.style.background = 'linear-gradient(135deg,#FF8C00,#FF5252)';
     }
   }
   window.updateProfileDownloadBtn = updateProfileDownloadBtn;
   updateProfileDownloadBtn();
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register('/sw.js', {scope: '/'}).catch(()=>{});
   }
   window.addEventListener('beforeinstallprompt', function(e){
     e.preventDefault();
     deferredPrompt = e;
   });
   window.openInstallFromProfile = function(){
-    if(isInstalled){ showToast('✅ App already installed'); return; }
+    if(isInstalled){ showToast('✅ App already installed - open it from Home Screen'); return; }
+    try{ localStorage.removeItem('patanisha_installed'); }catch(e){}
     if(popup) popup.style.display = 'flex';
   };
   window.closeInstallPopup = function(){
@@ -665,22 +669,22 @@ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls
   var installBtn = document.getElementById('installAppBtn');
   if(installBtn) installBtn.addEventListener('click', async function(){
     if(deferredPrompt){
+      installBtn.textContent = '⏳ Installing...';
       deferredPrompt.prompt();
       var choice = await deferredPrompt.userChoice;
       if(choice.outcome === 'accepted'){
-        isInstalled = true;
-        try{ localStorage.setItem('patanisha_installed','1'); }catch(e){}
-        updateProfileDownloadBtn();
-        if(popup) popup.style.display = 'none';
-        showToast('✅ App installed - open it from Home Screen');
+        installBtn.textContent = '✅ Installing... check Home Screen';
+      } else {
+        installBtn.textContent = '⬇️ Download App - FREE';
+        showToast('Tap Download again, then tap Install');
       }
       deferredPrompt = null;
     } else {
-      var m = document.getElementById('installManual');
-      if(m) m.style.display = 'block';
-      var pm = document.getElementById('profileDownloadManual');
-      if(pm) pm.style.display = 'block';
-      installBtn.textContent = 'Follow Steps Above 👆';
+      var st = document.getElementById('installStatus');
+      if(st) st.style.display = 'block';
+      installBtn.textContent = '⏳ Please wait... tap again in 2s';
+      setTimeout(function(){ installBtn.textContent = '⬇️ Download App - FREE'; }, 2000);
+      if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', {scope: '/'}).catch(()=>{});
     }
   });
   window.addEventListener('appinstalled', function(){
@@ -688,6 +692,7 @@ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls
     try{ localStorage.setItem('patanisha_installed','1'); }catch(e){}
     updateProfileDownloadBtn();
     if(popup) popup.style.display = 'none';
+    showToast('✅ App installed - check Home Screen');
   });
 })();
 </script>
