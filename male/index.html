@@ -6,7 +6,7 @@
 <link rel="icon" href="../logo-192.png">
 <link rel="apple-touch-icon" href="../logo-180.png">
 <meta name="theme-color" content="#2196F3">
-<link rel="manifest" href="../manifest.json">
+<link rel="manifest" href="/manifest.json">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -173,7 +173,6 @@ body{background:#0D1117;padding-bottom:80px;overflow-x:hidden}
   </div>
   <button id="profileDownloadBtn" onclick="openInstallFromProfile()" style="background:#fff;color:#000;border:none;padding:11px 14px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">⬇️ Download</button>
 </div>
-<p id="profileDownloadManual" style="display:none;font-size:13px;color:#C9D1D9;background:#21262D;padding:12px;border-radius:12px;margin:0 15px 15px;line-height:1.6">📱 <b>Android Chrome:</b> Tap <b>⋮ Menu</b> → <b>Add to Home screen</b> → <b>Install</b><br>🍎 <b>iPhone Safari:</b> Tap <b>Share ⬆️</b> → <b>Add to Home Screen</b></p>
 <!-- ===== END DOWNLOAD APP ===== -->
 <div style="padding:0 0 20px"><div class="menu-item" onclick="openFollowRequests()">👥 Follow Requests</div><div class="menu-item" onclick="openSocialList('requests')">🤝 Friend Requests</div><div class="menu-item" onclick="openRechargeHistory()">📜 Recharge History</div><div class="menu-item" onclick="openAdminChat()">💬 Contact Admin</div><div class="menu-item" onclick="window.location='../about.html#terms'">📄 Terms & Conditions</div><div class="menu-item" onclick="window.location='../about.html#privacy'">🔒 Privacy Policy</div><button class="btn" onclick="window.location='../register/index.html'" style="margin:15px;width:calc(100% - 30px)">Edit Profile</button><button onclick="askLogout()" style="width:calc(100% - 30px);margin:0 15px;padding:16px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF5252,#D32F2F);color:#fff;font-size:16px;font-weight:700;cursor:pointer">🚪 Log Out</button></div></div></div>
 <div class="popup" id="infoPopup"><span class="close-btn" onclick="closePopup('infoPopup')">×</span><div class="popup-content" style="text-align:left;padding:25px"><h3 style="text-align:center;margin-bottom:20px;color:#2196F3">Coin Rates</h3><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>💬 Chat</b><p style="color:#8B949E;font-size:13px">1st message FREE, then 10 Coins per message • HELD 60 mins until she replies • No reply = refund</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>🎁 Gifts</b><p style="color:#8B949E;font-size:13px">HELD 60 mins until she replies • No reply = refund</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📞 Voice Call</b><p style="color:#8B949E;font-size:13px">50 Coins per minute • Deducted live during call • NOT held / NOT refunded</p></div><div style="background:#21262D;padding:15px;border-radius:12px;margin-bottom:12px"><b>📹 Video Call</b><p style="color:#8B949E;font-size:13px">100 Coins per minute • Deducted live during call • NOT held / NOT refunded</p></div><div style="background:#21262D;padding:15px;border-radius:12px"><b>🔄 Recharge Rate</b><p style="color:#8B949E;font-size:13px">KES 100 = 1000 Coins</p></div></div></div>
@@ -237,7 +236,6 @@ let currentHomeTab = 'recommend';
 function showToast(msg){ let t=document.getElementById('appToast'); t.innerText=msg; t.style.display='block'; clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.display='none',2500); }
 function shortName(name){ if(!name) return 'User'; let n = String(name).split(' ')[0]; if(n.length>12) n=n.substring(0,12)+'...'; return n; }
 function fullName(u){ return (u && (u.name||u.displayName)) || 'User'; }
-// ===== LAST SEEN: Online / 10min ago / 5hrs ago / 1day ago / 3days ago / 1week ago =====
 function formatLastSeen(ts){
   if(!ts) return 'Offline';
   var diff = Date.now() - Number(ts);
@@ -253,7 +251,6 @@ function formatLastSeen(ts){
   var weeks = Math.floor(days / 7);
   return weeks + (weeks===1 ? 'week ago' : 'weeks ago');
 }
-// ===== ONLINE = online==true OR lastSeen < 10min ago =====
 function isOnlineNow(u){
   if(!u) return false;
   if(u.online===true) return true;
@@ -264,18 +261,7 @@ function syncMyProfileToFirebase(){
   if(!myProfile || !myProfile.id || !window.PatanishaDB) return;
   try{
     window.PatanishaDB.ref('users/'+myProfile.id).update({
-      id: myProfile.id,
-      displayId: myProfile.displayId||myProfile.id,
-      name: myProfile.name||'',
-      email: myProfile.email||'',
-      gender: myProfile.gender||'Male',
-      city: myProfile.city||'',
-      bio: myProfile.bio||'',
-      avatar: myProfile.avatar||'',
-      coins: Number(myProfile.coins||0),
-      verificationStatus: myProfile.verificationStatus||myProfile.verification||'approved',
-      online: true,
-      lastSeen: Date.now()
+      id: myProfile.id, displayId: myProfile.displayId||myProfile.id, name: myProfile.name||'', email: myProfile.email||'', gender: myProfile.gender||'Male', city: myProfile.city||'', bio: myProfile.bio||'', avatar: myProfile.avatar||'', coins: Number(myProfile.coins||0), verificationStatus: myProfile.verificationStatus||myProfile.verification||'approved', online: true, lastSeen: Date.now()
     });
   }catch(e){}
 }
@@ -363,13 +349,7 @@ function declineFollowRequest(fromId){
   openFollowRequests();
 }
 function creditLadyEarnings(ladyId, amount, reason){
-  console.warn('DEPRECATED: creditLadyEarnings called, forwarding to createPendingEarning', ladyId, amount, reason);
-  try{
-    if(typeof createPendingEarning === 'function'){
-      var toUser = {id: ladyId, name: ''};
-      return createPendingEarning(toUser, amount, reason);
-    }
-  }catch(e){ console.log('creditLadyEarnings forward failed', e); }
+  try{ if(typeof createPendingEarning === 'function'){ return createPendingEarning({id: ladyId, name: ''}, amount, reason); } }catch(e){}
   return null;
 }
 window.creditLadyEarnings = creditLadyEarnings;
@@ -401,7 +381,6 @@ function getFilteredUsers(){
   if(currentHomeTab === 'online'){ return base.filter(u=>isOnlineNow(u)); }
   return base;
 }
-// ===== CARD: Name / Location / Last Seen - NO Say Hi, NO bio, NO truncation =====
 function renderUsers(){
   filteredUsers = getFilteredUsers();
   let list = document.getElementById('userList');
@@ -714,7 +693,7 @@ loadUsersFromFirebase();
 if(typeof startPresence==='function') startPresence();
 setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000);
 </script>
-<!-- ===== INSTALL POPUP - TRIGGERED FROM PROFILE ===== -->
+<!-- ===== INSTALL POPUP - DIRECT ONLY, NO MANUAL STEPS ===== -->
 <div id="installPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999999;align-items:flex-end;justify-content:center">
   <div style="width:100%;max-width:650px;background:#161B22;color:#fff;border-radius:25px 25px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));text-align:center">
     <div style="width:60px;height:5px;background:#333;border-radius:10px;margin:0 auto 14px"></div>
@@ -722,7 +701,7 @@ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls
     <h2 style="font-size:22px;margin:12px 0 4px">Download Patanisha App 📲</h2>
     <p style="font-size:14px;color:#8B949E;line-height:1.5">Faster • Full screen • No browser bar<br>Chat, Voice & Video calls work better in the App.</p>
     <button id="installAppBtn" style="width:100%;padding:16px;border:none;border-radius:16px;background:linear-gradient(135deg,#2196F3,#1976D2);color:#fff;font-size:17px;font-weight:800;cursor:pointer;margin-top:12px">⬇️ Download App - FREE</button>
-    <p id="installManual" style="display:none;font-size:13px;color:#C9D1D9;background:#21262D;padding:12px;border-radius:12px;margin-top:12px;line-height:1.6;text-align:left">📱 <b>Android Chrome:</b> Tap <b>⋮ Menu</b> → <b>Add to Home screen</b> → <b>Install</b><br>🍎 <b>iPhone Safari:</b> Tap <b>Share ⬆️</b> → <b>Add to Home Screen</b></p>
+    <p id="installStatus" style="display:none;font-size:13px;color:#FFC107;margin-top:10px">⏳ Preparing install... please wait 2 seconds and tap again</p>
     <button onclick="closeInstallPopup()" style="width:100%;padding:14px;border:none;background:none;color:#8B949E;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px">Maybe Later</button>
   </div>
 </div>
@@ -730,7 +709,7 @@ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls
 (function(){
   var deferredPrompt = null;
   var popup = document.getElementById('installPopup');
-  var isInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || localStorage.getItem('patanisha_installed')==='1';
+  var isInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   function updateProfileDownloadBtn(){
     var btn = document.getElementById('profileDownloadBtn');
     var title = document.getElementById('profileDownloadTitle');
@@ -745,19 +724,23 @@ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls
       if(box) box.style.background = 'linear-gradient(135deg,#25D366,#128C7E)';
     } else {
       btn.textContent = '⬇️ Download';
+      if(title) title.textContent = 'Download Patanisha App 📲';
+      if(sub) sub.textContent = 'Faster • Full screen • No browser bar';
+      if(box) box.style.background = 'linear-gradient(135deg,#2196F3,#1976D2)';
     }
   }
   window.updateProfileDownloadBtn = updateProfileDownloadBtn;
   updateProfileDownloadBtn();
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('../sw.js').catch(()=>{});
+    navigator.serviceWorker.register('/sw.js', {scope: '/'}).catch(()=>{});
   }
   window.addEventListener('beforeinstallprompt', function(e){
     e.preventDefault();
     deferredPrompt = e;
   });
   window.openInstallFromProfile = function(){
-    if(isInstalled){ showToast('✅ App already installed'); return; }
+    if(isInstalled){ showToast('✅ App already installed - open it from Home Screen'); return; }
+    try{ localStorage.removeItem('patanisha_installed'); }catch(e){}
     if(popup) popup.style.display = 'flex';
   };
   window.closeInstallPopup = function(){
@@ -766,22 +749,22 @@ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls
   var installBtn = document.getElementById('installAppBtn');
   if(installBtn) installBtn.addEventListener('click', async function(){
     if(deferredPrompt){
+      installBtn.textContent = '⏳ Installing...';
       deferredPrompt.prompt();
       var choice = await deferredPrompt.userChoice;
       if(choice.outcome === 'accepted'){
-        isInstalled = true;
-        try{ localStorage.setItem('patanisha_installed','1'); }catch(e){}
-        updateProfileDownloadBtn();
-        if(popup) popup.style.display = 'none';
-        showToast('✅ App installed - open it from Home Screen');
+        installBtn.textContent = '✅ Installing... check Home Screen';
+      } else {
+        installBtn.textContent = '⬇️ Download App - FREE';
+        showToast('Tap Download again, then tap Install');
       }
       deferredPrompt = null;
     } else {
-      var m = document.getElementById('installManual');
-      if(m) m.style.display = 'block';
-      var pm = document.getElementById('profileDownloadManual');
-      if(pm) pm.style.display = 'block';
-      installBtn.textContent = 'Follow Steps Above 👆';
+      var st = document.getElementById('installStatus');
+      if(st) st.style.display = 'block';
+      installBtn.textContent = '⏳ Please wait... tap again in 2s';
+      setTimeout(function(){ installBtn.textContent = '⬇️ Download App - FREE'; }, 2000);
+      if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', {scope: '/'}).catch(()=>{});
     }
   });
   window.addEventListener('appinstalled', function(){
@@ -789,6 +772,7 @@ setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls
     try{ localStorage.setItem('patanisha_installed','1'); }catch(e){}
     updateProfileDownloadBtn();
     if(popup) popup.style.display = 'none';
+    showToast('✅ App installed - check Home Screen');
   });
 })();
 </script>
