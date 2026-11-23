@@ -162,6 +162,17 @@ label{display:block;margin-top:12px;font-weight:700;font-size:14px}
       <button class="btn btn-grey" style="flex:1" onclick="window.location='../about.html#terms'">📄 Terms</button>
       <button class="btn btn-grey" style="flex:1" onclick="window.location='../about.html#privacy'">🔒 Privacy</button>
     </div>
+    <!-- ===== DOWNLOAD APP - PROFILE ===== -->
+    <div id="profileDownloadBox" style="background:linear-gradient(135deg,#FF8C00,#FF5252);border-radius:16px;padding:14px;margin-top:12px;display:flex;gap:12px;align-items:center">
+      <img src="logo-192.png" style="width:48px;height:48px;border-radius:12px;object-fit:cover;background:#fff;flex-shrink:0">
+      <div style="flex:1;min-width:0;text-align:left">
+        <b id="profileDownloadTitle" style="color:#fff;font-size:15px;display:block">Download Patanisha App 📲</b>
+        <span id="profileDownloadSub" style="color:#fff;font-size:12px;opacity:.9">Faster • Full screen • No browser bar</span>
+      </div>
+      <button id="profileDownloadBtn" onclick="openInstallFromProfile()" style="background:#fff;color:#000;border:none;padding:11px 14px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">⬇️ Download</button>
+    </div>
+    <p id="profileDownloadManual" style="display:none;font-size:13px;color:#333;background:#f5f5f5;padding:12px;border-radius:12px;margin-top:8px;line-height:1.6">📱 <b>Android Chrome:</b> Tap <b>⋮ Menu</b> → <b>Add to Home screen</b> → <b>Install</b><br>🍎 <b>iPhone Safari:</b> Tap <b>Share ⬆️</b> → <b>Add to Home Screen</b></p>
+    <!-- ===== END DOWNLOAD APP ===== -->
     <button class="btn" style="width:100%;margin-top:12px;background:#D32F2F;color:#fff" onclick="logout()">🚪 Log Out</button>
   </div>
   <div id="referralBox" style="background:#000;padding:16px;border-radius:16px;color:#fff;margin:0 10px 10px">
@@ -252,7 +263,6 @@ function shortName(n){ if(!n) return 'User'; let p=String(n).trim().split(' '); 
 function fullName(u){ return (u && (u.name||u.displayName)) || 'User'; }
 function showToast(m){ let t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:12px 18px;border-radius:20px;z-index:999999;font-size:14px;max-width:90%;text-align:center'; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
 function copyMyId(){ var id = myProfile ? (myProfile.displayId||myProfile.id||'') : ''; if(!id) return; try{ navigator.clipboard.writeText(id); }catch(e){} showToast('✅ ID copied: '+id); }
-// FIXED: Follow now writes to Firebase so Lucus can Accept. Old version only touched localStorage.
 function localToggleFollowFemale(){
   var u=_currentBoy; if(!u) return;
   if(!myProfile.following) myProfile.following=[];
@@ -413,6 +423,7 @@ function refreshMe(){
   loadFemalePhotoPreviews();
   if(typeof refreshSocialCounts==='function') refreshSocialCounts().then(c=>{ if(c){ document.getElementById('meFriends').textContent=c.friends; document.getElementById('meFollowing').textContent=c.following; document.getElementById('meFollowers').textContent=c.followers; document.getElementById('meVisitors').textContent=c.visitors; } }).catch(()=>{});
   if(typeof renderReferralBox==='function') renderReferralBox();
+  if(typeof updateProfileDownloadBtn==='function') updateProfileDownloadBtn();
 }
 function saveProfile(){
   myProfile.name=document.getElementById('editName').value.trim()||myProfile.name;
@@ -488,7 +499,6 @@ function openBoyProfile(idx){
   if(typeof recordProfileVisit==='function') recordProfileVisit(u);
   document.getElementById('boyProfileName').textContent=fullName(u)+' ♂ '+(u.age||'');
   document.getElementById('boyProfileAvatar').src=u.avatar||'logo-192.png';
-  // PRIVACY: No coins shown for boy. Only ID / city / last seen.
   document.getElementById('boyProfileCity').textContent='📍 '+(u.city||'Ruiru')+' • ID:'+(u.displayId||u.id)+' • '+(isOnlineNow(u)?'● Online':'● '+formatLastSeen(u.lastSeen));
   document.getElementById('boyProfileBio').textContent=u.bio||'Say Hi 👋';
   document.getElementById('boyProfilePopup').style.display='flex';
@@ -542,7 +552,6 @@ function renderBoys(){
     let status = online ? '● Online' : '● '+formatLastSeen(u.lastSeen || u.onlineAt || u.lastActive);
     let name = String(fullName(u)).replace(/</g,'&lt;');
     let city = String(u.city||'Ruiru').replace(/</g,'&lt;');
-    // PRIVACY: No boy coins shown here.
     return `<div class="card" onclick="openBoyProfile(${idx})">
       <div class="avatar-wrap"><img src="${u.avatar||'logo-192.png'}" onerror="this.onerror=null;this.src='logo-192.png'" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><span class="${online?'dot-blue':'dot-grey'}"></span></div>
       <div class="info"><b title="${name}">${name} ♂ ${u.age||''}</b><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 ${city}</span><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${online?'#2196F3':'#888'};font-weight:${online?'700':'400'}">${status}</span></div>
@@ -550,13 +559,11 @@ function renderBoys(){
     </div>`;
   }).join('');
 }
-// FIXED: Earnings history now reads Firebase, not empty local income
 function loadFemaleEarnings(){
   if(!myProfile || !window.PatanishaDB) return Promise.resolve();
   var paths=['earnings/'+myProfile.id, 'coinHistory/'+myProfile.id, 'income/'+myProfile.id];
   return Promise.all(paths.map(function(p){ return window.PatanishaDB.ref(p).once('value').then(function(s){ var a=[]; s.forEach(function(c){ var v=c.val()||{}; v.ts=v.ts||v.createdAt||v.date||0; if(typeof v.ts==='string') v.ts=Date.parse(v.ts)||0; v.amount=v.amount||v.coins||v.earned||0; v.reason=v.reason||v.type||'Chat'; a.push(v); }); return a; }).catch(function(){ return []; }); })).then(function(groups){
     var all=[].concat.apply([], groups);
-    // Also include local fallback if Firebase is empty
     if(!all.length && myProfile.income && myProfile.income.length) all=myProfile.income;
     all.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
     var box=document.getElementById('incomeList'); if(!box) return;
@@ -606,5 +613,84 @@ loadBoys();
 loadFemaleEarnings();
 setTimeout(function(){ if(typeof checkMissedCalls==='function') checkMissedCalls(); }, 2000);
 </script>
+<!-- ===== INSTALL POPUP - TRIGGERED FROM PROFILE ===== -->
+<div id="installPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999999;align-items:flex-end;justify-content:center">
+  <div style="width:100%;max-width:650px;background:#fff;border-radius:25px 25px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));text-align:center">
+    <div style="width:60px;height:5px;background:#ddd;border-radius:10px;margin:0 auto 14px"></div>
+    <img src="logo-192.png" style="width:80px;height:80px;border-radius:20px;object-fit:cover">
+    <h2 style="font-size:22px;margin:12px 0 4px;color:#111">Download Patanisha App 📲</h2>
+    <p style="font-size:14px;color:#666;line-height:1.5">Faster • Full screen • No browser bar<br>Chat, Voice & Video calls work better in the App.</p>
+    <button id="installAppBtn" style="width:100%;padding:16px;border:none;border-radius:16px;background:linear-gradient(135deg,#FF8C00,#FF5252);color:#fff;font-size:17px;font-weight:800;cursor:pointer;margin-top:12px">⬇️ Download App - FREE</button>
+    <p id="installManual" style="display:none;font-size:13px;color:#333;background:#f5f5f5;padding:12px;border-radius:12px;margin-top:12px;line-height:1.6;text-align:left">📱 <b>Android Chrome:</b> Tap <b>⋮ Menu</b> → <b>Add to Home screen</b> → <b>Install</b><br>🍎 <b>iPhone Safari:</b> Tap <b>Share ⬆️</b> → <b>Add to Home Screen</b></p>
+    <button onclick="closeInstallPopup()" style="width:100%;padding:14px;border:none;background:none;color:#888;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px">Maybe Later</button>
+  </div>
+</div>
+<script>
+(function(){
+  var deferredPrompt = null;
+  var popup = document.getElementById('installPopup');
+  var isInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || localStorage.getItem('patanisha_installed')==='1';
+  function updateProfileDownloadBtn(){
+    var btn = document.getElementById('profileDownloadBtn');
+    var title = document.getElementById('profileDownloadTitle');
+    var sub = document.getElementById('profileDownloadSub');
+    var box = document.getElementById('profileDownloadBox');
+    if(!btn) return;
+    if(isInstalled){
+      btn.textContent = '✅ Installed';
+      btn.style.background = '#25D366'; btn.style.color = '#fff';
+      if(title) title.textContent = 'Patanisha App Installed ✅';
+      if(sub) sub.textContent = 'You are using the App version';
+      if(box) box.style.background = 'linear-gradient(135deg,#25D366,#128C7E)';
+    } else {
+      btn.textContent = '⬇️ Download';
+    }
+  }
+  window.updateProfileDownloadBtn = updateProfileDownloadBtn;
+  updateProfileDownloadBtn();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+  });
+  window.openInstallFromProfile = function(){
+    if(isInstalled){ showToast('✅ App already installed'); return; }
+    if(popup) popup.style.display = 'flex';
+  };
+  window.closeInstallPopup = function(){
+    if(popup) popup.style.display = 'none';
+  };
+  var installBtn = document.getElementById('installAppBtn');
+  if(installBtn) installBtn.addEventListener('click', async function(){
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      var choice = await deferredPrompt.userChoice;
+      if(choice.outcome === 'accepted'){
+        isInstalled = true;
+        try{ localStorage.setItem('patanisha_installed','1'); }catch(e){}
+        updateProfileDownloadBtn();
+        if(popup) popup.style.display = 'none';
+        showToast('✅ App installed - open it from Home Screen');
+      }
+      deferredPrompt = null;
+    } else {
+      var m = document.getElementById('installManual');
+      if(m) m.style.display = 'block';
+      var pm = document.getElementById('profileDownloadManual');
+      if(pm) pm.style.display = 'block';
+      installBtn.textContent = 'Follow Steps Above 👆';
+    }
+  });
+  window.addEventListener('appinstalled', function(){
+    isInstalled = true;
+    try{ localStorage.setItem('patanisha_installed','1'); }catch(e){}
+    updateProfileDownloadBtn();
+    if(popup) popup.style.display = 'none';
+  });
+})();
+</script>
+<!-- ===== END INSTALL POPUP ===== -->
 </body>
 </html>
