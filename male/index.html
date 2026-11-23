@@ -215,9 +215,9 @@ try{
 }catch(e){}
 if(users.length===0){
   users = [
-    {name:"Breezy 🔥", gender:"Female", city:"Ruiru", bio:"I'm as open as much as you're willing to flip my pages", avatar:"https://i.pravatar.cc/100?img=47", photos:["https://picsum.photos/200?1"], friends:[], id:"PT585061", displayId:"PT585061", activityScore:10},
-    {name:"Aisha W.", gender:"Female", city:"Nairobi", bio:"Hello babe ^_^", avatar:"https://i.pravatar.cc/100?img=45", photos:[], friends:[], id:"PT585062", displayId:"PT585062", activityScore:25},
-    {name:"Wanjiru K.", gender:"Female", city:"Ruiru", bio:"VIP User", avatar:"https://i.pravatar.cc/100?img=44", photos:[], friends:[], id:"PT585063", displayId:"PT585063", activityScore:5}
+    {name:"Breezy 🔥", gender:"Female", city:"Ruiru", bio:"I'm as open as much as you're willing to flip my pages", avatar:"https://i.pravatar.cc/100?img=47", photos:["https://picsum.photos/200?1"], friends:[], id:"PT585061", displayId:"PT585061", activityScore:10, lastSeen:Date.now()-5*60000},
+    {name:"Aisha W.", gender:"Female", city:"Nairobi", bio:"Hello babe ^_^", avatar:"https://i.pravatar.cc/100?img=45", photos:[], friends:[], id:"PT585062", displayId:"PT585062", activityScore:25, lastSeen:Date.now()-5*3600000},
+    {name:"Wanjiru K.", gender:"Female", city:"Ruiru", bio:"VIP User", avatar:"https://i.pravatar.cc/100?img=44", photos:[], friends:[], id:"PT585063", displayId:"PT585063", activityScore:5, lastSeen:Date.now()-3*86400000}
   ];
 }
 let currentProfile = {};
@@ -225,21 +225,29 @@ let filteredUsers = [];
 let currentHomeTab = 'recommend';
 function showToast(msg){ let t=document.getElementById('appToast'); t.innerText=msg; t.style.display='block'; clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.display='none',2500); }
 function shortName(name){ if(!name) return 'User'; let n = String(name).split(' ')[0]; if(n.length>12) n=n.substring(0,12)+'...'; return n; }
+function fullName(u){ return (u && (u.name||u.displayName)) || 'User'; }
+// ===== LAST SEEN: Online / 10min ago / 5hrs ago / 1day ago / 3days ago / 1week ago =====
 function formatLastSeen(ts){
-  if(!ts) return 'last seen a long time ago';
-  var d=new Date(ts), now=new Date();
-  var time=d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  var sameDay=d.toDateString()===now.toDateString();
-  var y=new Date(now); y.setDate(now.getDate()-1);
-  if(sameDay) return 'last seen today at '+time;
-  if(d.toDateString()===y.toDateString()) return 'last seen yesterday at '+time;
-  return 'last seen '+d.toLocaleDateString([], {day:'numeric', month:'short'})+' at '+time;
+  if(!ts) return 'Offline';
+  var diff = Date.now() - Number(ts);
+  if(diff < 0) diff = 0;
+  var min = Math.floor(diff / 60000);
+  if(min < 10) return 'Online';
+  if(min < 60) return min + 'min ago';
+  var hrs = Math.floor(min / 60);
+  if(hrs < 24) return hrs + (hrs===1 ? 'hr ago' : 'hrs ago');
+  var days = Math.floor(hrs / 24);
+  if(days === 1) return '1day ago';
+  if(days < 7) return days + 'days ago';
+  var weeks = Math.floor(days / 7);
+  return weeks + (weeks===1 ? 'week ago' : 'weeks ago');
 }
+// ===== ONLINE = online==true OR lastSeen < 10min ago =====
 function isOnlineNow(u){
   if(!u) return false;
   if(u.online===true) return true;
-  var ls = u.lastSeen || u.onlineAt || 0;
-  return ls && (Date.now() - ls < 300000);
+  var ls = u.lastSeen || u.onlineAt || u.lastActive || u.lastTs || 0;
+  return ls && (Date.now() - Number(ls) < 10*60*1000);
 }
 function syncMyProfileToFirebase(){
   if(!myProfile || !myProfile.id || !window.PatanishaDB) return;
@@ -382,13 +390,17 @@ function getFilteredUsers(){
   if(currentHomeTab === 'online'){ return base.filter(u=>isOnlineNow(u)); }
   return base;
 }
+// ===== CARD: Name / Location / Last Seen - NO Say Hi, NO bio, NO truncation =====
 function renderUsers(){
   filteredUsers = getFilteredUsers();
   let list = document.getElementById('userList');
   if(filteredUsers.length===0){ list.innerHTML='<div class="empty">No ladies found yet<br><span style="font-size:12px">'+(currentHomeTab==='online'?'No ladies online right now':currentHomeTab==='nearby'?'No Female users in '+(myProfile.city||'Ruiru')+' yet — try Recommend':'No ladies yet — pull to refresh')+'</span></div>'; return; }
   list.innerHTML = filteredUsers.map((u,i)=>{
-    let status = isOnlineNow(u) ? '● Online' : formatLastSeen(u.lastSeen);
-    return `<div class="card" onclick="openProfile(${i})"><div class="avatar"><img src="${u.avatar||'https://via.placeholder.com/80'}"><div class="${isOnlineNow(u)?'online':'offline'}"></div></div><div class="card-info"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">${(u.friends||[]).length} friends • ID:${u.displayId||u.id||''} • ${status}</div><div style="font-size:12px;color:#8B949E">📍 ${u.city||'Ruiru'} • Tap to view</div>${u.bio?`<div style="font-size:12px;color:#aaa;margin-top:4px">${u.bio.substring(0,60)}</div>`:''}</div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();openProfile(${i});startChat()">💬 Chat</button></div></div>`;
+    var online = isOnlineNow(u);
+    var seen = formatLastSeen(u.lastSeen || u.onlineAt || u.lastActive);
+    var name = String(fullName(u)).replace(/</g,'&lt;');
+    var city = String(u.city||'Ruiru').replace(/</g,'&lt;');
+    return `<div class="card" onclick="openProfile(${i})"><div class="avatar"><img src="${u.avatar||'https://via.placeholder.com/80'}" onerror="this.onerror=null;this.src='https://via.placeholder.com/80'"><div class="${online?'online':'offline'}"></div></div><div class="card-info"><h3 title="${name}">${name} ♀</h3><div style="font-size:13px;color:#8B949E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 ${city}</div><div style="font-size:13px;color:${online?'#4CAF50':'#8B949E'};font-weight:${online?'700':'400'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${online?'● Online':'● '+seen}</div></div><div class="btn-row"><button class="hi-btn" onclick="event.stopPropagation();openProfile(${i});startChat()">💬 Chat</button></div></div>`;
   }).join('');
 }
 function switchTab(tab, el){ currentHomeTab = tab; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(el) el.classList.add('active'); renderUsers(); }
@@ -453,8 +465,8 @@ function openProfile(idx){
   currentProfile = filteredUsers[idx]; if(!currentProfile) return;
   document.getElementById('profileCover').src = currentProfile.avatar;
   document.getElementById('profileAvatarBig').src = currentProfile.avatar;
-  document.getElementById('profileName').innerText = shortName(currentProfile.name);
-  document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown') + ' • ID:' + (currentProfile.displayId||currentProfile.id||'') + ' • ' + (isOnlineNow(currentProfile)?'● Online':formatLastSeen(currentProfile.lastSeen));
+  document.getElementById('profileName').innerText = fullName(currentProfile);
+  document.getElementById('profileCity').innerText = '📍 ' + (currentProfile.city || 'Unknown') + ' • ID:' + (currentProfile.displayId||currentProfile.id||'') + ' • ' + (isOnlineNow(currentProfile)?'● Online':'● '+formatLastSeen(currentProfile.lastSeen));
   document.getElementById('profileBio').innerText = currentProfile.bio || 'No bio yet';
   let localPhotos = (currentProfile.photos && currentProfile.photos.length) ? currentProfile.photos.filter(Boolean) : [currentProfile.avatar];
   window._currentProfilePhotos = localPhotos;
@@ -490,7 +502,7 @@ function searchUserById(){
   let all = users.filter(u=>{ let g=(u.gender||'').toString().toLowerCase().trim(); return !(g==='male'||g==='man'||g==='m'); });
   let found = all.find(u => ((u.displayId||u.id||'').toUpperCase()===q) || ((u.displayId||u.id||'').toUpperCase().includes(q)) || (u.name && u.name.toUpperCase().includes(q)));
   if(found){
-    filteredUsers=[found]; document.getElementById('userList').innerHTML = filteredUsers.map((u,i)=>`<div class="card" onclick="openProfile(0)"><div class="avatar"><img src="${u.avatar}"><div class="${isOnlineNow(u)?'online':'offline'}"></div></div><div class="card-info"><h3>${shortName(u.name)} ♀</h3><div class="friends-count">ID:${u.displayId||u.id} • ${isOnlineNow(u)?'● Online':formatLastSeen(u.lastSeen)}</div></div></div>`).join('');
+    filteredUsers=[found]; document.getElementById('userList').innerHTML = filteredUsers.map((u,i)=>`<div class="card" onclick="openProfile(0)"><div class="avatar"><img src="${u.avatar}"><div class="${isOnlineNow(u)?'online':'offline'}"></div></div><div class="card-info"><h3>${String(fullName(u)).replace(/</g,'&lt;')} ♀</h3><div style="font-size:13px;color:#8B949E">📍 ${u.city||'Ruiru'}</div><div style="font-size:13px;color:${isOnlineNow(u)?'#4CAF50':'#8B949E'}">${isOnlineNow(u)?'● Online':'● '+formatLastSeen(u.lastSeen)}</div></div></div>`).join('');
     return;
   }
   try{
@@ -503,9 +515,9 @@ function searchUserById(){
       let gg=(v.gender||'').toString().toLowerCase().trim();
       if(gg==='male'||gg==='man'||gg==='m'){ showToast('No user found with ID: '+q); return; }
       let rid2 = v.userId||v.displayId||v.id||key;
-      let u={name:v.username||v.name||'User',gender:v.gender||'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.photo||v.avatar||'https://via.placeholder.com/80',photos:v.photos||[],friends:[],id:rid2,displayId:rid2,activityScore:0,online:v.online,lastSeen:v.lastSeen};
+      let u={name:v.username||v.name||'User',gender:v.gender||'Female',city:v.city||'Ruiru',bio:v.bio||'',avatar:v.photo||v.avatar||'https://via.placeholder.com/80',photos:v.photos||[],friends:[],id:rid2,displayId:rid2,activityScore:0,online:v.online,lastSeen:v.lastSeen||0};
       if(!users.find(x=>(x.displayId||x.id)===q)) users.push(u);
-      filteredUsers=[u]; document.getElementById('userList').innerHTML = filteredUsers.map((uu,i)=>`<div class="card" onclick="openProfile(0)"><div class="avatar"><img src="${uu.avatar}"><div class="${isOnlineNow(uu)?'online':'offline'}"></div></div><div class="card-info"><h3>${shortName(uu.name)} ♀</h3><div class="friends-count">ID:${uu.displayId||uu.id} • ${isOnlineNow(uu)?'● Online':formatLastSeen(uu.lastSeen)}</div></div></div>`).join('');
+      filteredUsers=[u]; document.getElementById('userList').innerHTML = filteredUsers.map((uu,i)=>`<div class="card" onclick="openProfile(0)"><div class="avatar"><img src="${uu.avatar}"><div class="${isOnlineNow(uu)?'online':'offline'}"></div></div><div class="card-info"><h3>${String(fullName(uu)).replace(/</g,'&lt;')} ♀</h3><div style="font-size:13px;color:#8B949E">📍 ${uu.city||'Ruiru'}</div><div style="font-size:13px;color:${isOnlineNow(uu)?'#4CAF50':'#8B949E'}">${isOnlineNow(uu)?'● Online':'● '+formatLastSeen(uu.lastSeen)}</div></div></div>`).join('');
     }).catch(()=>{ showToast('No user found with ID: '+q); });
   }catch(e){ showToast('No user found with ID: '+q); }
 }
