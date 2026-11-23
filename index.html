@@ -249,6 +249,7 @@ function coinsToKES(c){ return (Number(c||0)*KES_PER_1000_COINS/1000); }
 function withdrawFeeKES(c){ return coinsToKES(c)*FEE_RATE; }
 function withdrawNetKES(c){ return coinsToKES(c)-withdrawFeeKES(c); }
 function shortName(n){ if(!n) return 'User'; let p=String(n).trim().split(' '); return p.length>1 ? p[0]+' '+p[1][0]+'.' : p[0]; }
+function fullName(u){ return (u && (u.name||u.displayName)) || 'User'; }
 function showToast(m){ let t=document.createElement('div'); t.textContent=m; t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:12px 18px;border-radius:20px;z-index:999999;font-size:14px;max-width:90%;text-align:center'; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
 function copyMyId(){ var id = myProfile ? (myProfile.displayId||myProfile.id||'') : ''; if(!id) return; try{ navigator.clipboard.writeText(id); }catch(e){} showToast('✅ ID copied: '+id); }
 // FIXED: Follow now writes to Firebase so Lucus can Accept. Old version only touched localStorage.
@@ -277,22 +278,28 @@ function localToggleFollowFemale(){
   try{ localStorage.setItem('patanisha_myProfile_female', JSON.stringify(myProfile)); localStorage.setItem('patanisha_myProfile', JSON.stringify(myProfile)); }catch(e){}
   if(typeof refreshSocialCounts==='function') refreshSocialCounts().catch(()=>{});
 }
-// FIXED: WhatsApp-style last seen + 5 min online window
+// ===== LAST SEEN: Online / 10min ago / 5hrs ago / 1day ago / 3days ago / 1week ago =====
 function formatLastSeen(ts){
-  if(!ts) return 'last seen a long time ago';
-  var d=new Date(ts), now=new Date();
-  var time=d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  var sameDay=d.toDateString()===now.toDateString();
-  var y=new Date(now); y.setDate(now.getDate()-1);
-  if(sameDay) return 'last seen today at '+time;
-  if(d.toDateString()===y.toDateString()) return 'last seen yesterday at '+time;
-  return 'last seen '+d.toLocaleDateString([], {day:'numeric', month:'short'})+' at '+time;
+  if(!ts) return 'Offline';
+  var diff = Date.now() - Number(ts);
+  if(diff < 0) diff = 0;
+  var min = Math.floor(diff / 60000);
+  if(min < 10) return 'Online';
+  if(min < 60) return min + 'min ago';
+  var hrs = Math.floor(min / 60);
+  if(hrs < 24) return hrs + (hrs===1 ? 'hr ago' : 'hrs ago');
+  var days = Math.floor(hrs / 24);
+  if(days === 1) return '1day ago';
+  if(days < 7) return days + 'days ago';
+  var weeks = Math.floor(days / 7);
+  return weeks + (weeks===1 ? 'week ago' : 'weeks ago');
 }
+// ===== ONLINE = online==true OR lastSeen < 10min ago =====
 function isOnlineNow(u){
   if(!u) return false;
   if(u.online===true) return true;
-  var ls = u.lastSeen || u.onlineAt || 0;
-  return ls && (Date.now() - ls < 300000);
+  var ls = u.lastSeen || u.onlineAt || u.lastActive || u.lastTs || 0;
+  return ls && (Date.now() - Number(ls) < 10*60*1000);
 }
 function startPresence(){
   if(!myProfile || !window.PatanishaDB) return;
@@ -327,7 +334,7 @@ function renderProfileView(){
   var photos = (myProfile.photos||[]).filter(Boolean);
   var main = photos[0] || myProfile.avatar || 'logo-192.png';
   document.getElementById('profileAvatarView').src = main;
-  document.getElementById('profileViewName').textContent = shortName(myProfile.name) + (myProfile.age ? ' • '+myProfile.age : '');
+  document.getElementById('profileViewName').textContent = fullName(myProfile) + (myProfile.age ? ' • '+myProfile.age : '');
   document.getElementById('profileViewMeta').textContent = '📍 ' + (myProfile.city||'Ruiru') + ' • ID:' + (myProfile.displayId||myProfile.id||'');
   document.getElementById('profileViewBio').textContent = myProfile.bio || 'Say Hi 👋';
   var box = document.getElementById('profileViewPhotos');
@@ -453,7 +460,9 @@ function searchBoyById(){
   var found = users.find(u=>((u.displayId||u.id||'').toUpperCase()===q) || ((u.displayId||u.id||'').toUpperCase().includes(q)) || ((u.name||'').toUpperCase().includes(q)));
   if(found){
     var idx = users.findIndex(x=>x.id===found.id);
-    document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${found.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${shortName(found.name)} ♂ ${found.age||''}</b><span>📍 ${found.city||'Ruiru'} • ID:${found.displayId||found.id} • ${isOnlineNow(found)?'● Online':formatLastSeen(found.lastSeen)}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
+    var _n = String(fullName(found)).replace(/</g,'&lt;');
+    var _c = String(found.city||'Ruiru').replace(/</g,'&lt;');
+    document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${found.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${_n} ♂ ${found.age||''}</b><span>📍 ${_c} • ID:${found.displayId||found.id} • ${isOnlineNow(found)?'● Online':'● '+formatLastSeen(found.lastSeen)}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
     document.getElementById('noBoys').classList.add('hidden');
     return;
   }
@@ -466,7 +475,9 @@ function searchBoyById(){
       if(!v){ showToast('No boy found with ID: '+q); return; }
       if(!users.find(function(x){return x.id===v.id})) users.push(v);
       var idx = users.findIndex(function(x){return x.id===v.id});
-      document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${v.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${shortName(v.name)} ♂ ${v.age||''}</b><span>📍 ${v.city||'Ruiru'} • ID:${v.displayId||v.id} • ${isOnlineNow(v)?'● Online':formatLastSeen(v.lastSeen)}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
+      var _n2 = String(fullName(v)).replace(/</g,'&lt;');
+      var _c2 = String(v.city||'Ruiru').replace(/</g,'&lt;');
+      document.getElementById('boysList').innerHTML = `<div class="card" onclick="openBoyProfile(${idx})"><div class="avatar-wrap"><img src="${v.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"></div><div class="info"><b>${_n2} ♂ ${v.age||''}</b><span>📍 ${_c2} • ID:${v.displayId||v.id} • ${isOnlineNow(v)?'● Online':'● '+formatLastSeen(v.lastSeen)}</span></div><div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div></div>`;
       document.getElementById('noBoys').classList.add('hidden');
     }).catch(function(){ showToast('No boy found with ID: '+q); });
   }catch(e){ showToast('No boy found with ID: '+q); }
@@ -475,10 +486,10 @@ let _currentBoy=null;
 function openBoyProfile(idx){
   let u=users[idx]; if(!u) return; _currentBoy=u;
   if(typeof recordProfileVisit==='function') recordProfileVisit(u);
-  document.getElementById('boyProfileName').textContent=shortName(u.name)+' ♂ '+(u.age||'');
+  document.getElementById('boyProfileName').textContent=fullName(u)+' ♂ '+(u.age||'');
   document.getElementById('boyProfileAvatar').src=u.avatar||'logo-192.png';
   // PRIVACY: No coins shown for boy. Only ID / city / last seen.
-  document.getElementById('boyProfileCity').textContent='📍 '+(u.city||'Ruiru')+' • ID:'+(u.displayId||u.id)+' • '+(isOnlineNow(u)?'● Online':formatLastSeen(u.lastSeen));
+  document.getElementById('boyProfileCity').textContent='📍 '+(u.city||'Ruiru')+' • ID:'+(u.displayId||u.id)+' • '+(isOnlineNow(u)?'● Online':'● '+formatLastSeen(u.lastSeen));
   document.getElementById('boyProfileBio').textContent=u.bio||'Say Hi 👋';
   document.getElementById('boyProfilePopup').style.display='flex';
   updateBoyFollowUI();
@@ -517,6 +528,7 @@ function loadBoys(){
   }
   renderBoys();
 }
+// ===== CARD: Name / Location / Last Seen - NO bio, NO View button, NO truncation =====
 function renderBoys(){
   let box=document.getElementById('boysList');
   let list = users;
@@ -526,12 +538,15 @@ function renderBoys(){
   document.getElementById('noBoys').classList.add('hidden');
   box.innerHTML = list.map((u,i)=>{
     let idx = users.findIndex(x=>x.id===u.id);
-    let status = isOnlineNow(u) ? '● Online' : formatLastSeen(u.lastSeen);
+    let online = isOnlineNow(u);
+    let status = online ? '● Online' : '● '+formatLastSeen(u.lastSeen || u.onlineAt || u.lastActive);
+    let name = String(fullName(u)).replace(/</g,'&lt;');
+    let city = String(u.city||'Ruiru').replace(/</g,'&lt;');
     // PRIVACY: No boy coins shown here.
     return `<div class="card" onclick="openBoyProfile(${idx})">
-      <div class="avatar-wrap"><img src="${u.avatar||'logo-192.png'}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><span class="${isOnlineNow(u)?'dot-blue':'dot-grey'}"></span></div>
-      <div class="info"><b>${shortName(u.name)} ♂ ${u.age||''}</b><span>📍 ${u.city||'Ruiru'} • ${status}<br>${(u.bio||'Say Hi 👋').slice(0,40)}</span></div>
-      <div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button><button class="btn btn-pink" onclick="event.stopPropagation();openBoyProfile(${idx})">👤 View</button></div>
+      <div class="avatar-wrap"><img src="${u.avatar||'logo-192.png'}" onerror="this.onerror=null;this.src='logo-192.png'" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #FFD700"><span class="${online?'dot-blue':'dot-grey'}"></span></div>
+      <div class="info"><b title="${name}">${name} ♂ ${u.age||''}</b><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 ${city}</span><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${online?'#2196F3':'#888'};font-weight:${online?'700':'400'}">${status}</span></div>
+      <div class="actions"><button class="btn btn-orange" onclick="event.stopPropagation();ChatManager.openChatByIndex(${idx})">💬 Chat</button></div>
     </div>`;
   }).join('');
 }
